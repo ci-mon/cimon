@@ -1,0 +1,43 @@
+﻿@page "/MonitorList"
+@using Cimon.Data
+@using System.Reactive.Subjects;
+@using System.Reactive.Linq
+@using Microsoft.AspNetCore.Http.Extensions
+@inject MonitorService MonitorService
+@implements IDisposable
+
+<h3>MonitorList</h3>
+<RadzenButton Click="add">XXX</RadzenButton>
+
+@foreach (var monitor in _monitors) {
+    <NavLink class="nav-link" href="@UriHelper.BuildRelative("/monitor", $"/{monitor.Id}")">
+        <span class="oi oi-plus" aria-hidden="true"></span>@monitor.Id
+    </NavLink>
+}
+
+@code {
+
+    private IList<Monitor> _monitors = new List<Monitor>();
+    protected override void OnInitialized()
+    {
+        MonitorService.GetMonitors()
+            .TakeUntil(_disposed)
+            .Subscribe(list => {
+                InvokeAsync(() => {
+                    _monitors = list;
+                    StateHasChanged();
+                });
+            });
+    }
+
+    private readonly Subject<bool> _disposed = new Subject<bool>();
+    public void Dispose()
+    {
+        _disposed.OnNext(true);
+    }
+
+    private void add() {
+        MonitorService.Add();
+    }
+
+}

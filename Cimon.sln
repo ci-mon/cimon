@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon", "Cimon\Cimon.csproj", "{573AD64B-39BE-416F-AC5A-C0ECBEE3974B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data", "Cimon.Data\Cimon.Data.csproj", "{D9AA73F6-618B-40F1-BF68-6B869877EBD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Tests", "Cimon.Data.Tests\Cimon.Data.Tests.csproj", "{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{573AD64B-39BE-416F-AC5A-C0ECBEE3974B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{573AD64B-39BE-416F-AC5A-C0ECBEE3974B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{573AD64B-39BE-416F-AC5A-C0ECBEE3974B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{573AD64B-39BE-416F-AC5A-C0ECBEE3974B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9AA73F6-618B-40F1-BF68-6B869877EBD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9AA73F6-618B-40F1-BF68-6B869877EBD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9AA73F6-618B-40F1-BF68-6B869877EBD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9AA73F6-618B-40F1-BF68-6B869877EBD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
