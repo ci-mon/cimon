@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Cimon.Data;
+using Cimon.Data.TeamCity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +13,12 @@ builder.Services.AddAuthorization(options => {
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<MonitorService>();
-var app = builder.Build();
+builder.Services.AddSingleton<BuildInfoService>();
+builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
+builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList());
+builder.Services.AddOptions()
+	.Configure<BuildInfoMonitoringSettings>(builder.Configuration.GetSection("BuildInfoMonitoring"));
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment()) {

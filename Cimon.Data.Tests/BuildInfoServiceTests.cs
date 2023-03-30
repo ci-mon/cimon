@@ -1,6 +1,7 @@
 namespace Cimon.Data.Tests;
 
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -10,7 +11,8 @@ public class BuildInfoServiceTests
 	private BuildInfoService _service;
 	private List<IBuildInfoProvider> _buildInfoProviders;
 	private IBuildInfoProvider _buildInfoProvider;
-	private BuildLocator _sampleBuildLocator;
+	private BuildLocator _sampleBuildLocator1;
+	private BuildLocator _sampleBuildLocator2;
 
 	[SetUp]
 	public void Setup() {
@@ -18,34 +20,59 @@ public class BuildInfoServiceTests
 			Delay = TimeSpan.FromMilliseconds(100)
 		});
 		_buildInfoProviders = new List<IBuildInfoProvider>();
-		var buildInfoProvider = Substitute.For<IBuildInfoProvider>();
-		_buildInfoProvider = buildInfoProvider;
+		_buildInfoProvider = Substitute.For<IBuildInfoProvider>();
 		_buildInfoProviders.Add(_buildInfoProvider);
 		_service = new BuildInfoService(options, _buildInfoProviders);
-		_sampleBuildLocator = new BuildLocator {
-			Id = "testId",
+		_sampleBuildLocator1 = new BuildLocator {
+			Id = "testId1",
 			CiSystem = CISystem.TeamCity
 		};
+		_sampleBuildLocator2 = new BuildLocator {
+			Id = "testId2",
+			CiSystem = CISystem.TeamCity
+		};
+		_buildInfoProvider.CiSystem.Returns(CISystem.TeamCity);
 	}
 
 	[Test]
 	public async Task Test1() {
-		BuildInfo testBuildInfo = new() {
-			Name = "Test build",
-			BuildId = _sampleBuildLocator.Id
-		};
-		_buildInfoProvider.GetInfo(Arg.Any<IList<BuildLocator>>()).Returns(new List<BuildInfo> {
-			testBuildInfo
+		_buildInfoProvider.GetInfo(null)
+			.ReturnsForAnyArgs(ci => {
+				var locators = ci.Arg<IEnumerable<BuildLocator>>();
+				var buildInfos = locators.Reverse().Select(l => new BuildInfo {
+					Name = "Test build",
+					BuildId = l.Id
+				}).ToList();
+				return Task.FromResult((IList<BuildInfo>)buildInfos);
+			});
+		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {
+			_sampleBuildLocator1,
+			_sampleBuildLocator2
 		});
-		IObservable<IList<BuildInfo>> items = _service.Watch(new List<BuildLocator> { _sampleBuildLocator });
 		_service.IsRunning.Should().BeFalse();
+		var items = _service.Watch(locators);
 		IList<BuildInfo> infos = null;
 		using (items.Subscribe(x => infos = x)) {
 			_service.IsRunning.Should().BeTrue();
-			await TestUtils.WaitFor(() => infos != null);
-			infos.Should().HaveCount(0);
-			await TestUtils.WaitForAssert(() => infos.Should().HaveCount(1).And.ContainEquivalentOf(testBuildInfo));
+			await Wait.ForAssert(() => infos.Should().HaveCount(2).And.ContainInOrder(new BuildInfo {
+				Name = "Test build",
+				BuildId = _sampleBuildLocator1.Id
+			}, new BuildInfo {
+				Name = "Test build",
+				BuildId = _sampleBuildLocator2.Id
+			}));
+			locators.OnNext(new List<BuildLocator>());
+			await Wait.ForAssert(() => infos.Should().HaveCount(0));
 		}
 		_service.IsRunning.Should().BeFalse();
+	}
+
+	[Test]
+	public async Task METHOD() {
+		var x1 = new BehaviorSubject<int>(1).Select(i => {
+			Console.WriteLine(i);
+			return i;
+		}).Replay(x=>x);
+		var v1 = await x1.FirstAsync();
 	}
 }

@@ -1,10 +1,8 @@
 ﻿@page "/MonitorList"
 @using Cimon.Data
-@using System.Reactive.Subjects;
-@using System.Reactive.Linq
 @using Microsoft.AspNetCore.Http.Extensions
 @inject MonitorService MonitorService
-@implements IDisposable
+@inherits ReactiveComponent
 
 <h3>MonitorList</h3>
 <RadzenButton Click="add">XXX</RadzenButton>
@@ -18,22 +16,9 @@
 @code {
 
     private IList<Monitor> _monitors = new List<Monitor>();
-    protected override void OnInitialized()
-    {
-        MonitorService.GetMonitors()
-            .TakeUntil(_disposed)
-            .Subscribe(list => {
-                InvokeAsync(() => {
-                    _monitors = list;
-                    StateHasChanged();
-                });
-            });
-    }
-
-    private readonly Subject<bool> _disposed = new Subject<bool>();
-    public void Dispose()
-    {
-        _disposed.OnNext(true);
+    
+    protected override void OnInitialized() {
+        Subscribe(MonitorService.GetMonitors(), () => _monitors);
     }
 
     private void add() {

@@ -1,5 +1,6 @@
 ﻿namespace Cimon.Data;
 
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
 public class Monitor
@@ -25,15 +26,19 @@ public class MonitorService
 		_monitors = new List<Monitor> {
 			new() {
 				Id = $"default{++counter}",
+			},
+			new Monitor {
+				Id = "bpms",
 				Builds = {
 					new BuildLocator {
 						CiSystem = CISystem.TeamCity,
 						Id = "BpmsPlatformWorkDiagnostic"
+					},
+					new BuildLocator {
+						CiSystem = CISystem.TeamCity,
+						Id = "BpmsPlatformWorkDiagnostic2"
 					}
 				}
-			},
-			new Monitor {
-				Id = "bpms"
 			},
 		};
 		_monitorsSubject.OnNext(_monitors);
@@ -42,8 +47,18 @@ public class MonitorService
 
 	public void Add() {
 		_monitors.Add(new Monitor {
-			Id = $"bpms{++counter}"
+			Id = $"bpms{++counter}",
+			Builds = new List<BuildLocator> {
+				new BuildLocator() {
+					Id = "xxx",
+					CiSystem = CISystem.TeamCity
+				}
+			}
 		});
 		_monitorsSubject.OnNext(_monitors);
+	}
+
+	public IObservable<Monitor?> GetMonitorById(string monitorId) {
+		return GetMonitors().Select(m => m.FirstOrDefault(x => x.Id == monitorId));
 	}
 }

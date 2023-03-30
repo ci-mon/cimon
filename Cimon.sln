@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data", "Cimon.Data\Ci
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Tests", "Cimon.Data.Tests\Cimon.Data.Tests.csproj", "{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.TeamCity", "Cimon.Data.TeamCity\Cimon.Data.TeamCity.csproj", "{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE7DFEA3-7D36-4555-BCB2-C997C85BF54F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,14 +1,26 @@
 ﻿@page "/monitor/{monitorId?}"
+@using Cimon.Data
+@using System.Reactive.Linq
+@inject MonitorService MonitorService
+@inject BuildInfoService BuildInfoService
+@inherits ReactiveComponent
 
 <PageTitle>CI @MonitorId</PageTitle>
+@foreach (var buildInfo in _buildInfos) {
+    <h2>@buildInfo.Name</h2>
+}
 
 @code {
+
     [Parameter]
     public string? MonitorId { get; set; }
-    
-    protected override void OnInitialized()
-    {
-        MonitorId = MonitorId ?? "default";
+
+    private IList<BuildInfo> _buildInfos = new List<BuildInfo>();
+
+    protected override async Task OnInitializedAsync() {
+        MonitorId ??= "default";
+        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorById(MonitorId).Select(m => m.Builds)), 
+            () => _buildInfos);
     }
 
 }

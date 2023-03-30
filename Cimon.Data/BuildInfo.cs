@@ -1,62 +1,37 @@
 namespace Cimon.Data;
 
-public class BuildInfo
+public record BuildInfo
 {
 
 	public string BuildHomeUrl { get; set; }
 
-	public string ProjectName {
-		get;
-		set;
-	}
+	public string ProjectName { get; set; }
 
-	public string Name {
-		get;
-		set;
-	}
+	public string Name { get; set; }
 
-	public string Number {
-		get;
-		set;
-	}
+	public string Number { get; set; }
 
-	public string StatusText {
-		get;
-		set;
-	}
+	public string StatusText { get; set; }
 
-	public BuildStatus Status {
-		get;
-		set;
-	}
+	public BuildStatus Status { get; set; }
 
-	public DateTime FinishDate {
-		get;
-		set;
-	}
+	public DateTime FinishDate { get; set; }
 
-	public DateTime StartDate {
-		get;
-		set;
-	}
+	public DateTime StartDate { get; set; }
 
-	public string BranchName {
-		get;
-		set;
-	}
+	public string BranchName { get; set; }
 
-	public string Commiters {
-		get;
-		set;
-	}
+	public string Commiters { get; set; }
 
 	private IList<string> _lastModificationBy;
+
 	public IList<string> LastModificationBy {
 		get {
 			if (_lastModificationBy == null) {
 				_lastModificationBy = new List<string>();
 			} else {
-				_lastModificationBy = _lastModificationBy.Where(x => x.ToLower() != "unknowuser" && x.ToLower() != "bpmonlinebuild").ToList();
+				_lastModificationBy = _lastModificationBy
+					.Where(x => x.ToLower() != "unknowuser" && x.ToLower() != "bpmonlinebuild").ToList();
 			}
 			return _lastModificationBy;
 		}
@@ -74,9 +49,7 @@ public class BuildInfo
 	}
 
 	public string GetFinishDateString {
-		get {
-			return FinishDate.ToString("dd.MM.yyyy HH:mm:ss");
-		}
+		get { return FinishDate.ToString("dd.MM.yyyy HH:mm:ss"); }
 	}
 
 	public string GetStartDateString => StartDate.ToString("HH:mm");
