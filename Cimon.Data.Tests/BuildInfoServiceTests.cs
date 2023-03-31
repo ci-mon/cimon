@@ -1,6 +1,5 @@
 namespace Cimon.Data.Tests;
 
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -13,6 +12,7 @@ public class BuildInfoServiceTests
 	private IBuildInfoProvider _buildInfoProvider;
 	private BuildLocator _sampleBuildLocator1;
 	private BuildLocator _sampleBuildLocator2;
+	private Subject<long> _timer;
 
 	[SetUp]
 	public void Setup() {
@@ -22,7 +22,8 @@ public class BuildInfoServiceTests
 		_buildInfoProviders = new List<IBuildInfoProvider>();
 		_buildInfoProvider = Substitute.For<IBuildInfoProvider>();
 		_buildInfoProviders.Add(_buildInfoProvider);
-		_service = new BuildInfoService(options, _buildInfoProviders);
+		_timer = new Subject<long>();
+		_service = new BuildInfoService(options, _buildInfoProviders, span => _timer);
 		_sampleBuildLocator1 = new BuildLocator {
 			Id = "testId1",
 			CiSystem = CISystem.TeamCity
@@ -49,11 +50,10 @@ public class BuildInfoServiceTests
 			_sampleBuildLocator1,
 			_sampleBuildLocator2
 		});
-		_service.IsRunning.Should().BeFalse();
 		var items = _service.Watch(locators);
-		IList<BuildInfo> infos = null;
+		IList<BuildInfo>? infos = null;
+		IList<BuildInfo>? infosForOtherSubscriber = null;
 		using (items.Subscribe(x => infos = x)) {
-			_service.IsRunning.Should().BeTrue();
 			await Wait.ForAssert(() => infos.Should().HaveCount(2).And.ContainInOrder(new BuildInfo {
 				Name = "Test build",
 				BuildId = _sampleBuildLocator1.Id
@@ -61,18 +61,20 @@ public class BuildInfoServiceTests
 				Name = "Test build",
 				BuildId = _sampleBuildLocator2.Id
 			}));
+			using (items.Subscribe(x => infosForOtherSubscriber = x)) {
+				_timer.OnNext(1);
+				await Wait.ForAssert(() => infos.Should().HaveCount(2));
+				await Wait.ForAssert(() => infosForOtherSubscriber.Should().HaveCount(2));
+			}
 			locators.OnNext(new List<BuildLocator>());
 			await Wait.ForAssert(() => infos.Should().HaveCount(0));
 		}
-		_service.IsRunning.Should().BeFalse();
+		infos = null;
+		locators.OnNext(new List<BuildLocator>());
+		await Wait.ForConditionNotChanged(() => infos.Should().BeNull());
+		infosForOtherSubscriber.Should().HaveCount(2);
+		_buildInfoProvider.ReceivedCalls().Where(c => c.GetMethodInfo().Name == nameof(IBuildInfoProvider.GetInfo))
+			.Should().HaveCount(2);
 	}
 
-	[Test]
-	public async Task METHOD() {
-		var x1 = new BehaviorSubject<int>(1).Select(i => {
-			Console.WriteLine(i);
-			return i;
-		}).Replay(x=>x);
-		var v1 = await x1.FirstAsync();
-	}
 }
