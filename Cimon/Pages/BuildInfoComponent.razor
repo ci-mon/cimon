@@ -1,0 +1,17 @@
+﻿@using Cimon.Data
+
+<div class="build-info-item @GetClasses()">
+    <h3>@Info.Name</h3>
+    <h2>@GetStatus()</h2>
+</div>
+
+@code {
+
+    [Parameter]
+    public BuildInfo Info { get; set; }
+
+    private string GetStatus() => string.IsNullOrWhiteSpace(Info.StatusText) ? Info.Status.ToString() : Info.StatusText;
+
+    private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
+
+}

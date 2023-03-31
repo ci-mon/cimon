@@ -1,20 +1,45 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inherits LayoutComponentBase
+@inject ProtectedLocalStorage BrowserStorage
 
 <PageTitle>Cimon</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
+<div class="page @pageClass()">
+	<div class="toggle-fullscreen-btn" @onclick="ToggleFullScreenAsync">
+		<RadzenIcon Icon="open_with" IconStyle="IconStyle.Primary"></RadzenIcon>
+	</div>
+	<div class="sidebar">
+		<NavMenu/>
+	</div>
 
-    <main>
-        <div class="top-row px-4 auth">
-            <LoginDisplay/>
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
+	<main>
+		<div class="top-row px-4 auth">
+			<LoginDisplay/>
+		</div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+		<article class="content px-4">
+			@Body
+		</article>
+	</main>
 </div>
+@code {
+	private bool _fullscreen;
+
+	private string pageClass() => _fullscreen ? "fullscreen" : string.Empty;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (firstRender) {
+			var storageResult = await BrowserStorage.GetAsync<bool>("FullscreenModeState");
+			if (storageResult.Success && _fullscreen != storageResult.Value) {
+				_fullscreen = storageResult.Value;
+				StateHasChanged();
+			}
+		}
+	}
+
+	private async Task ToggleFullScreenAsync() {
+		_fullscreen = !_fullscreen;
+		await BrowserStorage.SetAsync("FullscreenModeState", _fullscreen);
+	}
+
+}

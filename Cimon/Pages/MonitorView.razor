@@ -6,8 +6,14 @@
 @inherits ReactiveComponent
 
 <PageTitle>CI @MonitorId</PageTitle>
-@foreach (var buildInfo in _buildInfos) {
-    <h2>@buildInfo.Name</h2>
+@if (_buildInfos == null) {
+    <p>Monitor not fount</p>
+} else {
+    <div class="build-info-list">
+        @foreach (var buildInfo in _buildInfos) {
+            <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
+        }
+    </div>
 }
 
 @code {
@@ -15,12 +21,12 @@
     [Parameter]
     public string? MonitorId { get; set; }
 
-    private IList<BuildInfo> _buildInfos = new List<BuildInfo>();
+    private IList<BuildInfo>? _buildInfos = new List<BuildInfo>();
 
     protected override async Task OnInitializedAsync() {
         MonitorId ??= "default";
-        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorById(MonitorId).Select(m => m.Builds)), 
-            () => _buildInfos);
+        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorById(MonitorId)
+            .Select(m => m?.Builds)), () => _buildInfos);
     }
 
 }

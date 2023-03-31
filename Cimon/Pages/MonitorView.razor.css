@@ -1,0 +1,11 @@
+﻿.build-info-list{
+    background-color: #353535;
+    color: white;
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    flex-wrap: nowrap;
+}
