@@ -31,7 +31,8 @@ public class BuildInfoService : IDisposable
 	}
 
 	public IObservable<IList<BuildInfo>> Watch(IObservable<IList<BuildLocator>> builds) {
-		return builds.Do(list => {
+		return builds
+			.Do(list => {
 				var locators = new HashSet<BuildLocator>(_trackedLocators.Value.Concat(list));
 				if (!_trackedLocators.Value.SetEquals(locators)) {
 					_trackedLocators.OnNext(locators);

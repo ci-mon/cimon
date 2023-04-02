@@ -1,45 +1,48 @@
-﻿@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inherits LayoutComponentBase
 @inject ProtectedLocalStorage BrowserStorage
 
 <PageTitle>Cimon</PageTitle>
 
-<div class="page @pageClass()">
-	<div class="toggle-fullscreen-btn" @onclick="ToggleFullScreenAsync">
-		<RadzenIcon Icon="open_with" IconStyle="IconStyle.Primary"></RadzenIcon>
-	</div>
-	<div class="sidebar">
-		<NavMenu/>
-	</div>
+<RadzenLayout class="@pageClass()" Style="height: 100vh; grid-template-columns: auto 1fr auto; grid-template-areas: 'rz-header rz-header rz-header' 'rz-sidebar rz-body rz-right-sidebar'">
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="ToggleFullScreenAsync"/>
+            <RadzenLabel Text="Cimon"/>
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.End">
+            <LoginDisplay/>
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar Expanded="_sidebarExpanded" Responsive="false">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="" />
+            <RadzenPanelMenuItem Text="Monitors" Icon="monitor" Path="monitorList"/>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenBody Style="padding: unset">
+        @Body
+    </RadzenBody>
+</RadzenLayout>
 
-	<main>
-		<div class="top-row px-4 auth">
-			<LoginDisplay/>
-		</div>
-
-		<article class="content px-4">
-			@Body
-		</article>
-	</main>
-</div>
 @code {
-	private bool _fullscreen;
+    private bool _sidebarExpanded;
 
-	private string pageClass() => _fullscreen ? "fullscreen" : string.Empty;
+    private string pageClass() => _sidebarExpanded ? "fullscreen" : string.Empty;
 
-	protected override async Task OnAfterRenderAsync(bool firstRender) {
-		if (firstRender) {
-			var storageResult = await BrowserStorage.GetAsync<bool>("FullscreenModeState");
-			if (storageResult.Success && _fullscreen != storageResult.Value) {
-				_fullscreen = storageResult.Value;
-				StateHasChanged();
-			}
-		}
-	}
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            var storageResult = await BrowserStorage.GetAsync<bool>("FullscreenModeState");
+            if (storageResult.Success && _sidebarExpanded != !storageResult.Value) {
+                _sidebarExpanded = !storageResult.Value;
+                StateHasChanged();
+            }
+        }
+    }
 
-	private async Task ToggleFullScreenAsync() {
-		_fullscreen = !_fullscreen;
-		await BrowserStorage.SetAsync("FullscreenModeState", _fullscreen);
-	}
+    private async Task ToggleFullScreenAsync() {
+        _sidebarExpanded = !_sidebarExpanded;
+        await BrowserStorage.SetAsync("FullscreenModeState", !_sidebarExpanded);
+    }
 
 }

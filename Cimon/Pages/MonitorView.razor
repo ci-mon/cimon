@@ -1,4 +1,4 @@
-﻿@page "/monitor/{monitorId?}"
+@page "/monitor/{monitorId?}"
 @using Cimon.Data
 @using System.Reactive.Linq
 @inject MonitorService MonitorService
@@ -6,16 +6,34 @@
 @inherits ReactiveComponent
 
 <PageTitle>CI @MonitorId</PageTitle>
-@if (_buildInfos == null) {
-    <p>Monitor not fount</p>
-} else {
-    <div class="build-info-list">
+<div class="monitor">
+    @if (_buildInfos == null) {
+        <p>Monitor not fount</p>
+    } else {
         @foreach (var buildInfo in _buildInfos) {
-            <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
+            <div class="build-info">
+                <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
+            </div>
         }
-    </div>
-}
+    }
+</div>
+<style>
+    .monitor{
+        background-color: #4d4d4d;
+        font-size: xx-small;
+        height: calc(100vh - 50px);
+        display: grid;
+    }
+    .build-info{
+        font-size: 0.2em;
+    }
+    @@media only screen and (min-width: 900px) {
+        .monitor {
+            /*grid-template-columns: auto auto;*/
+        }
+    }
 
+</style>
 @code {
 
     [Parameter]
@@ -23,10 +41,10 @@
 
     private IList<BuildInfo>? _buildInfos = new List<BuildInfo>();
 
-    protected override async Task OnInitializedAsync() {
+    protected override void OnInitialized() {
         MonitorId ??= "default";
         Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorById(MonitorId)
-            .Select(m => m?.Builds)), () => _buildInfos);
+            .Select(m => m?.Builds ?? new List<BuildLocator>())), () => _buildInfos);
     }
 
 }

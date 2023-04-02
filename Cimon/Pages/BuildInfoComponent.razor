@@ -1,14 +1,41 @@
-﻿@using Cimon.Data
+@using Cimon.Data
 
 <div class="build-info-item @GetClasses()">
-    <h3>@Info.Name</h3>
-    <h2>@GetStatus()</h2>
+    <RadzenStack Orientation="Orientation.Vertical" >
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenText TextStyle="TextStyle.H4" Style="color: white" Text="@Info.Name"></RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal" Style="height: 41px; float: none">
+                @if (Info.Status == BuildStatus.Failed) {
+                    foreach (var user in Info.CommitterUsers) {
+                        <RadzenStack 
+                            Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right" 
+                            AlignItems="AlignItems.Center" Gap="0" Style="scale: 0.8">
+                            <RadzenGravatar Email="@user.Email">@user.UserName</RadzenGravatar>
+                            <RadzenText Text="@user.UserName" Style="color: white"></RadzenText>
+                        </RadzenStack>
+                    }
+                }
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenStack>
+     <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetStatus()"></RadzenText>
 </div>
-
+<style>
+    .build-info-item {
+        background: rgb(76,116,34);
+        background: linear-gradient(1deg, rgba(76,116,34,1) 0%, rgba(131,190,64,1) 100%);
+        padding: 0.5em;
+        margin: 0.1em;
+    }
+    .build-info-item.failed {
+        background: rgb(76,116,34);
+        background: linear-gradient(1deg, rgb(116, 34, 34) 0%,  rgb(190, 64, 64) 100%);
+    }
+</style>
 @code {
 
     [Parameter]
-    public BuildInfo Info { get; set; }
+    public BuildInfo? Info { get; set; }
 
     private string GetStatus() => string.IsNullOrWhiteSpace(Info.StatusText) ? Info.Status.ToString() : Info.StatusText;
 

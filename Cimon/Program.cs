@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Cimon.Data;
 using Cimon.Data.TeamCity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
 builder.Services.AddAuthorization(options => {
 	// By default, all incoming requests will be authorized according to the default policy.
-	options.FallbackPolicy = options.DefaultPolicy;
+	//options.FallbackPolicy = options.DefaultPolicy;
+	options.AddPolicy("x", policyBuilder => policyBuilder.RequireAssertion(context => true));
+	options.FallbackPolicy = options.GetPolicy("x");
 });
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

@@ -1,7 +1,0 @@
-﻿.build-info-item.failed{
-    background-color: #ec270d;
-}
-.build-info-item{
-    background: rgb(76,116,34);
-    background: linear-gradient(1deg, rgba(76,116,34,1) 0%, rgba(165,236,86,1) 68%, rgba(131,190,64,1) 100%);
-}
