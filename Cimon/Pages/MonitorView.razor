@@ -11,9 +11,7 @@
         <p>Monitor not fount</p>
     } else {
         @foreach (var buildInfo in _buildInfos) {
-            <div class="build-info">
-                <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
-            </div>
+            <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
         }
     }
 </div>
@@ -21,15 +19,16 @@
     .monitor{
         background-color: #4d4d4d;
         font-size: xx-small;
-        height: calc(100vh - 50px);
+        height: 100%;
         display: grid;
-    }
-    .build-info{
-        font-size: 0.2em;
+        align-content: stretch;
+        justify-items: stretch;
+        align-items: stretch;
+        grid-template-columns: auto;
     }
     @@media only screen and (min-width: 900px) {
         .monitor {
-            /*grid-template-columns: auto auto;*/
+            grid-template-columns: auto auto;
         }
     }
 
