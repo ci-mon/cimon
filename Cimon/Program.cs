@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Cimon.Data;
 using Cimon.Data.TeamCity;
+using Cimon.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 
@@ -35,5 +36,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
+app.MapHub<UserHub>("/user");
 app.MapFallbackToPage("/_Host");
 app.Run();

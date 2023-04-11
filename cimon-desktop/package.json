@@ -11,5 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "^24.0.0"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^7.0.5"
   }
 }
