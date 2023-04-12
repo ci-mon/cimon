@@ -1,7 +1,6 @@
 ﻿namespace Cimon.Data.TeamCity;
 
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 public class TcBuildInfoProvider:IBuildInfoProvider
 {

@@ -1,10 +1,7 @@
-﻿using NUnit.Framework;
-
-namespace Cimon.Data.Tests;
+﻿namespace Cimon.Data.Tests;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using FluentAssertions.Collections;
 using FluentAssertions.Execution;
 
 public static class Wait

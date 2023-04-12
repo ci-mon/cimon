@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Cimon.Data;
 using Cimon.Data.TeamCity;
 using Cimon.Hubs;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +13,10 @@ builder.Services.AddAuthorization(options => {
 	options.AddPolicy("x", policyBuilder => policyBuilder.RequireAssertion(context => true));
 	options.FallbackPolicy = options.GetPolicy("x");
 });
+builder.Services.AddCors();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddControllers();
 builder.Services.AddSingleton<MonitorService>();
 builder.Services.AddSingleton<BuildInfoService>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
@@ -32,10 +32,15 @@ if (!app.Environment.IsDevelopment()) {
 	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
+
+app.UseCors(policyBuilder => policyBuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapBlazorHub();
+app.MapControllers();
 app.MapHub<UserHub>("/user");
 app.MapFallbackToPage("/_Host");
 app.Run();

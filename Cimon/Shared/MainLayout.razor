@@ -25,6 +25,9 @@
         <RadzenPanelMenu>
             <RadzenPanelMenuItem Text="Home" Icon="home" Path="" />
             <RadzenPanelMenuItem Text="Monitors" Icon="monitor" Path="monitorList"/>
+            @if (_showSignalsDebugPage) {
+             <RadzenPanelMenuItem Text="SignalTest" Icon="monitor" Path="SignalTest"/>
+            }
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody Style="padding: unset">
@@ -54,9 +57,13 @@
 </style>
 @code {
     private bool _sidebarCollapsed;
+    private bool _showSignalsDebugPage;
     
     protected override void OnInitialized() {
         base.OnInitialized();
+        #if DEBUG
+        _showSignalsDebugPage = true;
+        #endif
         var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("full-screen", out var value) 
                 && bool.TryParse(value, out var fullScreen)) {

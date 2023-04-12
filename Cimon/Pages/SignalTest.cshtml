@@ -1,0 +1,56 @@
+﻿@page
+@model Cimon.Pages.SignalTest
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Signals test</title>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.js" integrity="sha512-tpBsmBFkC8YBhVdyWZwUQBapLZYews0549Qy6r2S6EjanLGzWoXvfm8cynvcD1XjKkszf5XpCrfI9V1+p3xmAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<div id="app">
+  {{ counter }}
+  <button @@click="notify">+</button>
+</div>
+<script type="module">
+  import { createApp } from "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+
+    class ReconnectionPolicy {
+        nextRetryDelayInMilliseconds(retryContext) {
+            return 5000;
+        }
+    }
+    createApp({
+        data() {
+          return {
+            state: 'none'
+          }
+        },
+        mounted() {
+          this.connect();
+        },
+        methods: {
+          async connect() {
+             let connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/user")
+                    .withAutomaticReconnect(new ReconnectionPolicy())
+                    .build();
+                connection.onclose(() => {
+                    this.state = 'onclose';
+                });
+                connection.onreconnected(() => {
+                    this.state = 'onreconnected';
+                });
+                await connection.start();
+            this.state = 'connected';
+          }
+    }
+    }).mount('#app')
+</script>
+</body>
+</html>

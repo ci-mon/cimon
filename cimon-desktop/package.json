@@ -2,17 +2,26 @@
   "name": "cimon-desktop",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/main.ts",
   "scripts": {
-    "start": "electron .",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "lint": "eslint -c .eslintrc --ext .ts ./src",
+    "start": "npm run build && electron ./dist/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.1",
+    "@types/request": "^2.48.8",
     "electron": "^24.0.0"
   },
   "dependencies": {
-    "@microsoft/signalr": "^7.0.5"
+    "@microsoft/signalr": "^7.0.5",
+    "eslint": "^8.38.0",
+    "jsonwebtoken": "^9.0.0",
+    "request": "^2.88.2",
+    "typescript": "^5.0.4"
   }
 }
