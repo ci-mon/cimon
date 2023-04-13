@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="7.0.2" />
         <PackageReference Include="Optional" Version="4.0.0" />
         <PackageReference Include="Radzen.Blazor" Version="4.8.2" />

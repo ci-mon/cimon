@@ -14,7 +14,8 @@
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.js" integrity="sha512-tpBsmBFkC8YBhVdyWZwUQBapLZYews0549Qy6r2S6EjanLGzWoXvfm8cynvcD1XjKkszf5XpCrfI9V1+p3xmAw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <div id="app">
-  {{ counter }}
+    {{ state }}
+    <p>{{ UserName }}</p>
   <button @@click="notify">+</button>
 </div>
 <script type="module">
@@ -28,7 +29,8 @@
     createApp({
         data() {
           return {
-            state: 'none'
+            state: 'none',
+            UserName: ''
           }
         },
         mounted() {
@@ -36,18 +38,29 @@
         },
         methods: {
           async connect() {
-             let connection = new signalR.HubConnectionBuilder()
-                    .withUrl("/user")
-                    .withAutomaticReconnect(new ReconnectionPolicy())
-                    .build();
-                connection.onclose(() => {
-                    this.state = 'onclose';
-                });
-                connection.onreconnected(() => {
-                    this.state = 'onreconnected';
-                });
-                await connection.start();
-            this.state = 'connected';
+              const response = await fetch('/auth/token');
+              var body = await response.json();
+              var y = await fetch('auth/checkJwt', {
+                headers: {
+                    Authorization: `Bearer ${body.token}`
+                }
+              })
+              this.UserName = body.userName;
+                let connection = new signalR.HubConnectionBuilder()
+                        .withUrl("/hubs/user", {
+                            accessTokenFactory: () => body.token
+                        })
+                        .withAutomaticReconnect(new ReconnectionPolicy())
+                        .build();
+                    connection.onclose(() => {
+                        this.state = 'onclose';
+                    });
+                    connection.onreconnected(() => {
+                        this.state = 'onreconnected';
+                    });
+                    await connection.start();
+                  this.state = 'connected';
+             
           }
     }
     }).mount('#app')

@@ -1,7 +1,7 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.AspNetCore.WebUtilities
 @using Optional
-@inherits LayoutComponentBase
+@inherits Microsoft.AspNetCore.Components.LayoutComponentBase
 @inject ProtectedLocalStorage BrowserStorage
 @inject NavigationManager NavManager
 
@@ -13,8 +13,8 @@
             <RadzenColumn>
             </RadzenColumn>
             <RadzenColumn>
-                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-                    <LoginDisplay/>
+                 <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
+                    <div class="rz-mr-2 login-info"><LoginDisplay/></div>
                     <RadzenButton Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" class="full-screen-toggle" />
                     <div class="rz-ml-2"></div>
                 </RadzenStack>
@@ -41,18 +41,19 @@
     .full-screen .header.rz-header {
         display: none;
     }
-    .full-screen-toggle {
-        box-shadow: none;
-         position: absolute;
-        right: 0.5em;
-        top: 0.5em;
-    }
     .full-screen-toggle-float {
         position: absolute;
         right: 0.5em;
         top: 0.5em;
         z-index: 10;
         background-color: transparent !important;
+    }
+    .right-toolbar{
+        margin-top: 0.5em;
+    }
+    .login-info{
+        display: flex;
+        align-items: center;
     }
 </style>
 @code {

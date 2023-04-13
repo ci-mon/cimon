@@ -1,3 +1,10 @@
 ﻿<AuthorizeView>
-    Hello, @context.User.Identity?.Name!
+    <Authorized>
+            <RadzenLabel Text="@context.User.Identity.Name"></RadzenLabel>
+        </Authorized>
+        <NotAuthorized>
+            <RadzenLink Path="auth/autologin?returnUrl=/" >
+                <RadzenButton Text="Login" Icon="login"></RadzenButton>
+            </RadzenLink>
+        </NotAuthorized>
 </AuthorizeView>
