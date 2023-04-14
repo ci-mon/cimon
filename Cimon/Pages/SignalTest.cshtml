@@ -44,7 +44,18 @@
                 headers: {
                     Authorization: `Bearer ${body.token}`
                 }
-              })
+              });
+              /*await fetch('/auth/signOut', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                     userName: `TSCRM\\v.artemchuk`
+                 }),
+                headers: {
+                    Authorization: `Bearer ${body.token}`,
+                    'Content-Type': 'application/json'
+                }
+              });*/
+              
               this.UserName = body.userName;
                 let connection = new signalR.HubConnectionBuilder()
                         .withUrl("/hubs/user", {

@@ -7,59 +7,38 @@ using Microsoft.IdentityModel.Tokens;
 namespace Cimon.Auth;
 
 public class TokenService
-    {
-        internal static byte[] Key = "!SomethingSecret!"u8.ToArray();
-        
-        private const int ExpirationMinutes = 30;
-        public string CreateToken(IdentityUser user)
-        {
-            var expiration = DateTime.UtcNow.AddMinutes(ExpirationMinutes);
-            var token = CreateJwtToken(
-                CreateClaims(user),
-                CreateSigningCredentials(),
-                expiration
-            );
-            var tokenHandler = new JwtSecurityTokenHandler();
-            return tokenHandler.WriteToken(token);
-        }
+{
 
-        private JwtSecurityToken CreateJwtToken(List<Claim> claims, SigningCredentials credentials,
-            DateTime expiration) =>
-            new(
-                "apiWithAuthBackend",
-                "apiWithAuthBackend",
-                claims,
-                expires: expiration,
-                signingCredentials: credentials
-            );
+	private readonly SigningCredentials _signingCredentials;
+	private readonly JwtOptions _jwtOptions;
 
-        public List<Claim> CreateClaims(IdentityUser user)
-        {
-            try
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, "TokenForTheApiWithAuth"),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.UserName),
-                };
-                return claims;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
-        private SigningCredentials CreateSigningCredentials() {
-           
-            return new SigningCredentials(
-                new SymmetricSecurityKey(
-                    Key
-                ),
-                SecurityAlgorithms.HmacSha256
-            );
-        }
-    }
+	public TokenService(JwtOptions jwtOptions) {
+		_jwtOptions = jwtOptions;
+		_signingCredentials = CreateSigningCredentials();
+	}
+
+	public string CreateToken(IdentityUser user) {
+		var claims = CreateClaims(user);
+		JwtSecurityToken token = CreateJwtToken(claims);
+		var tokenHandler = new JwtSecurityTokenHandler();
+		return tokenHandler.WriteToken(token);
+	}
+
+	private JwtSecurityToken CreateJwtToken(List<Claim> claims) =>
+		new(_jwtOptions.Issuer, _jwtOptions.Audience, claims, expires: DateTime.UtcNow + _jwtOptions.Expiration,
+			signingCredentials: _signingCredentials);
+
+	public List<Claim> CreateClaims(IdentityUser user) {
+		var claims = new List<Claim> {
+			new(JwtRegisteredClaimNames.Sub, "cimon_token"),
+			new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+			new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
+			new(ClaimTypes.NameIdentifier, user.Id),
+			new(ClaimTypes.Name, user.UserName ?? user.Id)
+		};
+		return claims;
+	}
+
+	private SigningCredentials CreateSigningCredentials() => 
+		new(new SymmetricSecurityKey(_jwtOptions.Key), SecurityAlgorithms.HmacSha256);
+}

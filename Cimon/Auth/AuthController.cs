@@ -10,6 +10,7 @@ namespace Cimon.Controllers;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 class AuthResponse
 {
@@ -17,19 +18,21 @@ class AuthResponse
 	public string Token { get; set; }
 }
 
+public class SignOutRequest
+{
+	public string UserName { get; set; }
+}
+
+
 [Route("auth")]
 public class AuthController : Controller
 {
 	private readonly TokenService _tokenService;
+	private readonly UserManager _userManager;
 
-	public AuthController(TokenService tokenService) {
+	public AuthController(TokenService tokenService, UserManager userManager) {
 		_tokenService = tokenService;
-	}
-
-	[Route("checkJwt")]
-	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-	public async Task<IActionResult> CheckJwt() {
-		return Ok(User.Identity.Name);
+		_userManager = userManager;
 	}
 
 	[Route("autologin")]
@@ -55,10 +58,24 @@ public class AuthController : Controller
 	[Route("token")]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Token() {
-		var identityUser = new IdentityUser(User.Identity.Name);
-		var token = _tokenService.CreateToken(identityUser);
+		string token = _userManager.GetToken(User);
 		return Ok(new AuthResponse { UserName = User.Identity.Name, Token = token });
 	}
+
+	[Route("checkToken")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+	public async Task<IActionResult> CheckToken() {
+		return Ok(User.Identity.Name);
+	}
+
+	[Route("signOut")]
+	[HttpPost]
+	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
+	public async Task<IActionResult> SignOut([FromBody]SignOutRequest req) {
+		_userManager.SignOut(req.UserName);
+		return Ok();
+	}
+
 	[HttpPost]
 	[Route("login")]
 	public async Task<IActionResult> Login([FromForm]string userName, [FromForm]string password) {
