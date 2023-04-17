@@ -1,58 +1,26 @@
-﻿using System.Security.Claims;
-using Cimon.Auth;
+﻿namespace Cimon.Auth;
+
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-
-namespace Cimon.Controllers;
-
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-
-class AuthResponse
-{
-	public string UserName { get; set; }
-	public string Token { get; set; }
-}
-
-public class SignOutRequest
-{
-	public string UserName { get; set; }
-}
-
 
 [Route("auth")]
 public class AuthController : Controller
 {
 	private readonly TokenService _tokenService;
 	private readonly UserManager _userManager;
+	private readonly CimonOptions _options;
 
-	public AuthController(TokenService tokenService, UserManager userManager) {
+	public AuthController(TokenService tokenService, UserManager userManager, IOptions<CimonOptions> options) {
 		_tokenService = tokenService;
 		_userManager = userManager;
-	}
-
-	[Route("autologin")]
-	[Authorize(AuthenticationSchemes = NegotiateDefaults.AuthenticationScheme)]
-	public async Task<IActionResult> Autologin(string returnUrl) {
-		var identityUser = new IdentityUser(User.Identity.Name);
-		var claimsIdentity = new ClaimsIdentity(
-			_tokenService.CreateClaims(identityUser), 
-			CookieAuthenticationDefaults.AuthenticationScheme);
-		var authProperties = new AuthenticationProperties {
-			AllowRefresh = true,
-			ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
-			IsPersistent = true,
-			RedirectUri = "/auth/autologin"
-		};
-		await HttpContext.SignInAsync(
-			CookieAuthenticationDefaults.AuthenticationScheme, 
-			new ClaimsPrincipal(claimsIdentity), 
-			authProperties);
-		return LocalRedirect(returnUrl);
+		_options = options.Value;
 	}
 
 	[Route("token")]
@@ -68,18 +36,55 @@ public class AuthController : Controller
 		return Ok(User.Identity.Name);
 	}
 
-	[Route("signOut")]
+	[Route("logoutUser")]
 	[HttpPost]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
-	public async Task<IActionResult> SignOut([FromBody]SignOutRequest req) {
+	public async Task<IActionResult> LogoutUser([FromBody]SignOutRequest req) {
 		_userManager.SignOut(req.UserName);
 		return Ok();
+	}
+	
+	[Route("logout")]
+	[HttpGet]
+	[Authorize]
+	public async Task<IActionResult> Logout() {
+		_userManager.SignOut(User.Identity.Name);
+		await HttpContext.SignOutAsync();
+		return Redirect("/");
+	}
+
+	[Route("autologin")]
+	[Authorize(AuthenticationSchemes = NegotiateDefaults.AuthenticationScheme)]
+	public async Task<IActionResult> Autologin(string returnUrl) {
+		var userName = User.Identity?.Name?.ToLowerInvariant();
+		if (string.IsNullOrWhiteSpace(userName)) {
+			return Unauthorized();
+		}
+		return await LoginUsingCookie(returnUrl, userName);
 	}
 
 	[HttpPost]
 	[Route("login")]
 	public async Task<IActionResult> Login([FromForm]string userName, [FromForm]string password) {
-		ControllerContext.HttpContext.Response.Cookies.Append("auth", "XXX");
-		return LocalRedirect("/");
+		PasswordSignInResult loginResult = await _userManager.SignInAsync(userName, password);
+		if (!loginResult.Success) {
+			return Unauthorized();
+		}
+		return await LoginUsingCookie("/", loginResult.UserName);
+	}
+
+	private async Task<IActionResult> LoginUsingCookie(string returnUrl, string userName) {
+		var identityUser = new IdentityUser(userName);
+		var claimsIdentity = new ClaimsIdentity(_tokenService.CreateClaims(identityUser),
+			CookieAuthenticationDefaults.AuthenticationScheme);
+		var authProperties = new AuthenticationProperties {
+			AllowRefresh = true,
+			ExpiresUtc = DateTimeOffset.UtcNow.Add(_options.Auth.Expiration),
+			IsPersistent = true,
+			RedirectUri = "/auth/autologin",
+		};
+		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+			new ClaimsPrincipal(claimsIdentity), authProperties);
+		return LocalRedirect(returnUrl);
 	}
 }

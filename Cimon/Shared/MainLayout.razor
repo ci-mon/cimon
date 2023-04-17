@@ -13,7 +13,7 @@
             <RadzenColumn>
             </RadzenColumn>
             <RadzenColumn>
-                 <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
+                <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
                     <div class="rz-mr-2 login-info"><LoginDisplay/></div>
                     <RadzenButton Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" class="full-screen-toggle" />
                     <div class="rz-ml-2"></div>
@@ -26,14 +26,19 @@
             <RadzenPanelMenuItem Text="Home" Icon="home" Path="" />
             <RadzenPanelMenuItem Text="Monitors" Icon="monitor" Path="monitorList"/>
             @if (_showSignalsDebugPage) {
-             <RadzenPanelMenuItem Text="SignalTest" Icon="monitor" Path="SignalTest"/>
+                <RadzenPanelMenuItem Text="SignalTest" Icon="monitor" Path="SignalTest"/>
             }
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody Style="padding: unset">
         @Body
     </RadzenBody>
+    <RadzenDialog/>
+    <RadzenNotification/>
+    <RadzenContextMenu/>
+    <RadzenTooltip/>
 </RadzenLayout>
+
 <style>
     .full-screen .rz-sidebar {
         display: none;

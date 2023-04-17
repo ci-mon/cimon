@@ -2,16 +2,15 @@
 ## MVP
 
 ### back-end
-1. Login by password
-2. Redirect to login page
-3. Logout
-4. TC client (vault)
-5. Jenkins client (vault)
-6. Monitor setup
-7. Blame
-8. Build status page
-9. Default plan
-10. Teams
+1. Login by password (+)
+2. Logout (+)
+3. TC client (vault)
+4. Jenkins client (vault)
+5. Monitor setup
+6. Blame
+7. Build status page
+8. Default plan
+9. Teams
 
 ### Electron app
 1. Login (negotiate/basic)

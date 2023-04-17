@@ -1,23 +1,25 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿namespace Cimon.Auth;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-
-namespace Cimon.Auth;
-
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Primitives;
 
-public static class Extensions
+public static class ConfigurationExtensions
 {
-	class JwtConfigurator: IConfigureNamedOptions<JwtBearerOptions>
+	class AuthConfigurator: IConfigureNamedOptions<JwtBearerOptions>, IConfigureNamedOptions<CookieAuthenticationOptions>
 	{
 
-		private readonly JwtOptions _jwtOptions;
+		private readonly CimonOptions _options;
 		private readonly UserManager _userManager;
 
-		public JwtConfigurator(JwtOptions jwtOptions, UserManager userManager) {
-			_jwtOptions = jwtOptions;
+		public AuthConfigurator(IOptions<CimonOptions> options, UserManager userManager) {
+			_options = options.Value;
 			_userManager = userManager;
 		}
 
@@ -45,11 +47,21 @@ public static class Extensions
 			parameters.ValidateAudience = true;
 			parameters.ValidateLifetime = true;
 			parameters.ValidateIssuerSigningKey = true;
-			parameters.ValidIssuer = _jwtOptions.Issuer;
-			parameters.ValidAudience = _jwtOptions.Audience;
-			parameters.IssuerSigningKey = new SymmetricSecurityKey(_jwtOptions.Key);
+			parameters.ValidIssuer = _options.Jwt.Issuer;
+			parameters.ValidAudience = _options.Jwt.Audience;
+			parameters.IssuerSigningKey = new SymmetricSecurityKey(_options.Jwt.Key);
 		}
+
 		public void Configure(string? name, JwtBearerOptions options) => Configure(options);
+
+		public void Configure(CookieAuthenticationOptions options) {
+			options.ReturnUrlParameter = "returnUrl";
+			options.LoginPath = "/Login";
+			options.LogoutPath = "/auth/logout";
+			options.ExpireTimeSpan = _options.Auth.Expiration;
+		}
+
+		public void Configure(string? name, CookieAuthenticationOptions options) => Configure(options);
 	}
 
 	class UserManagerFilter: IStartupFilter
@@ -73,6 +85,7 @@ public static class Extensions
 			};
 		}
 	}
+
 	public static void AddAuth(this IServiceCollection services) {
 		services.AddSingleton<TokenService, TokenService>();
 		services.AddSingleton<UserManager, UserManager>();
@@ -81,7 +94,8 @@ public static class Extensions
 			.AddCookie()
 			.AddJwtBearer();
 		services.AddTransient<IStartupFilter, UserManagerFilter>();
-		services.AddTransient<IConfigureOptions<JwtBearerOptions>, JwtConfigurator>();
+		services.AddTransient<IConfigureOptions<JwtBearerOptions>, AuthConfigurator>();
+		services.AddTransient<IConfigureOptions<CookieAuthenticationOptions>, AuthConfigurator>();
 	}
 
 }

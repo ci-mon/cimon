@@ -1,10 +1,50 @@
-﻿<AuthorizeView>
+﻿@using Cimon.Auth
+@inject ContextMenuService ContextMenuService
+@inject NavigationManager NavigationManager
+<AuthorizeView>
     <Authorized>
-            <RadzenLabel Text="@context.User.Identity.Name"></RadzenLabel>
-        </Authorized>
-        <NotAuthorized>
-            <RadzenLink Path="auth/autologin?returnUrl=/" >
-                <RadzenButton Text="Login" Icon="login"></RadzenButton>
-            </RadzenLink>
-        </NotAuthorized>
+        <RadzenProfileMenu>
+            <Template>
+                <RadzenLabel>@_name</RadzenLabel>
+                <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_email"></RadzenGravatar>
+            </Template>
+            <ChildContent>
+                <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
+            </ChildContent>
+        </RadzenProfileMenu>
+    </Authorized>
+    <NotAuthorized>
+        <RadzenMenu >
+            <RadzenMenuItem Text="Login" Icon="login">
+                <RadzenMenuItem Icon="login" Click="OnLoginMenuClicked" Text="Auto" Path="/auth/autologin?returnUrl=/"></RadzenMenuItem>
+                <RadzenMenuItem Icon="password" Click="OnLoginMenuClicked" Text="Password" Path="/Login"></RadzenMenuItem>
+            </RadzenMenuItem>
+        </RadzenMenu>
+    </NotAuthorized>
 </AuthorizeView>
+<style>
+    .rz-menu.rz-profile-menu{
+        padding: 0;
+    }
+</style>
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private string _email;
+    private string? _name;
+
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        AuthenticationState state = await AuthenticationState;
+        if (state.User.Identity != null) {
+            _email = $"{state.User.Identity.GetUserName()}@creatio.com";
+            _name = state.User.Identity.Name;
+        }
+    }
+
+    void OnLoginMenuClicked(MenuItemEventArgs args) {
+        NavigationManager.NavigateTo(args.Path);
+    }
+}

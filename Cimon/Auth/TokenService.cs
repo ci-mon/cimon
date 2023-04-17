@@ -6,14 +6,15 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Cimon.Auth;
 
+using Microsoft.Extensions.Options;
+
 public class TokenService
 {
-
+	private readonly CimonOptions _options;
 	private readonly SigningCredentials _signingCredentials;
-	private readonly JwtOptions _jwtOptions;
 
-	public TokenService(JwtOptions jwtOptions) {
-		_jwtOptions = jwtOptions;
+	public TokenService(IOptions<CimonOptions> cimonOptions) {
+		_options = cimonOptions.Value;
 		_signingCredentials = CreateSigningCredentials();
 	}
 
@@ -25,7 +26,8 @@ public class TokenService
 	}
 
 	private JwtSecurityToken CreateJwtToken(List<Claim> claims) =>
-		new(_jwtOptions.Issuer, _jwtOptions.Audience, claims, expires: DateTime.UtcNow + _jwtOptions.Expiration,
+		new(_options.Jwt.Issuer, _options.Jwt.Audience, claims,
+			expires: DateTime.UtcNow + _options.Auth.Expiration,
 			signingCredentials: _signingCredentials);
 
 	public List<Claim> CreateClaims(IdentityUser user) {
@@ -40,5 +42,5 @@ public class TokenService
 	}
 
 	private SigningCredentials CreateSigningCredentials() => 
-		new(new SymmetricSecurityKey(_jwtOptions.Key), SecurityAlgorithms.HmacSha256);
+		new(new SymmetricSecurityKey(_options.Jwt.Key), SecurityAlgorithms.HmacSha256);
 }

@@ -16,11 +16,11 @@ const createWindow = async () => {
     const win = new BrowserWindow({
         width: 400,
         height: 800,
-        autoHideMenuBar: true
+        //autoHideMenuBar: true
     });
 
     // TODO open login page, get access token and use it in signalR connection
-    win.loadURL('http://localhost:5001/auth');
+    win.loadURL('http://localhost:5001/auth/token');
 }
 
 app.whenReady().then(() => {

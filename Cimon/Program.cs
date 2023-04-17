@@ -4,6 +4,7 @@ using Cimon.Data;
 using Cimon.Data.TeamCity;
 using Cimon.Hubs;
 using Microsoft.Extensions.Options;
+using Radzen;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuth();
@@ -18,8 +19,16 @@ builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IB
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
+	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)
 	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Jwt);
-var app = builder.Build();
+
+// Radzen
+builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<TooltipService>();
+builder.Services.AddScoped<ContextMenuService>();
+
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment()) {
