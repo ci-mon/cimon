@@ -1,4 +1,4 @@
-﻿namespace Cimon.Pages;
+﻿namespace Cimon.Shared;
 
 using System.Linq.Expressions;
 using System.Reactive.Linq;
@@ -10,13 +10,14 @@ public class ReactiveComponent : ComponentBase, IDisposable
 {
 
 	private List<IDisposable> _disposables = new();
-	protected void Subscribe<T>(IObservable<T> source, Expression<Func<T>> fieldExpression) {
+	protected void Subscribe<T>(IObservable<T> source, Expression<Func<T>> fieldExpression, Action<T>? callback = null) {
 		if (fieldExpression.Body is not MemberExpression { Member: FieldInfo field }) {
 			throw new InvalidOperationException();
 		}
 		_disposables.Add(source.TakeUntil(_disposed).Subscribe(value => {
 			InvokeAsync(() => {
 				field.SetValue(this, value);
+				callback?.Invoke(value);
 				StateHasChanged();
 			});
 		}));

@@ -11,7 +11,7 @@
         <p>Monitor not fount</p>
     } else {
         @foreach (var buildInfo in _buildInfos) {
-            <BuildInfoComponent Info="buildInfo"></BuildInfoComponent>
+            <BuildInfoComponent Info="@buildInfo"></BuildInfoComponent>
         }
     }
 </div>

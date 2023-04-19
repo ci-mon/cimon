@@ -20,10 +20,10 @@ public class MonitorService
 	private BehaviorSubject<IList<Monitor>> _monitorsSubject { get; }
 
 	private int counter = 0;
-	private List<Monitor> _monitors = new();
+	private List<Monitor> _monitors;
 
 	public IObservable<IList<Monitor>> GetMonitors() {
-		_monitors = new List<Monitor> {
+		_monitors ??= new List<Monitor> {
 			new() {
 				Id = $"default{++counter}",
 			},
@@ -60,5 +60,11 @@ public class MonitorService
 
 	public IObservable<Monitor?> GetMonitorById(string monitorId) {
 		return GetMonitors().Select(m => m.FirstOrDefault(x => x.Id == monitorId));
+	}
+
+	public void SetBuildLocators(string? monitorId, IList<BuildLocatorDescriptor> locators) {
+		Monitor monitor = _monitors.Find(m => m.Id == monitorId) ?? throw new InvalidOperationException($"monitor {monitorId} not found");
+		monitor.Builds = locators.OfType<BuildLocator>().ToList();
+		_monitorsSubject.OnNext(_monitors);
 	}
 }

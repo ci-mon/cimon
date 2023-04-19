@@ -14,6 +14,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<MonitorService>();
 builder.Services.AddSingleton<BuildInfoService>();
+builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
 builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList());
 builder.Services.AddOptions()

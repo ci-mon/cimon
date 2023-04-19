@@ -2,7 +2,7 @@
 
 public interface IBuildInfoProvider
 {
-	public CISystem CiSystem { get; }
+	CISystem CiSystem { get; }
 
-	public Task<IList<BuildInfo>> GetInfo(IEnumerable<BuildLocator> locators);
+	Task<IList<BuildInfo>> GetInfo(IEnumerable<BuildLocator> locators);
 }

@@ -4,11 +4,11 @@
 ### back-end
 1. Login by password (+)
 2. Logout (+)
-3. TC client (vault)
-4. Jenkins client (vault)
-5. Monitor setup
-6. Blame
-7. Build status page
+3. Monitor setup (wip)
+4. Build status page
+5. TC client (vault)
+6. Jenkins client (vault)
+7. Blame
 8. Default plan
 9. Teams
 

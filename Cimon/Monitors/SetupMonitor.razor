@@ -1,0 +1,77 @@
+﻿@page "/SetupMonitor/{monitorId?}"
+@using Cimon.Data
+@inject MonitorService MonitorService
+@inject IEnumerable<IBuildLocatorProvider> BuildLocatorProviders
+@inherits ReactiveComponent
+
+<PageTitle>Setup monitor @MonitorId</PageTitle>
+<RadzenCard>
+    <RadzenText TextStyle="TextStyle.H4" Text="Select builds to display"></RadzenText>
+    <RadzenButton Text="Save" Icon="save" Click="Save" />
+    <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
+                    AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
+                    Data="@_locators" TItem="BuildLocatorDescriptor" ColumnWidth="200px"
+                    SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
+        <Columns>
+            <RadzenDataGridColumn TItem="BuildLocatorDescriptor" Width="60px" Sortable="false" Filterable="false">
+                <HeaderTemplate>
+                    <RadzenCheckBox TriState="false" TValue="bool" Value="@(_locators?.Any(i => _selectedLocators?.Contains(i) ?? false) ?? false)"
+                                    Change="@(OnSelectAllChanged)"/>
+                </HeaderTemplate>
+                <Template Context="data">
+                    <RadzenCheckBox TriState="false" Value="@(_selectedLocators.Contains(data))"
+                                    TValue="bool"/>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="BuildLocatorDescriptor" Property="CiSystem" Title="CiSystem"/>
+            <RadzenDataGridColumn TItem="BuildLocatorDescriptor" Property="Id" Title="Id"/>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+@code {
+
+    private Monitor _monitor;
+    RadzenDataGrid<BuildLocatorDescriptor> grid;
+    IEnumerable<BuildLocatorDescriptor> _locators;
+    IList<BuildLocatorDescriptor> _selectedLocators = new List<BuildLocatorDescriptor>();
+    
+    [Parameter]
+    public string? MonitorId { get; set; }
+    
+    void OnRender(DataGridRenderEventArgs<BuildLocatorDescriptor> args) {
+        if (!args.FirstRender)
+            return;
+        args.Grid.Groups.Add(new GroupDescriptor() {
+            Property = nameof(BuildLocatorDescriptor.CiSystem),
+            SortOrder = SortOrder.Ascending
+        });
+        StateHasChanged();
+    }
+
+    private void SetSelectedLocators(IList<BuildLocatorDescriptor>? list) {
+        _selectedLocators = list ?? ArraySegment<BuildLocatorDescriptor>.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _locators = await BuildLocatorProviders.SelectMany(x => x.GetLocators()).ToListAsync();
+        Subscribe(MonitorService.GetMonitorById(MonitorId), () => _monitor, monitor => {
+            var selectedIds = (monitor?.Builds.Select(l => l.Id) ?? Enumerable.Empty<string>()).
+                ToHashSet(StringComparer.OrdinalIgnoreCase);
+            SetSelectedLocators(_locators?.Where(l => selectedIds.Contains(l.Id)).ToList());
+        });
+    }
+
+    private void Save() {
+        MonitorService.SetBuildLocators(MonitorId, _selectedLocators);
+    }
+
+    private void OnSelectAllChanged(bool args) {
+        SetSelectedLocators(args ? _locators?.ToList() : null);
+    }
+
+}
