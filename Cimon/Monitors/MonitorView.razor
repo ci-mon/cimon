@@ -26,12 +26,41 @@
         align-items: stretch;
         grid-template-columns: auto;
     }
-    @@media only screen and (min-width: 800px) {
-        .monitor {
-            grid-template-columns: auto auto;
-        }
-    }
 
+ .build-info-item {
+        background: rgb(76,116,34);
+        background: linear-gradient(1deg, rgba(76,116,34,1) 0%, rgba(131,190,64,1) 100%);
+        padding: 0.5em;
+        margin: 0.1em;
+        container-type: size;
+    }
+    .build-info-item .committer p {
+        font-size: clamp(5px, 12cqmin, 15px);
+    }
+    .build-info-item h5 {
+        font-size: clamp(8px, 15cqmin, 20px);
+    }
+    .build-info-item h4 {
+        font-size: clamp(12px, 30cqmin, 30px);
+    }
+     @@media only screen and (min-width: 700px) {
+        .monitor {
+             grid-template-columns: auto auto;
+         }
+        .build-info-item .committer p {
+            font-size: clamp(5px, 8cqmin, 15px);
+        }
+        .build-info-item h5 {
+            font-size: clamp(5px, 17cqmin, 20px);
+        }
+        .build-info-item h4 {
+             font-size: clamp(10px, 22cqmin, 30px);
+        }   
+     }
+    .build-info-item.failed {
+        background: rgb(76,116,34);
+        background: linear-gradient(1deg, rgb(116, 34, 34) 0%,  rgb(190, 64, 64) 100%);
+    }
 </style>
 @code {
 
