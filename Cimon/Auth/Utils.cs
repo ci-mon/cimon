@@ -4,7 +4,7 @@ using System.Security.Principal;
 
 public record struct UserName(string Domain, string Name)
 {
-	public override string ToString() => $"{Domain}\\{Name}";
+	public override string ToString() => string.IsNullOrWhiteSpace(Domain) ? Name : $"{Domain}\\{Name}";
 
 	public static implicit operator string(UserName? name) => name?.ToString() ?? string.Empty;
 
