@@ -66,8 +66,9 @@
         });
     }
 
-    private void Save() {
-        MonitorService.SetBuildLocators(MonitorId, _selectedLocators);
+    private async Task Save() {
+        _monitor.Builds = _selectedLocators.OfType<BuildLocator>().ToList();
+        await MonitorService.Save(_monitor);
     }
 
     private void OnSelectAllChanged(bool args) {

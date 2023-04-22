@@ -44,7 +44,7 @@ public class BuildInfoServiceTests
 					Name = "Test build",
 					BuildId = l.Id
 				}).ToList();
-				return Task.FromResult((IList<BuildInfo>)buildInfos);
+				return Task.FromResult((IReadOnlyCollection<BuildInfo>)buildInfos);
 			});
 		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {
 			_sampleBuildLocator1,

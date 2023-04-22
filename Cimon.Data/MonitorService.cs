@@ -1,4 +1,7 @@
-﻿namespace Cimon.Data;
+﻿using System.Collections.Immutable;
+using System.Reactive;
+
+namespace Cimon.Data;
 
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -13,58 +16,44 @@ public class Monitor
 
 public class MonitorService
 {
+	private readonly ReplaySubject<IImmutableList<Monitor>> _bufferedMonitors;
+	private readonly IObservable<IImmutableList<Monitor>> _monitors;
+
 	public MonitorService() {
-		_monitorsSubject = new(_monitors);
+		_bufferedMonitors = new ReplaySubject<IImmutableList<Monitor>>(1);
+		var getDataSubject = new BehaviorSubject<Unit>(Unit.Default);
+		var buffer = _bufferedMonitors.Replay().RefCount(2);
+		buffer.Subscribe(_ => getDataSubject.OnCompleted());
+		_monitors = buffer.Amb(getDataSubject.SelectMany(_ => Observable
+			.DeferAsync(async ct => {
+				// TODO load from db
+				await Task.Delay(TimeSpan.FromMilliseconds(10), ct);
+				return Observable.Return(MockData.Monitors);
+			})).Replay(1).RefCount().TakeUntil(_bufferedMonitors));
+		
 	}
 
-	private BehaviorSubject<IList<Monitor>> _monitorsSubject { get; }
 
-	private int counter = 0;
-	private List<Monitor> _monitors;
+	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _monitors;
 
-	public IObservable<IList<Monitor>> GetMonitors() {
-		_monitors ??= new List<Monitor> {
-			new() {
-				Id = $"default{++counter}",
-			},
-			new Monitor {
-				Id = "bpms",
-				Builds = {
-					new BuildLocator {
-						CiSystem = CISystem.TeamCity,
-						Id = "BpmsPlatformWorkDiagnostic"
-					},
-					new BuildLocator {
-						CiSystem = CISystem.TeamCity,
-						Id = "BpmsPlatformWorkDiagnostic2"
-					}
-				}
-			},
-		};
-		_monitorsSubject.OnNext(_monitors);
-		return _monitorsSubject;
-	}
-
-	public void Add() {
-		_monitors.Add(new Monitor {
-			Id = $"bpms{++counter}",
-			Builds = new List<BuildLocator> {
-				new BuildLocator() {
-					Id = "xxx",
-					CiSystem = CISystem.TeamCity
-				}
-			}
+	public async Task Add() {
+		var monitors = await _monitors.FirstAsync();
+		monitors = monitors.Add(new Monitor {
+			Id = "Untitled",
+			Builds = new List<BuildLocator>()
 		});
-		_monitorsSubject.OnNext(_monitors);
+		_bufferedMonitors.OnNext(monitors);
+		// TODO save in db
 	}
 
 	public IObservable<Monitor?> GetMonitorById(string monitorId) {
 		return GetMonitors().Select(m => m.FirstOrDefault(x => x.Id == monitorId));
 	}
 
-	public void SetBuildLocators(string? monitorId, IList<BuildLocatorDescriptor> locators) {
-		Monitor monitor = _monitors.Find(m => m.Id == monitorId) ?? throw new InvalidOperationException($"monitor {monitorId} not found");
-		monitor.Builds = locators.OfType<BuildLocator>().ToList();
-		_monitorsSubject.OnNext(_monitors);
+	public async Task Save(Monitor monitor) {
+		var monitors = await _monitors.FirstAsync();
+		var existing = monitors.FirstOrDefault(m => m.Id == monitor.Id);
+		monitors = existing != null ? monitors.Replace(existing, monitor) : monitors.Add(monitor);
+		_bufferedMonitors.OnNext(monitors);
 	}
 }

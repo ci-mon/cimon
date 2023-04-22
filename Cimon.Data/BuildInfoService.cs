@@ -24,7 +24,7 @@ public class BuildInfoService : IDisposable
 			.SelectMany(async tuple => {
 				var (locators, _) = tuple;
 				var results = await Task.WhenAll(_buildInfoProviders.Select(provider =>
-					provider.GetInfo(locators.Where(l => l.CiSystem == provider.CiSystem))).ToArray());
+					provider.GetInfo(locators.Where(l => l.CiSystem == provider.CiSystem).ToList())).ToArray());
 				var buildInfos = results.SelectMany(x => x).Distinct().ToList();
 				return buildInfos;
 			}).TakeUntil(_ => _watchCts.IsCancellationRequested).Replay().RefCount(1);

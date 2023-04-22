@@ -21,8 +21,4 @@
       <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Discussions\" />
-    </ItemGroup>
-
 </Project>

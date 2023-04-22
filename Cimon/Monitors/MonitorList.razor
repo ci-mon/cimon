@@ -74,7 +74,7 @@
 </style>
 @code {
 
-    private readonly IList<Monitor> _monitors = new List<Monitor>();
+    private readonly IReadOnlyList<Monitor> _monitors = new List<Monitor>();
     
     protected override void OnInitialized() {
         Subscribe(MonitorService.GetMonitors(), () => _monitors);

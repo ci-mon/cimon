@@ -4,10 +4,10 @@ public class TcBuildLocatorProvider : IBuildLocatorProvider
 {
 
 	public async IAsyncEnumerable<BuildLocatorDescriptor> GetLocators() {
-		for (int i = 0; i < 10; i++) {
-			yield return new BuildLocatorDescriptor {
-				Id = i.ToString()
-			};
-		}
+		foreach (BuildInfo x in MockData.TestBuildInfos) yield return new BuildLocatorDescriptor {
+			Id = x.Name,
+			CiSystem = CISystem.TeamCity,
+			Path = x.ProjectName
+		};
 	}
 }

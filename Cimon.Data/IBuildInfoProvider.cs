@@ -4,5 +4,5 @@ public interface IBuildInfoProvider
 {
 	CISystem CiSystem { get; }
 
-	Task<IList<BuildInfo>> GetInfo(IEnumerable<BuildLocator> locators);
+	Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildLocator> locators);
 }
