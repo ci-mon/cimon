@@ -17,6 +17,7 @@ builder.Services.AddSingleton<BuildInfoService>();
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
 builder.Services.AddSingleton<BuildDiscussionStoreService>();
+builder.Services.AddSingleton<UserInfoService>();
 builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList());
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))

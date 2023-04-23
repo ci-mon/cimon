@@ -1,12 +1,13 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using AngleSharp.Html.Parser;
 
 namespace Cimon.Data;
 
 public class BuildComment
 {
-	public string Content { get; set; }
+	public string Comment { get; set; }
 	public string Author { get; set; }
 	public IImmutableList<string> Mentions { get; set; } = ImmutableList<string>.Empty;
 }
@@ -69,12 +70,20 @@ public class BuildDiscussionService
 	public async Task AddComment(CommentData data) {
 		var comment = new BuildComment {
 			Author = data.Author,
-			Content = data.Comment
+			Comment = data.Comment,
+			Mentions = await ExtractMentionedUsers(data.Comment)
 		};
 		var currentState = await _state.FirstAsync();
 		_state.OnNext(currentState with {
 			Comments = currentState.Comments.Add(comment)
 		});
+	}
+	
+	private async Task<IImmutableList<string>> ExtractMentionedUsers(string content) {
+		var parser = new HtmlParser();
+		var document = await parser.ParseDocumentAsync(content);
+		var mentionElements = document.QuerySelectorAll("span.mention");
+		return mentionElements.Select(mention => mention.GetAttribute("data-id")).Where(x=>x != null).ToImmutableList()!;
 	}
 
 	public async Task Close() {

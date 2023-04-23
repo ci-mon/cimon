@@ -12,9 +12,9 @@
 window.quillInterop = {
     initQuill: function (element, contentChangedCallback) {
         var mentionUsers = [
-            { id: 1, value: 'Alice' },
-            { id: 2, value: 'Bob' },
-            { id: 3, value: 'Charlie' },
+            { id: 'Alice', value: 'Alice' },
+            { id: 'Bob', value: 'Bob' },
+            { id: 'Charlie', value: 'Charlie' },
             // Add more users as needed
         ];
 

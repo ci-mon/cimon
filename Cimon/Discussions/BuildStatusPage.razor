@@ -2,53 +2,114 @@
 @page "/BuildStatus/{buildId?}"
 @using System.Reactive.Linq
 @inject BuildDiscussionStoreService DiscussionStoreService
+@inject UserInfoService UserInfoService
 @inherits ReactiveComponent
 
 @if (_state != null) {
-    <div>@_state.Status</div>
-    <RadzenSplitContainer Orientation="Horizontal" Width="100%" Style="height: 600px;">
-        <RadzenPane>
-            <RadzenPanelMenu>
-                @foreach (var comment in _state.Comments)
-                {
-                    <RadzenPanelMenuItem Text="@comment.Author" Icon="account_circle">
-                        <div>
-                            <p>@((MarkupString)comment.Content)</p>
-                            @if (comment.Mentions.Any())
-                            {
-                                <p>
-                                    <strong>Mentioned Users:</strong>
-                                    @string.Join(", ", comment.Mentions)
+    <div class="container">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="6">
+            <RadzenCard class="status-item">
+               <RadzenText Text="@_state.Status.ToString()"></RadzenText>
+            </RadzenCard>
+            @foreach (var comment in _state.Comments) {
+                <RadzenCard class="comment-item">
+                    <RadzenRow AlignItems="AlignItems.End">
+                        <RadzenColumn Size="1">
+                            <RadzenStack Orientation="Orientation.Vertical">
+                                <RadzenGravatar Email="@UserInfoService.GetEmail(comment.Author)"></RadzenGravatar>
+                            </RadzenStack>
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenStack Orientation="Orientation.Vertical">
+                                <p class="comment-content">
+                                    <RadzenText TextStyle="TextStyle.H6" Text="@comment.Author"/>
+                                    @((MarkupString)comment.Comment)
+                                    <div class="comment-content-icon"></div>
                                 </p>
-                            }
-                        </div>
-                    </RadzenPanelMenuItem>
-                }
-            </RadzenPanelMenu>
-        </RadzenPane>
-        <RadzenPane Size="50%">
-            <RadzenTemplateForm @ref="_form" TItem="CommentData" Data="@_newComment" Submit="@AddComment">
-                <RadzenFieldset>
-                    <RadzenLabel for="author">Author</RadzenLabel>
-                    <RadzenTextBox Disabled="true" @bind-Value="@_newComment.Author" Name="author" id="author" Style="width: 100%;"/>
-                </RadzenFieldset>
-
-                <RadzenFieldset>
-                    <RadzenLabel for="comment">Comment</RadzenLabel>
-                    <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment"/>
-                </RadzenFieldset>
-
-                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"/>
-            </RadzenTemplateForm>
-        </RadzenPane>
-
-    </RadzenSplitContainer>
-
+                            </RadzenStack>
+                        </RadzenColumn>
+                    </RadzenRow>
+                    @if (comment.Mentions.Any()) {
+                        <RadzenRow>
+                            <p>
+                                <strong>Mentioned Users:</strong>
+                                @string.Join(", ", comment.Mentions)
+                            </p>
+                        </RadzenRow>
+                    }
+                </RadzenCard>
+            }
+            <RadzenCard class="comment-editor-block">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                    <div style="width: 100%">
+                        <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment"/>
+                    </div>
+                    <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
+                        <RadzenButton Click="@AddComment" Icon="send" Size="ButtonSize.Large"/>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+    </div>
 }
 <style>
+    .container{
+       background-color: var(--rz-base-800);
+       height: 100%;
+       width: 100%;
+       max-width: 100%;
+       margin: 0;
+       overflow: scroll;
+    }
+    .container div {
+        position: relative;
+    }
+    .container::before {
+        content: "";
+        background-image: url("/img/tile.jpg");
+        background-size: cover;
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        left: 0px;
+        opacity: 0.40;
+        filter: blur(6px);
+    }
+    .comment-item, .status-item{
+        margin-top: 1em;
+    }
+    .comment-item {
+        background-color: transparent;
+        box-shadow: none;
+    }
+    .comment-editor-block {
+        margin-top: 1em;
+    }
     .comment-editor {
         height: 100px;
         display: block;
+    }
+    .comment-content {
+        background-color: white;
+        border-radius: 1em 1em 1em 0;
+        padding: 0.5em;
+    }
+    .comment-content-icon{
+        border: 5px solid white;
+        border-top: none;
+        border-left: none;
+        width: 1em;
+        height: 1em;
+        position: relative;
+        left: -1.5em;
+        bottom: -0.5em;
+    }
+    .comment-content-icon::after {
+        content: '';
+        background-color: #a2e7ff;
     }
 </style>
 @code {
@@ -60,7 +121,6 @@
 
     private BuildDiscussionService _discussionService;
     private BuildDiscussionState _state;
-    private RadzenTemplateForm<CommentData>? _form;
     private CommentData _newComment = new();
 
     protected override async Task OnInitializedAsync() {
@@ -79,10 +139,9 @@
     }
 
     private async Task AddComment() {
-        if (_form?.IsValid == true) {
-            await _discussionService.AddComment(_newComment);
-            await ClearComment();
-        }
+        await _discussionService.AddComment(_newComment);
+        await ClearComment();
+        StateHasChanged();
     }
 
 }

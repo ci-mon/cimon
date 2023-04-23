@@ -5,9 +5,20 @@
 @code {
     private ElementReference editorContainer;
     private IJSObjectReference quillInstance;
+    private string _content;
 
     [Parameter] public string Class { get; set; }
-    [Parameter] public string Content { get; set; }
+
+    [Parameter]
+    public string Content {
+        get => _content;
+        set {
+            if (_content == value) return;
+            _content = value;
+            SetContent(Content);
+        }
+    }
+
     [Parameter] public EventCallback<string> ContentChanged { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -18,12 +29,13 @@
                 "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this)});
             await SetContent(Content);
         }
+       
     }
 
     [JSInvokable]
     public async Task UpdateContent(string content)
     {
-        Content = content;
+        _content = content;
         await ContentChanged.InvokeAsync(content);
     }
 
