@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Components;
 public class ReactiveComponent : ComponentBase, IDisposable
 {
 
-	private List<IDisposable> _disposables = new();
+	private readonly List<IDisposable> _disposables = new();
 	protected void Subscribe<T>(IObservable<T> source, Expression<Func<T>> fieldExpression, Action<T>? callback = null) {
 		if (fieldExpression.Body is not MemberExpression { Member: FieldInfo field }) {
 			throw new InvalidOperationException();
@@ -21,10 +21,9 @@ public class ReactiveComponent : ComponentBase, IDisposable
 				StateHasChanged();
 			});
 		}));
-		
 	}
 
-	private readonly Subject<bool> _disposed = new Subject<bool>();
+	private readonly Subject<bool> _disposed = new();
 	protected virtual void Dispose(bool disposing) {
 		_disposed.OnNext(disposing);
 	}

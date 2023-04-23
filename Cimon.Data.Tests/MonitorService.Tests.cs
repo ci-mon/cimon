@@ -1,4 +1,5 @@
 ﻿using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace Cimon.Data.Tests;
 
@@ -25,5 +26,48 @@ public class MonitorServiceTests
 		await sut.Save(monitor);
 		monitors = await observable.FirstOrDefaultAsync();
 		monitors.Should().Contain(m => m.Id == id);
+	}
+
+	[Test]
+	public async Task Add() {
+		var sut = new MonitorService();
+		var monitors = await sut.GetMonitors().FirstAsync();
+		var newMon = await sut.Add();
+		monitors = await sut.GetMonitors().FirstAsync();
+		monitors.Should().Contain(x=>x.Id == newMon.Id);
+	}
+
+	[Test]
+	public async Task GetMonitors_MultipleSubscribe() {
+		var sut = new MonitorService();
+		var task = Enumerable.Range(0, 10).Select(x => sut.GetMonitors()).Select(async x => await x.FirstAsync())
+			.ToArray();
+		var monitors = await Task.WhenAll(task);
+		monitors.Should().HaveCount(10);
+	}
+
+	[Test]
+	public async Task GetMonitorBuildsById_MultipleSubscribe() {
+		var sut = new MonitorService();
+		var expected = MockData.Monitors.First();
+		var builds = await sut.GetMonitorBuildsById(expected.Id).FirstAsync();
+		builds.Should().Contain(expected.Builds);
+		for (int i = 0; i < 10; i++) {
+			builds = await sut.GetMonitorBuildsById(expected.Id).FirstAsync();
+			builds.Should().Contain(expected.Builds);
+		}
+	}
+	[Test]
+	public async Task GetMonitorById_MultipleSubscribe() {
+		var sut = new MonitorService();
+		var expected = MockData.Monitors.First();
+		for (int i = 0; i < 10; i++) {
+			var tcs = new TaskCompletionSource<Monitor>();
+			var disposed = new Subject<bool>();
+			sut.GetMonitorById(expected.Id).TakeUntil(disposed).Subscribe(x => tcs.SetResult(x));
+			var result = await tcs.Task;
+			//disposed.OnNext(true);
+			result.Id.Should().BeSameAs(expected.Id);
+		}
 	}
 }

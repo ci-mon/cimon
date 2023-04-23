@@ -1,10 +1,8 @@
 ﻿using System.Collections.Immutable;
-using System.Reactive;
 
 namespace Cimon.Data;
 
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 public class Monitor
 {
@@ -14,46 +12,48 @@ public class Monitor
 
 }
 
-public class MonitorService
+public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 {
-	private readonly ReplaySubject<IImmutableList<Monitor>> _bufferedMonitors;
-	private readonly IObservable<IImmutableList<Monitor>> _monitors;
 
+	private readonly ReactiveRepository<IImmutableList<Monitor>> _state;
 	public MonitorService() {
-		_bufferedMonitors = new ReplaySubject<IImmutableList<Monitor>>(1);
-		var getDataSubject = new BehaviorSubject<Unit>(Unit.Default);
-		var buffer = _bufferedMonitors.Replay().RefCount(2);
-		buffer.Subscribe(_ => getDataSubject.OnCompleted());
-		_monitors = buffer.Amb(getDataSubject.SelectMany(_ => Observable
-			.DeferAsync(async ct => {
-				// TODO load from db
-				await Task.Delay(TimeSpan.FromMilliseconds(10), ct);
-				return Observable.Return(MockData.Monitors);
-			})).Replay(1).RefCount().TakeUntil(_bufferedMonitors));
-		
+		_state = new ReactiveRepository<IImmutableList<Monitor>>(this);
 	}
 
+	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _state.Items;
 
-	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _monitors;
-
-	public async Task Add() {
-		var monitors = await _monitors.FirstAsync();
-		monitors = monitors.Add(new Monitor {
+	public async Task<Monitor> Add() {
+		var monitor = new Monitor {
 			Id = "Untitled",
 			Builds = new List<BuildLocator>()
-		});
-		_bufferedMonitors.OnNext(monitors);
+		};
+		await _state.Mutate(monitors => Task.FromResult(monitors.Add(monitor)));
 		// TODO save in db
+		return monitor;
 	}
 
-	public IObservable<Monitor?> GetMonitorById(string monitorId) {
-		return GetMonitors().Select(m => m.FirstOrDefault(x => x.Id == monitorId));
+	public IObservable<Monitor> GetMonitorById(string? monitorId) {
+		return monitorId == null
+			? Observable.Empty<Monitor>()
+			: GetMonitors().SelectMany(x => x).Where(x => x.Id == monitorId);
+	}
+
+	public IObservable<IReadOnlyList<BuildLocator>> GetMonitorBuildsById(string monitorId) {
+		return GetMonitors().SelectMany(x => x).Where(x => x.Id == monitorId)
+			.Select(m => m.Builds);
 	}
 
 	public async Task Save(Monitor monitor) {
-		var monitors = await _monitors.FirstAsync();
-		var existing = monitors.FirstOrDefault(m => m.Id == monitor.Id);
-		monitors = existing != null ? monitors.Replace(existing, monitor) : monitors.Add(monitor);
-		_bufferedMonitors.OnNext(monitors);
+		await _state.Mutate(monitors => {
+			var existing = monitors.FirstOrDefault(m => m.Id == monitor.Id);
+			var newItem = existing != null ? monitors.Replace(existing, monitor) : monitors.Add(monitor);
+			return Task.FromResult(newItem);
+		});
+	}
+
+	public async Task<IImmutableList<Monitor>> LoadData(CancellationToken token) {
+		// TODO load from DB
+		await Task.Delay(TimeSpan.FromMicroseconds(10), token);
+		return MockData.Monitors;
 	}
 }

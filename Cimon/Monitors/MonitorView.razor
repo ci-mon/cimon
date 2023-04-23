@@ -71,8 +71,7 @@
 
     protected override void OnInitialized() {
         MonitorId ??= "default";
-        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorById(MonitorId)
-            .Select(m => m?.Builds ?? new List<BuildLocator>())), () => _buildInfos);
+        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorBuildsById(MonitorId)), () => _buildInfos);
     }
 
 }

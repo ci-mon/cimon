@@ -30,7 +30,7 @@ public class BuildInfoService : IDisposable
 			}).TakeUntil(_ => _watchCts.IsCancellationRequested).Replay().RefCount(1);
 	}
 
-	public IObservable<IList<BuildInfo>> Watch(IObservable<IList<BuildLocator>> builds) {
+	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildLocator>> builds) {
 		return builds
 			.Do(list => {
 				var locators = new HashSet<BuildLocator>(_trackedLocators.Value.Concat(list));
@@ -42,7 +42,7 @@ public class BuildInfoService : IDisposable
 			.Select(CombineBuildInfos);
 	}
 
-	private List<BuildInfo> CombineBuildInfos((IList<BuildLocator> locators, List<BuildInfo> buildInfos) result) {
+	private List<BuildInfo> CombineBuildInfos((IReadOnlyList<BuildLocator> locators, List<BuildInfo> buildInfos) result) {
 		var indexes = result.locators.Select(l => l.Id).ToList();
 		var infos = result.buildInfos.Where(i => result.locators.Any(l => l.Id == i.BuildId))
 			.OrderBy(x => indexes.IndexOf(x.BuildId)).ToList();

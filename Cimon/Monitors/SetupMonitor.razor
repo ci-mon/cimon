@@ -55,14 +55,12 @@
         _selectedLocators = list ?? ArraySegment<BuildLocatorDescriptor>.Empty;
     }
 
-    protected override async Task OnInitializedAsync()
-    {
+    protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _locators = await BuildLocatorProviders.SelectMany(x => x.GetLocators()).ToListAsync();
         Subscribe(MonitorService.GetMonitorById(MonitorId), () => _monitor, monitor => {
-            var selectedIds = (monitor?.Builds.Select(l => l.Id) ?? Enumerable.Empty<string>()).
-                ToHashSet(StringComparer.OrdinalIgnoreCase);
-            SetSelectedLocators(_locators?.Where(l => selectedIds.Contains(l.Id)).ToList());
+            var descriptors = _locators.Where(l => monitor.Builds.Any(b => l.Id == b.Id)).ToList();
+            SetSelectedLocators(descriptors);
         });
     }
 
