@@ -1,0 +1,37 @@
+﻿@namespace Cimon.Discussions
+@inject IJSRuntime JsRuntime
+
+<div class="@Class" @ref="editorContainer"></div>
+@code {
+    private ElementReference editorContainer;
+    private IJSObjectReference quillInstance;
+
+    [Parameter] public string Class { get; set; }
+    [Parameter] public string Content { get; set; }
+    [Parameter] public EventCallback<string> ContentChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            quillInstance = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this)});
+            await SetContent(Content);
+        }
+    }
+
+    [JSInvokable]
+    public async Task UpdateContent(string content)
+    {
+        Content = content;
+        await ContentChanged.InvokeAsync(content);
+    }
+
+    private async Task SetContent(string content)
+    {
+        if (quillInstance != null)
+        {
+            await quillInstance.InvokeVoidAsync("setContent", content);
+        }
+    }
+}

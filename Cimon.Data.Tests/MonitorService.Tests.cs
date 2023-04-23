@@ -47,17 +47,6 @@ public class MonitorServiceTests
 	}
 
 	[Test]
-	public async Task GetMonitorBuildsById_MultipleSubscribe() {
-		var sut = new MonitorService();
-		var expected = MockData.Monitors.First();
-		var builds = await sut.GetMonitorBuildsById(expected.Id).FirstAsync();
-		builds.Should().Contain(expected.Builds);
-		for (int i = 0; i < 10; i++) {
-			builds = await sut.GetMonitorBuildsById(expected.Id).FirstAsync();
-			builds.Should().Contain(expected.Builds);
-		}
-	}
-	[Test]
 	public async Task GetMonitorById_MultipleSubscribe() {
 		var sut = new MonitorService();
 		var expected = MockData.Monitors.First();

@@ -16,6 +16,7 @@ builder.Services.AddSingleton<MonitorService>();
 builder.Services.AddSingleton<BuildInfoService>();
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
+builder.Services.AddSingleton<BuildDiscussionStoreService>();
 builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList());
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))
@@ -45,8 +46,9 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapBlazorHub();
 app.MapControllers();
+app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapFallbackToPage("/_Host");
+app.MapFallbackToPage("/BuildStatus/{param?}", "/_Host");
 app.Run();

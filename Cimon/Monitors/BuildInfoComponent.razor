@@ -1,12 +1,22 @@
 @using Cimon.Data
 @using Microsoft.AspNetCore.Components
+@using System.Text.Encodings.Web
+@inject NavigationManager NavigationManager
 
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
          <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
-             <RadzenText TextStyle="TextStyle.H4" Style="color: white" Text="@Info.Name"></RadzenText>
-             <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetStatus()"></RadzenText>
-            </RadzenStack>
+             <RadzenLink Path="@Info.BuildHomeUrl">
+                 <RadzenText TextStyle="TextStyle.H4" Style="color: white" Text="@Info.Name"></RadzenText>
+             </RadzenLink>
+             <RadzenStack Orientation="Orientation.Horizontal">
+                 <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetStatus()"></RadzenText>
+                 <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                     <RadzenIcon Icon="chat" Style="color: var(--rz-white)" />
+                     <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount" class="rz-ml-2"/>
+                 </RadzenButton>
+             </RadzenStack>
+         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal" >
             @if (Info.Status == BuildStatus.Failed) {
                 foreach (var user in Info.CommitterUsers) {
@@ -29,5 +39,9 @@
     private string GetStatus() => string.IsNullOrWhiteSpace(Info.StatusText) ? Info.Status.ToString() : Info.StatusText;
 
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
+
+    private void Discuss() {
+        NavigationManager.NavigateTo($"/BuildStatus/{Info.BuildId}");
+    }
 
 }
