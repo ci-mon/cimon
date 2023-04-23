@@ -7,7 +7,7 @@
 
 <RadzenCard class="rz-mt-4 main-panel">
     <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="true"
-                    Data="@_monitors" TItem="Monitor">
+                    Data="@_monitors.Where(m=>!m.Removed)" TItem="Monitor">
         <Template Context="monitor">
             <RadzenCard class="monitor-item">
                 <RadzenRow>
@@ -15,9 +15,10 @@
                 </RadzenRow>
                 <div>
                     <RadzenRow>
-                        <RadzenText TextStyle="TextStyle.H2" Text=@($"{monitor.Id}") class="me-1"/>
+                        <RadzenText TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                     </RadzenRow>
                     <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
+                        <RadzenButton Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
                         <RadzenButton Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
                         <RadzenButton Variant="Variant.Text" Text="Open" Click="() => ViewMonitor(monitor)"/>
                     </RadzenRow>
@@ -28,7 +29,7 @@
     
 </RadzenCard>
 <RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End" >
-    <RadzenButton Click="add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8" />
+    <RadzenButton Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8" />
 </RadzenStack>
 <style>
     .bottom-panel {
@@ -80,8 +81,8 @@
         Subscribe(MonitorService.GetMonitors(), () => _monitors);
     }
 
-    private void add() {
-        MonitorService.Add();
+    private async Task Add() {
+        await MonitorService.Add();
     }
 
     private void ViewMonitor(Monitor monitor) {
@@ -92,6 +93,10 @@
     private void SetupMonitor(Monitor monitor) {
         string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Id}");
         NavigationManager.NavigateTo(url); 
+    }
+
+    private async Task Remove(Monitor monitor) {
+        await MonitorService.Remove(monitor);
     }
 
 }

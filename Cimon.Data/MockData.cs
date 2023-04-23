@@ -16,6 +16,7 @@ public class MockData
 		public static ImmutableList<Monitor> Monitors { get; } = new List<Monitor> {
 			new Monitor {
 				Id = "Team 1",
+				Title = "Team 1",
 				Builds = TestBuildInfos.Where(x=>x.Name.Contains(".")).Select(x=>new BuildLocator {
 					Id = x.Name,
 					CiSystem = CISystem.TeamCity
@@ -23,6 +24,7 @@ public class MockData
 			},
 			new Monitor() {
 				Id = "all",
+				Title = "all",
 				Builds = TestBuildInfos.Select(x=>new BuildLocator {
 					Id = x.Name,
 					CiSystem = CISystem.TeamCity

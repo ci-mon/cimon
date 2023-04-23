@@ -7,9 +7,9 @@ using System.Reactive.Linq;
 public class Monitor
 {
 	public string Id { get; set; }
-
 	public List<BuildLocator> Builds { get; set; } = new();
-
+	public string Title { get; set; }
+	public bool Removed { get; set; }
 }
 
 public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
@@ -24,7 +24,8 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public async Task<Monitor> Add() {
 		var monitor = new Monitor {
-			Id = "Untitled",
+			Id = Guid.NewGuid().ToString(),
+			Title = "Untitled",
 			Builds = new List<BuildLocator>()
 		};
 		await _state.Mutate(monitors => Task.FromResult(monitors.Add(monitor)));
@@ -36,11 +37,6 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		return monitorId == null
 			? Observable.Empty<Monitor>()
 			: GetMonitors().SelectMany(x => x).Where(x => x.Id == monitorId);
-	}
-
-	public IObservable<IReadOnlyList<BuildLocator>> GetMonitorBuildsById(string monitorId) {
-		return GetMonitors().SelectMany(x => x).Where(x => x.Id == monitorId)
-			.Select(m => m.Builds);
 	}
 
 	public async Task Save(Monitor monitor) {
@@ -55,5 +51,13 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		// TODO load from DB
 		await Task.Delay(TimeSpan.FromMicroseconds(10), token);
 		return MockData.Monitors;
+	}
+
+	public async Task Remove(Monitor monitor) {
+		await _state.Mutate(monitors => {
+			var existing = monitors.First(m => m.Id == monitor.Id);
+			existing.Removed = true;
+			return Task.FromResult(monitors.Replace(existing, monitor));
+		});
 	}
 }

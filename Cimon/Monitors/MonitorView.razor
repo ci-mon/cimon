@@ -5,11 +5,13 @@
 @inject BuildInfoService BuildInfoService
 @inherits ReactiveComponent
 
-<PageTitle>CI @MonitorId</PageTitle>
+<PageTitle>CI @GetTitle()</PageTitle>
 <div class="monitor">
-    @if (_buildInfos == null) {
-        <p>Monitor not fount</p>
-    } else {
+    @if (_errorMessage != null) {
+         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
+        </RadzenRow>
+    } else if (_buildInfos != null) {
         @foreach (var buildInfo in _buildInfos) {
             <BuildInfoComponent Info="@buildInfo"></BuildInfoComponent>
         }
@@ -17,7 +19,7 @@
 </div>
 <style>
     .monitor{
-        background-color: #4d4d4d;
+        background-color: var(--rz-base-800);
         font-size: xx-small;
         height: 100%;
         display: grid;
@@ -25,6 +27,9 @@
         justify-items: stretch;
         align-items: stretch;
         grid-template-columns: auto;
+    }
+    .monitor h1 {
+        color: var(--rz-danger);
     }
 
  .build-info-item {
@@ -68,10 +73,26 @@
     public string? MonitorId { get; set; }
 
     private IList<BuildInfo>? _buildInfos = new List<BuildInfo>();
+    private Monitor? _monitor;
+
+    private string GetTitle() => _monitor?.Title ?? MonitorId ?? string.Empty;
+    private string? _errorMessage = "Monitor not fount";
 
     protected override void OnInitialized() {
         MonitorId ??= "default";
-        Subscribe(BuildInfoService.Watch(MonitorService.GetMonitorBuildsById(MonitorId)), () => _buildInfos);
+        BuildInfoService.Watch(
+            MonitorService.GetMonitorById(MonitorId)
+                .Subscribe(this, () => _monitor, monitor => {
+                    if (!monitor.Builds.Any()) {
+                        _errorMessage = "No build set up";
+                    } else if (monitor.Removed) {
+                        _errorMessage = "Monitor removed";
+                    } else {
+                        _errorMessage = null;
+                    }
+                })
+                .Select(m => m.Builds))
+            .Subscribe(this, () => _buildInfos);
     }
 
 }
