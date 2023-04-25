@@ -24,8 +24,8 @@ public record BuildDiscussionState
 
 public class CommentData
 {
-	public string Author { get; set; }
-	public string Comment { get; set; }
+	public string Author { get; set; } = "guest";
+	public string Comment { get; set; } = string.Empty;
 }
 
 public class BuildDiscussionStoreService
@@ -41,7 +41,8 @@ public class BuildDiscussionStoreService
 		if (currentDiscussions.Any(x => x.BuildId == buildId)) {
 			return;
 		}
-		_allDiscussions.OnNext(currentDiscussions.Add(new BuildDiscussionService(buildId)));
+		var service = new BuildDiscussionService(buildId);
+		_allDiscussions.OnNext(currentDiscussions.Add(service));
 	}
 
 	public async Task CloseDiscussion(string buildId) {
@@ -74,9 +75,10 @@ public class BuildDiscussionService
 			Mentions = await ExtractMentionedUsers(data.Comment)
 		};
 		var currentState = await _state.FirstAsync();
-		_state.OnNext(currentState with {
+		var state = currentState with {
 			Comments = currentState.Comments.Add(comment)
-		});
+		};
+		_state.OnNext(state);
 	}
 	
 	private async Task<IImmutableList<string>> ExtractMentionedUsers(string content) {

@@ -13,7 +13,7 @@
                  <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetStatus()"></RadzenText>
                  <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                      <RadzenIcon Icon="chat" Style="color: var(--rz-white)" />
-                     <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount" class="rz-ml-2"/>
+                     <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
                  </RadzenButton>
              </RadzenStack>
          </RadzenStack>
@@ -41,7 +41,7 @@
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
 
     private void Discuss() {
-        NavigationManager.NavigateTo($"/BuildStatus/{Info.BuildId}");
+        NavigationManager.NavigateTo($"/buildStatus/{Info.BuildId}");
     }
 
 }
