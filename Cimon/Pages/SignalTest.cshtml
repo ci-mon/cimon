@@ -16,67 +16,11 @@
 <div id="app">
     {{ state }}
     <p>{{ UserName }}</p>
-  <button @@click="notify">+</button>
+    <button @@click="notify">+</button>
+    <li v-for="item in messages">
+        <a v-bind:href="item.url">{{ item.msg }}</a>
+    </li>
 </div>
-<script type="module">
-  import { createApp } from "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
-
-    class ReconnectionPolicy {
-        nextRetryDelayInMilliseconds(retryContext) {
-            return 5000;
-        }
-    }
-    createApp({
-        data() {
-          return {
-            state: 'none',
-            UserName: ''
-          }
-        },
-        mounted() {
-          this.connect();
-        },
-        methods: {
-          async connect() {
-              const response = await fetch('/auth/token', {
-                  redirect: "manual"
-              });
-              var body = await response.json();
-              var y = await fetch('auth/checkJwt', {
-                headers: {
-                    Authorization: `Bearer ${body.token}`
-                }
-              });
-              /*await fetch('/auth/logoutUser', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                     userName: `TSCRM\\v.artemchuk`
-                 }),
-                headers: {
-                    Authorization: `Bearer ${body.token}`,
-                    'Content-Type': 'application/json'
-                }
-              });*/
-              
-              this.UserName = body.userName;
-                let connection = new signalR.HubConnectionBuilder()
-                        .withUrl("/hubs/user", {
-                            accessTokenFactory: () => body.token
-                        })
-                        .withAutomaticReconnect(new ReconnectionPolicy())
-                        .build();
-                    connection.onclose(() => {
-                        this.state = 'onclose';
-                    });
-                    connection.onreconnected(() => {
-                        this.state = 'onreconnected';
-                    });
-                    await connection.start();
-                  this.state = 'connected';
-             
-          }
-    }
-    }).mount('#app')
-</script>
+<script type="module" src="/js/SignalTest.js"></script>
 </body>
 </html>

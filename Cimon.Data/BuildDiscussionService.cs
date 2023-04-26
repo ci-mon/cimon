@@ -10,6 +10,7 @@ public class BuildComment
 	public string Comment { get; set; }
 	public string Author { get; set; }
 	public IImmutableList<string> Mentions { get; set; } = ImmutableList<string>.Empty;
+	public string Id { get; set; } = Guid.NewGuid().ToString("N");
 }
 
 public enum BuildDiscussionStatus
@@ -30,8 +31,13 @@ public class CommentData
 
 public class BuildDiscussionStoreService
 {
+	private readonly INotificationService _notificationService;
 	private readonly BehaviorSubject<ImmutableList<BuildDiscussionService>> _allDiscussions =
 		new(ImmutableList<BuildDiscussionService>.Empty);
+
+	public BuildDiscussionStoreService(INotificationService notificationService) {
+		_notificationService = notificationService;
+	}
 
 	public IObservable<BuildDiscussionService> GetDiscussionService(string buildId) {
 		return _allDiscussions.SelectMany(b => b).Where(b => b.BuildId == buildId);
@@ -41,7 +47,7 @@ public class BuildDiscussionStoreService
 		if (currentDiscussions.Any(x => x.BuildId == buildId)) {
 			return;
 		}
-		var service = new BuildDiscussionService(buildId);
+		var service = new BuildDiscussionService(buildId, _notificationService);
 		_allDiscussions.OnNext(currentDiscussions.Add(service));
 	}
 
@@ -59,11 +65,13 @@ public class BuildDiscussionStoreService
 public class BuildDiscussionService
 {
 
+	private readonly INotificationService _notificationService;
 	private readonly BehaviorSubject<BuildDiscussionState> _state = new(new BuildDiscussionState());
 	public IObservable<BuildDiscussionState> State => _state;
 
-	public BuildDiscussionService(string buildId) {
+	public BuildDiscussionService(string buildId, INotificationService notificationService) {
 		BuildId = buildId;
+		_notificationService = notificationService;
 	}
 
 	public string BuildId { get; }
@@ -78,6 +86,7 @@ public class BuildDiscussionService
 		var state = currentState with {
 			Comments = currentState.Comments.Add(comment)
 		};
+		await _notificationService.Notify(BuildId, comment.Id, data.Author, comment.Mentions);
 		_state.OnNext(state);
 	}
 	

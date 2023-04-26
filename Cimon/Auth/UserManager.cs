@@ -39,9 +39,11 @@ public class UserManager
 	public async Task<PasswordSignInResult> SignInAsync(UserName userName, string password) {
 		var result = new PasswordSignInResult {
 			UserName = userName,
-			Success = true
+			Success = true,
+			Team = "all"
 		};
 		if (userName == "test" && password == "test") {
+			result.Team = "testers";
 			return result;
 		}
 		string domain = userName.Domain.ToLowerInvariant(); // TODO get from where?

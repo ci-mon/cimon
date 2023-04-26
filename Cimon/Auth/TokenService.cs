@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 
 public class TokenService
 {
+	internal const string TeamClaimName = "team";
 	private readonly CimonOptions _options;
 	private readonly SigningCredentials _signingCredentials;
 
@@ -30,13 +31,15 @@ public class TokenService
 			expires: DateTime.UtcNow + _options.Auth.Expiration,
 			signingCredentials: _signingCredentials);
 
-	public List<Claim> CreateClaims(IdentityUser user) {
+	public List<Claim> CreateClaims(IdentityUser user, string team = "all") {
+		var userName = user.UserName ?? user.Id;
 		var claims = new List<Claim> {
-			new(JwtRegisteredClaimNames.Sub, "cimon_token"),
-			new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+			new(JwtRegisteredClaimNames.Sub, userName),
+			new(JwtRegisteredClaimNames.Jti, user.Id),
 			new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
 			new(ClaimTypes.NameIdentifier, user.Id),
-			new(ClaimTypes.Name, user.UserName ?? user.Id)
+			new(ClaimTypes.Name, userName),
+			new(TeamClaimName, team)
 		};
 		return claims;
 	}

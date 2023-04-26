@@ -60,7 +60,9 @@ public class AuthController : Controller
 		if (string.IsNullOrWhiteSpace(userName)) {
 			return Unauthorized();
 		}
-		return await LoginUsingCookie(returnUrl, userName);
+		// TODO Negotiate: get team
+		var team = "all";
+		return await LoginUsingCookie(returnUrl, userName, team);
 	}
 
 	[HttpPost]
@@ -70,12 +72,12 @@ public class AuthController : Controller
 		if (!loginResult.Success) {
 			return Unauthorized();
 		}
-		return await LoginUsingCookie("/", loginResult.UserName);
+		return await LoginUsingCookie("/", loginResult.UserName, loginResult.Team);
 	}
 
-	private async Task<IActionResult> LoginUsingCookie(string returnUrl, string userName) {
+	private async Task<IActionResult> LoginUsingCookie(string returnUrl, string userName, string team) {
 		var identityUser = new IdentityUser(userName);
-		var claimsIdentity = new ClaimsIdentity(_tokenService.CreateClaims(identityUser),
+		var claimsIdentity = new ClaimsIdentity(_tokenService.CreateClaims(identityUser, team),
 			CookieAuthenticationDefaults.AuthenticationScheme);
 		var authProperties = new AuthenticationProperties {
 			AllowRefresh = true,

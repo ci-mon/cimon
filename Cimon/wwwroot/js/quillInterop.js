@@ -1,4 +1,23 @@
-﻿class QuillInterop {
+﻿function isValidURL(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+const Delta = Quill.import('delta');
+
+function urlMatcher(node, delta) {
+    if (node.nodeType === Node.TEXT_NODE && isValidURL(node.data)) {
+        return new Delta().insert(node.data, {link: node.data});
+    } else {
+        return delta;
+    }
+}
+
+class QuillInterop {
     constructor(quill) {
         this.quill = quill;
     }
@@ -11,36 +30,28 @@
 }
 window.quillInterop = {
     initQuill: function (element, contentChangedCallback) {
-        var mentionUsers = [
-            { id: 'Alice', value: 'Alice' },
-            { id: 'Bob', value: 'Bob' },
-            { id: 'Charlie', value: 'Charlie' },
-            // Add more users as needed
-        ];
-
-        var quill = new Quill(element, {
+        const quill = new Quill(element, {
             modules: {
+                clipboard: {
+                    matchers: [[Node.TEXT_NODE, urlMatcher]]
+                },
                 mention: {
                     allowedChars: /^[A-Za-z\s]*$/,
-                    mentionDenotationChars: ["@"],
-                    source: function (searchTerm, renderList, mentionChar) {
-                        let values = mentionUsers;
-
-                        if (searchTerm.length === 0) {
+                    mentionDenotationChars: ["@", "#"],
+                    source: async function (searchTerm, renderList, mentionChar) {
+                        if (mentionChar === '@') {
+                            const usersResponse = await fetch(`/api/users/search?q=${searchTerm}`);
+                            const users = await usersResponse.json();
+                            let values = users.map(x => ({id: x.name, value: x.name}));
                             renderList(values, searchTerm);
-                        } else {
-                            const matches = [];
-                            for (let i = 0; i < values.length; i++)
-                                if (~values[i].value.toLowerCase().indexOf(searchTerm.toLowerCase())) matches.push(values[i]);
-                            renderList(matches, searchTerm);
                         }
                     },
                 },
                 toolbar: [
-                    [{ header: [1, 2, false] }],
+                    [{header: [1, 2, false]}],
                     ['bold', 'italic', 'underline'],
                     ['link'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    [{list: 'ordered'}, {list: 'bullet'}],
                     ['clean'],
                 ],
             },

@@ -2,43 +2,37 @@
 @page "/buildStatus/{buildId?}"
 @using System.Reactive.Linq
 @inject BuildDiscussionStoreService DiscussionStoreService
-@inject UserInfoService UserInfoService
+@inject UserService UserService
 @inherits ReactiveComponent
 
 @if (_state != null) {
     <div class="container">
     <RadzenRow JustifyContent="JustifyContent.Center">
-        <RadzenColumn Size="6">
+        <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="8" SizeMD="8" SizeLG="6" SizeXL="4">
             <RadzenCard class="status-item">
-               <RadzenText Text="@_state.Status.ToString()"></RadzenText>
+               <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Status.ToString()"></RadzenLabel>
             </RadzenCard>
             @foreach (var comment in _state.Comments) {
-                <RadzenCard class="comment-item">
-                    <RadzenRow AlignItems="AlignItems.End">
-                        <RadzenColumn Size="1">
-                            <RadzenStack Orientation="Orientation.Vertical">
-                                <RadzenGravatar Email="@UserInfoService.GetEmail(comment.Author)"></RadzenGravatar>
-                            </RadzenStack>
-                        </RadzenColumn>
-                        <RadzenColumn>
-                            <RadzenStack Orientation="Orientation.Vertical">
-                                <p class="comment-content">
-                                    <RadzenText TextStyle="TextStyle.H6" Text="@comment.Author"/>
-                                    @((MarkupString)comment.Comment)
-                                    <div class="comment-content-icon"></div>
-                                </p>
-                            </RadzenStack>
-                        </RadzenColumn>
-                    </RadzenRow>
-                    @if (comment.Mentions.Any()) {
-                        <RadzenRow>
-                            <p>
-                                <strong>Mentioned Users:</strong>
-                                @string.Join(", ", comment.Mentions)
-                            </p>
+                <div id="@comment.Id">
+                    <RadzenCard class="comment-item">
+                        <RadzenRow AlignItems="AlignItems.End">
+                            <RadzenColumn Size="1">
+                                <RadzenStack Orientation="Orientation.Vertical">
+                                    <RadzenGravatar Email="@UserService.GetEmail(comment.Author)"></RadzenGravatar>
+                                </RadzenStack>
+                            </RadzenColumn>
+                            <RadzenColumn>
+                                <RadzenStack Orientation="Orientation.Vertical">
+                                    <p class="comment-content">
+                                        <RadzenText TextStyle="TextStyle.H6" Text="@comment.Author"/>
+                                        @((MarkupString)comment.Comment)
+                                        <div class="comment-content-icon"></div>
+                                    </p>
+                                </RadzenStack>
+                            </RadzenColumn>
                         </RadzenRow>
-                    }
-                </RadzenCard>
+                    </RadzenCard>
+                </div>
             }
             <RadzenCard class="comment-editor-block">
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
