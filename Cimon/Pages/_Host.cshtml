@@ -17,11 +17,15 @@
     <link rel="stylesheet" href="css/quill.core.css"/>
     <link rel="stylesheet" href="css/quill.snow.css"/>
     <link rel="stylesheet" href="css/quill.mention.min.css"/>
+    <link rel="stylesheet" href="css/styles/vs2015.min.css"/>
+    <link rel="stylesheet" href="css/quillInterop.css"/>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
 <component type="typeof(App)" render-mode="ServerPrerendered"/>
-
+<div id="ql-fullscreen-image-background">
+    <div id="ql-fullscreen-image"></div>
+</div>
 <div id="blazor-error-ui">
     <environment include="Staging,Production">
         An error has occurred. This application may no longer respond until reloaded.
@@ -35,8 +39,17 @@
 
 <script src="_framework/blazor.server.js"></script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+<script src="js/highlight.js"></script>
 <script src="js/quill.min.js"></script>
 <script src="js/quill.mention.min.js"></script>
+<script src="js/languages/csharp.min.js"></script>
+<script src="js/languages/typescript.min.js"></script>
+<script src="js/languages/diff.min.js"></script>
+<script src="js/languages/shell.min.js"></script>
+<script src="js/languages/xml.min.js"></script>
+<script src="js/languages/yaml.min.js"></script>
+<script src="js/languages/javascript.min.js"></script>
+<script src="js/languages/markdown.min.js"></script>
 <script src="js/quillInterop.js"></script>
 </body>
 </html>

@@ -17,4 +17,10 @@ public class UsersController : Controller
 	public IAsyncEnumerable<UserInfo> Search([FromQuery]string? searchTerm) {
 		return _userService.GetUsers(searchTerm);
 	}
+
+	[Route("searchTeams")]
+	[HttpGet]
+	public IAsyncEnumerable<TeamInfo> SearchTeams([FromQuery]string? searchTerm) {
+		return _userService.GetTeams(searchTerm);
+	}
 }

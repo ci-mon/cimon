@@ -41,7 +41,7 @@
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
 
     private void Discuss() {
-        NavigationManager.NavigateTo($"/buildStatus/{Info.BuildId}");
+        NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildId}");
     }
 
 }

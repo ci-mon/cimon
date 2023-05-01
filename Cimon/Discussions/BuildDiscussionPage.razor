@@ -1,8 +1,7 @@
 ﻿@namespace Cimon.Discussions
-@page "/buildStatus/{buildId?}"
+@page "/buildDiscussion/{buildId?}"
 @using System.Reactive.Linq
 @inject BuildDiscussionStoreService DiscussionStoreService
-@inject UserService UserService
 @inherits ReactiveComponent
 
 @if (_state != null) {
@@ -13,34 +12,15 @@
                <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Status.ToString()"></RadzenLabel>
             </RadzenCard>
             @foreach (var comment in _state.Comments) {
-                <div id="@comment.Id">
-                    <RadzenCard class="comment-item">
-                        <RadzenRow AlignItems="AlignItems.End">
-                            <RadzenColumn Size="1">
-                                <RadzenStack Orientation="Orientation.Vertical">
-                                    <RadzenGravatar Email="@UserService.GetEmail(comment.Author)"></RadzenGravatar>
-                                </RadzenStack>
-                            </RadzenColumn>
-                            <RadzenColumn>
-                                <RadzenStack Orientation="Orientation.Vertical">
-                                    <p class="comment-content">
-                                        <RadzenText TextStyle="TextStyle.H6" Text="@comment.Author"/>
-                                        @((MarkupString)comment.Comment)
-                                        <div class="comment-content-icon"></div>
-                                    </p>
-                                </RadzenStack>
-                            </RadzenColumn>
-                        </RadzenRow>
-                    </RadzenCard>
-                </div>
+                <CommentComponent BuildComment="comment" DiscussionService="_discussionService" ></CommentComponent>
             }
             <RadzenCard class="comment-editor-block">
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
                     <div style="width: 100%">
-                        <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment"/>
+                        <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
                     </div>
                     <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
-                        <RadzenButton Click="@AddComment" Icon="send" Size="ButtonSize.Large"/>
+                        <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
                     </RadzenStack>
                 </RadzenStack>
             </RadzenCard>
@@ -79,6 +59,13 @@
         background-color: transparent;
         box-shadow: none;
     }
+    .comment-item:not(.editing) .comment-editor.ql-container {
+         border: none;
+         height: auto;
+    }
+    .comment-item .comment-date{
+        color: var(--rz-base-700);
+    }
     .comment-editor-block {
         margin-top: 1em;
     }
@@ -89,7 +76,7 @@
     .comment-content {
         background-color: white;
         border-radius: 1em 1em 1em 0;
-        padding: 0.5em;
+        padding: 1.5em;
     }
     .comment-content-icon{
         border: 5px solid white;

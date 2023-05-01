@@ -1,0 +1,74 @@
+﻿@using System.Globalization
+@inject UserService UserService
+<div id="@BuildComment.Id">
+    <RadzenCard class="@CardClasses">
+        <RadzenRow AlignItems="AlignItems.End">
+            <RadzenColumn Size="1">
+                <RadzenStack Orientation="Orientation.Vertical">
+                    <RadzenGravatar Email="@UserService.GetEmail(BuildComment.Author)"></RadzenGravatar>
+                </RadzenStack>
+            </RadzenColumn>
+            <RadzenColumn>
+                <RadzenStack Orientation="Orientation.Vertical">
+                    <p class="comment-content">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                            <RadzenStack Orientation="Orientation.Horizontal" Style="width: 50%;">
+                                <RadzenText TextStyle="TextStyle.H6" Text="@BuildComment.Author"/>
+                                <RadzenText TextStyle="TextStyle.Body2" class="comment-date" Text="@GetDateDescription()" />
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal"  Style="width: 50%;" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">
+                                <RadzenButton Icon="edit" Visible="EditButtonVisible" Size="ButtonSize.Small" Variant="Variant.Text" Click="EditComment" />
+                                <RadzenButton Icon="save" Visible="_editing" Size="ButtonSize.Small" Variant="Variant.Text" Click="SaveComment" />
+                                <RadzenButton Icon="delete" Visible="_canEdit" Size="ButtonSize.Small" Variant="Variant.Text" Click="RemoveComment" />
+                            </RadzenStack>
+                        </RadzenStack>
+                        <QuillEditor Class="comment-editor" Readonly="@(!_editing)" @bind-Content="@BuildComment.Comment"/>
+                        <div class="comment-content-icon"></div>
+                    </p>
+                </RadzenStack>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+</div>
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+    [Parameter]
+    public BuildComment BuildComment { get; set; }
+    [Parameter]
+    public BuildDiscussionService DiscussionService { get; set; }
+
+    private bool _canEdit;
+    private bool _editing;
+    private bool EditButtonVisible => _canEdit && !_editing;
+    private string CardClasses => $"comment-item {(_editing ? "editing" : "")}";
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        if (AuthenticationState != null) {
+            var state = await AuthenticationState;
+            _canEdit = BuildComment.GetCanEdit(state.User);
+        }
+    }
+
+    private async Task RemoveComment() {
+        await DiscussionService.RemoveComment(BuildComment);
+    }
+
+    private async Task EditComment() {
+        _editing = true;
+        StateHasChanged();
+    }
+
+    private async Task SaveComment() {
+        await DiscussionService.UpdateComment(BuildComment);
+        _editing = false;
+        StateHasChanged();
+    }
+
+    private string GetDateDescription() {
+        return BuildComment.ModifiedOn != null ? 
+            $"{BuildComment.ModifiedOn:U} (edited)"
+            : BuildComment.CreatedOn.ToString("U", CultureInfo.CurrentCulture);
+    }
+
+}

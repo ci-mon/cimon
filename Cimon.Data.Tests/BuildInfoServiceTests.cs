@@ -26,7 +26,8 @@ public class BuildInfoServiceTests
 		_buildInfoProvider = Substitute.For<IBuildInfoProvider>();
 		_buildInfoProviders.Add(_buildInfoProvider);
 		_timer = new Subject<long>();
-		_buildDiscussionStoreService = new BuildDiscussionStoreService();
+		var notificationService = Substitute.For<INotificationService>();
+		_buildDiscussionStoreService = new BuildDiscussionStoreService(notificationService);
 		_service = new BuildInfoService(options, _buildInfoProviders, _buildDiscussionStoreService, span => _timer);
 		_sampleBuildLocator1 = new BuildLocator {
 			Id = "testId1",

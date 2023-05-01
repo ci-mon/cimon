@@ -14,6 +14,10 @@ public class UserService
 		return GetAll().Where(x => searchTerm == null || x.Name.Contains(searchTerm));
 	}
 
+	public IAsyncEnumerable<TeamInfo> GetTeams(string? searchTerm) {
+		return GetAllTeams().Where(x => searchTerm == null || x.Name.Contains(searchTerm));
+	}
+
 	private static async IAsyncEnumerable<UserInfo> GetAll() {
 		await Task.Yield();
 		yield return new UserInfo("test", new TeamInfo("testers"));
@@ -22,4 +26,5 @@ public class UserService
 	}
 	
 	public string GetEmail(string userName) => $"{userName}@creatio.com";
+
 }

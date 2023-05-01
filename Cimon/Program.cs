@@ -31,6 +31,7 @@ builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
+builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 
 WebApplication app = builder.Build();
 
@@ -52,5 +53,5 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapFallbackToPage("/_Host");
-app.MapFallbackToPage("/BuildStatus/{param?}", "/_Host");
+app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");
 app.Run();

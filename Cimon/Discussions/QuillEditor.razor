@@ -6,8 +6,19 @@
     private ElementReference editorContainer;
     private IJSObjectReference quillInstance;
     private string _content;
+    private bool _readonly;
 
     [Parameter] public string Class { get; set; }
+
+    [Parameter]
+    public bool Readonly {
+        get => _readonly;
+        set {
+            if (_readonly == value) return;
+            _readonly = value;
+            quillInstance?.InvokeVoidAsync("setReadonly", value);
+        }
+    }
 
     [Parameter]
     public string Content {
@@ -20,13 +31,14 @@
     }
 
     [Parameter] public EventCallback<string> ContentChanged { get; set; }
+    [Parameter] public EventCallback OnSend { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             quillInstance = await JsRuntime.InvokeAsync<IJSObjectReference>(
-                "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this)});
+                "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this), Readonly});
             await SetContent(Content);
         }
        
@@ -38,12 +50,14 @@
         _content = content;
         await ContentChanged.InvokeAsync(content);
     }
-
-    private async Task SetContent(string content)
+    
+    [JSInvokable]
+    public async Task Send()
     {
-        if (quillInstance != null)
-        {
-            await quillInstance.InvokeVoidAsync("setContent", content);
-        }
+        await OnSend.InvokeAsync();
+    }
+
+    private async Task SetContent(string content) {
+        await quillInstance.InvokeVoidAsync("setContent", content);
     }
 }

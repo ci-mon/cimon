@@ -1,16 +1,24 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Security.Claims;
 using AngleSharp.Html.Parser;
 
 namespace Cimon.Data;
 
 public class BuildComment
 {
+	public static string UnknownAuthor { get; } = "Guest";
+	public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 	public string Comment { get; set; }
 	public string Author { get; set; }
 	public IImmutableList<string> Mentions { get; set; } = ImmutableList<string>.Empty;
 	public string Id { get; set; } = Guid.NewGuid().ToString("N");
+	public DateTime? ModifiedOn { get; set; }
+
+	public bool GetCanEdit(ClaimsPrincipal? user) {
+		return Author == user?.Identity?.Name || Author == UnknownAuthor;
+	}
 }
 
 public enum BuildDiscussionStatus
@@ -25,7 +33,7 @@ public record BuildDiscussionState
 
 public class CommentData
 {
-	public string Author { get; set; } = "guest";
+	public string Author { get; set; } = BuildComment.UnknownAuthor;
 	public string Comment { get; set; } = string.Empty;
 }
 
@@ -101,5 +109,22 @@ public class BuildDiscussionService
 		_state.OnNext(new BuildDiscussionState {
 			Status = BuildDiscussionStatus.Closed
 		});
+	}
+
+	public async Task RemoveComment(BuildComment comment) {
+		var currentState = await _state.FirstAsync();
+		var state = currentState with {
+			Comments = currentState.Comments.Remove(comment)
+		};
+		_state.OnNext(state);
+	}
+
+	public async Task UpdateComment(BuildComment comment) {
+		comment.ModifiedOn = DateTime.UtcNow;
+		var currentState = await _state.FirstAsync();
+		var state = currentState with {
+			Comments = currentState.Comments.Replace(comment, comment)
+		};
+		_state.OnNext(state);
 	}
 }
