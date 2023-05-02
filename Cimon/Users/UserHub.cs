@@ -2,10 +2,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Principal;
 
 namespace Cimon.Hubs;
-
-using System.Security.Principal;
 
 public interface IUserClientApi
 {
@@ -42,4 +41,5 @@ public class UserHub : Hub<IUserClientApi>
 		_logger.LogInformation("User {Identifier} ({Name} {IsAuthenticated}) disconnected", Context.UserIdentifier,
 			identity?.Name, identity?.IsAuthenticated);
 	}
+
 }

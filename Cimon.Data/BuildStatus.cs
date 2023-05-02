@@ -4,6 +4,6 @@ public enum BuildStatus
 {
 	Success,
 	Failed,
-	SoonBeTimeToGoHome,
-	Silence
+	Investigated,
+	Fixed
 }

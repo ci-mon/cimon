@@ -26,7 +26,6 @@ builder.Services.AddOptions()
 	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)
 	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Jwt);
 
-// Radzen
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
@@ -35,11 +34,8 @@ builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_00
 
 WebApplication app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment()) {
 	app.UseExceptionHandler("/Error");
-
-	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
 

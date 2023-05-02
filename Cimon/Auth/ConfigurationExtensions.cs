@@ -93,9 +93,14 @@ public static class ConfigurationExtensions
 			.AddNegotiate()
 			.AddCookie()
 			.AddJwtBearer();
+		services.AddAuthorization(options => {
+			options.AddPolicy("LocalhostPolicy", policy =>
+				policy.Requirements.Add(new LocalhostRequirement()));
+		});
 		services.AddTransient<IStartupFilter, UserManagerFilter>();
 		services.AddTransient<IConfigureOptions<JwtBearerOptions>, AuthConfigurator>();
 		services.AddTransient<IConfigureOptions<CookieAuthenticationOptions>, AuthConfigurator>();
+		services.AddSingleton<IAuthorizationHandler, LocalhostRequirementHandler>();
 	}
 
 }

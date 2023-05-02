@@ -1,0 +1,4 @@
+﻿POST http://localhost:5001/api/internal/emulateAllBuildsAreGreen?value=true
+
+###
+POST http://localhost:5001/api/internal/emulateAllBuildsAreGreen?value=false
