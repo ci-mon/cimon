@@ -1,7 +1,5 @@
 ﻿namespace Cimon.Data;
 
-using System.Reactive.Linq;
-
 public static class EnumerableUtils
 {
 	public static async IAsyncEnumerable<T> SelectMany<TSource, T>(this IEnumerable<TSource> sources, Func<TSource, IAsyncEnumerable<T>> func) {
@@ -18,20 +16,5 @@ public static class EnumerableUtils
 			res.Add(item);
 		}
 		return res;
-	}
-}
-
-public static class ObservableUtils
-{
-	public static IObservable<TSource> OnSubscribe<TSource>(this IObservable<TSource> source, Action onSubscribe,
-			Action onDispose) {
-		return Observable.Create<TSource>(observer => {
-			onSubscribe?.Invoke();
-			IDisposable subscription = source.Subscribe(observer);
-			return () => {
-				subscription.Dispose();
-				onDispose?.Invoke();
-			};
-		});
 	}
 }

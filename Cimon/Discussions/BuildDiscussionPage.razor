@@ -27,6 +27,8 @@
         </RadzenColumn>
     </RadzenRow>
     </div>
+} else {
+    <RadzenText TextStyle="TextStyle.H1" Text="Discussion not found" />
 }
 <style>
     .container{
@@ -100,13 +102,12 @@
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
 
-    private BuildDiscussionService _discussionService;
-    private BuildDiscussionState _state;
+    private BuildDiscussionService? _discussionService;
+    private BuildDiscussionState? _state;
     private CommentData _newComment = new();
 
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        await DiscussionStoreService.OpenDiscussion(BuildId);
         DiscussionStoreService.GetDiscussionService(BuildId).Subscribe(this, () => _discussionService)
             .SelectMany(x => x.State).Subscribe(this, () => _state);
         await ClearComment();

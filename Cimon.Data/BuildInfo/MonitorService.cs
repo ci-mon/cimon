@@ -10,6 +10,7 @@ public class Monitor
 	public List<BuildLocator> Builds { get; set; } = new();
 	public string Title { get; set; }
 	public bool Removed { get; set; }
+	public bool AlwaysOnMonitoring { get; set; }
 }
 
 public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>

@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Claims;
 using AngleSharp.Html.Parser;
+using Optional;
 
 namespace Cimon.Data;
 
@@ -50,13 +51,14 @@ public class BuildDiscussionStoreService
 	public IObservable<BuildDiscussionService> GetDiscussionService(string buildId) {
 		return _allDiscussions.SelectMany(b => b).Where(b => b.BuildId == buildId);
 	}
-	public async Task OpenDiscussion(string buildId) {
+	public async Task<Option<BuildDiscussionService>> OpenDiscussion(string buildId) {
 		var currentDiscussions = await _allDiscussions.FirstAsync();
 		if (currentDiscussions.Any(x => x.BuildId == buildId)) {
-			return;
+			return Option.None<BuildDiscussionService>();
 		}
 		var service = new BuildDiscussionService(buildId, _notificationService);
 		_allDiscussions.OnNext(currentDiscussions.Add(service));
+		return service.Some();
 	}
 
 	public async Task CloseDiscussion(string buildId) {
@@ -106,9 +108,11 @@ public class BuildDiscussionService
 	}
 
 	public async Task Close() {
-		_state.OnNext(new BuildDiscussionState {
+		var currentState = await _state.FirstAsync();
+		_state.OnNext(currentState with {
 			Status = BuildDiscussionStatus.Closed
 		});
+		_state.OnCompleted();
 	}
 
 	public async Task RemoveComment(BuildComment comment) {

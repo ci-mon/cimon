@@ -2,14 +2,14 @@ namespace Cimon.Data;
 
 public record User
 {
-	public User(string name) {
-		Name = name;
-		UserName = name.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
+	public User(string fullName) {
+		FullName = fullName;
+		Name = fullName.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
 	}
 
-	public string Name { get; init; }
-	public string UserName { get; set; }
-	public string Email => $"{UserName}@creatio.com";
+	public string FullName { get; init; }
+	public string Name { get; set; }
+	public string Email => $"{Name}@creatio.com";
 
 }
 
@@ -72,4 +72,6 @@ public record BuildInfo
 	public int CommentsCount { get; set; }
 
 	public bool IsNotOk() => Status == BuildStatus.Failed;
+
+	public bool CanHaveDiscussion() => Status is BuildStatus.Failed or BuildStatus.Investigated or BuildStatus.Fixed;
 }

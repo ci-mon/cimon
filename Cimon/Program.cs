@@ -12,14 +12,12 @@ builder.Services.AddCors();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
-builder.Services.AddSingleton<MonitorService>();
-builder.Services.AddSingleton<BuildInfoService>();
+builder.Services.AddCimonData();
+
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
-builder.Services.AddSingleton<BuildDiscussionStoreService>();
-builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
-builder.Services.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList());
+
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
