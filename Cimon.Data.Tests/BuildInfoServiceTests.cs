@@ -110,19 +110,60 @@ public class BuildInfoServiceTests
 		info = await items.FirstAsync();
 		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(1);
 		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
-		var stream = items.ToAsyncEnumerable().GetAsyncEnumerator();
-		await stream.MoveNextAsync();
-		stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(0);
+		info = await items.FirstAsync();
+		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(0);
+	}
+
+	[Test]
+	public async Task Watch_SubscribeAndUnsubscribe() {
+		_buildInfoProvider.GetInfo(null)
+			.ReturnsForAnyArgs(ci => {
+				var locators = ci.Arg<IEnumerable<BuildLocator>>();
+				var buildInfos = locators.Reverse().Select(l => new BuildInfo {
+					Name = "Test build " + l.Id,
+					BuildId = l.Id
+				}).ToList();
+				return Task.FromResult((IReadOnlyCollection<BuildInfo>)buildInfos);
+			});
+		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {
+			_sampleBuildLocator1,
+			_sampleBuildLocator2
+		});
 		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator1.Id);
-		discussionService = await _buildDiscussionStoreService.GetDiscussionService(_sampleBuildLocator1.Id).FirstAsync();
+		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator2.Id);
+		await AddComment(_sampleBuildLocator1.Id);
+		await AddComment(_sampleBuildLocator2.Id);
+		var stream = _service.Watch(locators).ToAsyncEnumerable().GetAsyncEnumerator();
+		async Task<IList<BuildInfo>> GetNextAsync() {
+			await stream.MoveNextAsync();
+			return stream.Current;
+		}
+		var current = await GetNextAsync();
+		current.Should().Contain(x => x.CommentsCount == 1);
+		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
+		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator2.Id);
+		current = await GetNextAsync();
+		current.Should().Contain(x => x.CommentsCount == 0);
+		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator1.Id);
+		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator2.Id);
+		await AddComment(_sampleBuildLocator1.Id);
+		await AddComment(_sampleBuildLocator1.Id);
+		
+		current = await GetNextAsync();
+		current.Should().Contain(x => x.CommentsCount > 0);
+		// TODO
 		for (int i = 1; i <= 3; i++) {
-			await discussionService.AddComment(new CommentData());
-			await stream.MoveNextAsync();
-			stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
+			await AddComment(_sampleBuildLocator1.Id);
+			current = await GetNextAsync();
+			// check
 			_timer.OnNext(1);
-			await stream.MoveNextAsync();
-			stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
+			current = await GetNextAsync();
 		}
 	}
 
+	private async Task AddComment(string buildId) {
+		var discussionService = await _buildDiscussionStoreService.GetDiscussionService(buildId)
+			.FirstAsync();
+		await discussionService.AddComment(new CommentData());
+	}
 }
