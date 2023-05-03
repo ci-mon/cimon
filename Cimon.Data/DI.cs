@@ -7,7 +7,7 @@ public static class DI
 {
 	public static IServiceCollection AddCimonData(this IServiceCollection services) {
 		return services
-			.AddSingleton<BuildMonitoringService>()
+			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<BuildInfoService>()
 			.AddSingleton<BuildDiscussionStoreService>()
 			.AddSingleton<UserService>()

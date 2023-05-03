@@ -29,7 +29,7 @@ public class BuildInfoServiceTests
 		var notificationService = Substitute.For<INotificationService>();
 		_buildDiscussionStoreService = new BuildDiscussionStoreService(notificationService);
 		_service = new BuildInfoService(options, _buildInfoProviders, _buildDiscussionStoreService, 
-			Substitute.For<BuildMonitoringService>(), span => _timer);
+			Substitute.For<IBuildMonitoringService>(), span => _timer);
 		_sampleBuildLocator1 = new BuildLocator {
 			Id = "testId1",
 			CiSystem = CISystem.TeamCity
@@ -106,11 +106,19 @@ public class BuildInfoServiceTests
 		await discussionService.AddComment(new CommentData());
 		info = await items.FirstAsync();
 		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(1);
+		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
+		info = await items.FirstAsync();
+		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(0);
+		var discussionServiceSub = _buildDiscussionStoreService.GetDiscussionService(_sampleBuildLocator1.Id);
+		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator1.Id);
+		discussionService = await discussionServiceSub.FirstAsync();
+		for (int i = 1; i <= 3; i++) {
+			await discussionService.AddComment(new CommentData());
+			items = _service.Watch(locators);
+			info = await items.FirstAsync();
+			info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
+		}
 	}
 
-	[Test]
-	public void Watch_WhenDiscussionClosedAndOpenedAgain() {
-		// TODO
-	}
 
 }

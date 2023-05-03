@@ -17,7 +17,7 @@ public class BuildInfoService : IDisposable
 
 	public BuildInfoService(IOptions<BuildInfoMonitoringSettings> settings,
 			IList<IBuildInfoProvider> buildInfoProviders, BuildDiscussionStoreService discussionStore,
-			BuildMonitoringService buildMonitoringService, Func<TimeSpan, IObservable<long>>? timerFactory = null) {
+			IBuildMonitoringService buildMonitoringService, Func<TimeSpan, IObservable<long>>? timerFactory = null) {
 		_discussionStore = discussionStore;
 		_watchCts = new CancellationTokenSource();
 		timerFactory ??= Observable.Interval;
@@ -30,7 +30,7 @@ public class BuildInfoService : IDisposable
 				return buildInfos;
 			})
 			.SelectMany(buildInfos => Observable.FromAsync(async _ => {
-				await buildMonitoringService.OnBuildIfoReceived(buildInfos.ToImmutableArray());
+				await buildMonitoringService.CheckBuildInfo(buildInfos.ToImmutableArray());
 				return buildInfos;
 			}))
 			.TakeUntil(_ => _watchCts.IsCancellationRequested).Replay().RefCount(1);

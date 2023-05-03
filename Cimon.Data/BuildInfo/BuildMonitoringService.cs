@@ -1,12 +1,15 @@
 ﻿using System.Collections.Immutable;
-using System.Reactive.Linq;
 using Optional;
 using Optional.Collections;
-using Optional.Linq;
 
 namespace Cimon.Data;
 
-public class BuildMonitoringService
+public interface IBuildMonitoringService
+{
+	Task CheckBuildInfo(ImmutableArray<BuildInfo> buildInfos);
+}
+
+public class BuildMonitoringService : IBuildMonitoringService
 {
 	private readonly BuildDiscussionStoreService _discussionStore;
 	private Option<ImmutableArray<BuildInfo>> _previousState;
@@ -15,7 +18,7 @@ public class BuildMonitoringService
 		_discussionStore = discussionStore;
 	}
 
-	public async Task OnBuildIfoReceived(ImmutableArray<BuildInfo> buildInfos) {
+	public async Task CheckBuildInfo(ImmutableArray<BuildInfo> buildInfos) {
 		foreach (var current in buildInfos) {
 			await _previousState.FlatMap(x => x.FirstOrNone(x => x.BuildId == current.BuildId))
 				.Match(async previous => {
