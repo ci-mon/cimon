@@ -106,19 +106,23 @@ public class BuildInfoServiceTests
 		await discussionService.AddComment(new CommentData());
 		info = await items.FirstAsync();
 		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(1);
-		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
+		_timer.OnNext(1);
 		info = await items.FirstAsync();
-		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(0);
-		var discussionServiceSub = _buildDiscussionStoreService.GetDiscussionService(_sampleBuildLocator1.Id);
+		info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(1);
+		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
+		var stream = items.ToAsyncEnumerable().GetAsyncEnumerator();
+		await stream.MoveNextAsync();
+		stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(0);
 		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator1.Id);
-		discussionService = await discussionServiceSub.FirstAsync();
+		discussionService = await _buildDiscussionStoreService.GetDiscussionService(_sampleBuildLocator1.Id).FirstAsync();
 		for (int i = 1; i <= 3; i++) {
 			await discussionService.AddComment(new CommentData());
-			items = _service.Watch(locators);
-			info = await items.FirstAsync();
-			info.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
+			await stream.MoveNextAsync();
+			stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
+			_timer.OnNext(1);
+			await stream.MoveNextAsync();
+			stream.Current.Should().HaveCount(1).And.Subject.First().CommentsCount.Should().Be(i);
 		}
 	}
-
 
 }
