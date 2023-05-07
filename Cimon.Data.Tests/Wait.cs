@@ -6,15 +6,23 @@ using FluentAssertions.Execution;
 
 public static class Wait
 {
-	public static Task ForAssert(Action func, 
-			[CallerArgumentExpression("func")] string expression = null) {
-		return For(() => {
+	public static Task ForAssert(Action func,
+		[CallerArgumentExpression("func")] string expression = null) {
+		return ForAssert(() => {
 			func();
+			return Task.CompletedTask;
+		}, expression);
+	}
+
+	public static Task ForAssert(Func<Task> func, 
+			[CallerArgumentExpression("func")] string expression = null) {
+		return For(async () => {
+			await func();
 			return true;
 		}, true, expression);
 	}
 
-	private static async Task For(Func<bool> func, bool catchExceptions = false,
+	private static async Task For(Func<Task<bool>> func, bool catchExceptions = false,
 			[CallerArgumentExpression("func")] string expression = null) {
 		Exception? lastException = null;
 		try {
@@ -24,7 +32,7 @@ public static class Wait
 			while (await timer.WaitForNextTickAsync(cts.Token)) {
 				try {
 					using (new AssertionScope()) {
-						if (func()) {
+						if (await func()) {
 							return;
 						}
 					}

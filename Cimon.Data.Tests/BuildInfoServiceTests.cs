@@ -138,6 +138,12 @@ public class BuildInfoServiceTests
 			await stream.MoveNextAsync();
 			return stream.Current;
 		}
+		async Task WaitItem(Func<BuildInfo, bool> info) {
+			await Wait.ForAssert(async () => {
+				var current = await GetNextAsync();
+				current.Should().Contain(x => info(x));
+			});
+		}
 		var current = await GetNextAsync();
 		current.Should().Contain(x => x.CommentsCount == 1);
 		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
@@ -149,17 +155,15 @@ public class BuildInfoServiceTests
 		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator1.Id);
 		await _buildDiscussionStoreService.OpenDiscussion(_sampleBuildLocator2.Id);
 		await AddComment(_sampleBuildLocator1.Id);
+		await WaitItem(x => x.BuildId == _sampleBuildLocator1.Id && x.CommentsCount == 1);
 		await AddComment(_sampleBuildLocator1.Id);
-		
-		current = await GetNextAsync();
-		current.Should().Contain(x => x.CommentsCount > 0);
-		// TODO
+		await WaitItem(x => x.BuildId == _sampleBuildLocator1.Id && x.CommentsCount == 2);
 		for (int i = 1; i <= 3; i++) {
 			await AddComment(_sampleBuildLocator1.Id);
-			current = await GetNextAsync();
-			// check
+			var expectedComments = 2 + i;
+			await WaitItem(x => x.BuildId == _sampleBuildLocator1.Id && x.CommentsCount == expectedComments);
 			_timer.OnNext(1);
-			current = await GetNextAsync();
+			await WaitItem(x => x.BuildId == _sampleBuildLocator1.Id && x.CommentsCount == expectedComments);
 		}
 	}
 

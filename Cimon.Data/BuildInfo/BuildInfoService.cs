@@ -40,44 +40,40 @@ public class BuildInfoService : IDisposable
 	record BuildDiscussionInfo(BuildLocator Locator, BuildDiscussionState State);
 	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildLocator>> locators) {
 		var trackedLocators = locators.Do(TrackLocators);
-		var comments = GetComments(trackedLocators);
-		// TODO get current group for each locator using join
+		var comments = GetBuildDiscussionStates(trackedLocators);
 		return trackedLocators
-			.CombineLatest(_buildInfos)
-			.Select(CombineBuildInfos)
-			.CombineLatest(comments)
-			.Select(tuple => CombineBuildDiscussionState(tuple.First, tuple.Second));
+			.CombineLatest(_buildInfos).Select(CombineBuildInfos)
+			.CombineLatest(comments).Select(tuple => CombineBuildDiscussionState(tuple.First, tuple.Second))
+			.DistinctUntilChanged();
 	}
 
-	private IObservable<IReadOnlyCollection<BuildDiscussionInfo?>> GetComments(
+	private IObservable<IReadOnlyCollection<BuildDiscussionInfo>> GetBuildDiscussionStates(
 			IObservable<IReadOnlyList<BuildLocator>> trackedLocators) {
-		var result =
-			new BehaviorSubject<Dictionary<string, BuildDiscussionInfo>>(new Dictionary<string, BuildDiscussionInfo>());
-		var comments = trackedLocators
-			.SelectMany(locators =>
-				locators.Select(
-					locator => 
-						_discussionStore.GetDiscussionService(locator.Id)
-							.Select(s => s.State.Select(discussionState => 
-								(locator, discussionState)))
-							.Switch()
-					)).Switch();
-		return result.CombineLatest(comments).Do(tuple => {
-			var current = tuple.First;
+		var combinedState =
+			new BehaviorSubject<List<BuildDiscussionInfo>>(new List<BuildDiscussionInfo>());
+		IObservable<(BuildLocator locator, BuildDiscussionState discussionState)> comments = trackedLocators
+			.SelectMany(l => l)
+			.SelectMany(locator => _discussionStore.GetDiscussionService(locator.Id)
+				.Select(ds => ds.State)
+				.Switch()
+				.Select(state => (locator, state)));
+		return combinedState.CombineLatest(comments).Do(tuple => {
+			var currentItems = tuple.First;
 			var (locator, discussionState) = tuple.Second;
+			var currentItem = currentItems.Find(x => x.Locator.Id == locator.Id);
+			if (currentItem != null) {
+				currentItems.Remove(currentItem);
+			}
 			if (discussionState.Status == BuildDiscussionStatus.Closed) {
-				if (current.ContainsKey(locator.Id)) {
-					current.Remove(locator.Id);
-				}
 				return;
 			}
-			if (!current.TryGetValue(locator.Id, out var state)) {
-				state = new BuildDiscussionInfo(locator, discussionState);
+			if (currentItem != null) {
+				currentItem = currentItem with { State = discussionState };
 			} else {
-				state = state with { State = discussionState };
+				currentItem = new BuildDiscussionInfo(locator, discussionState);
 			}
-			current[locator.Id] = state;
-		}).Select(tuple => tuple.First.Values);
+			currentItems.Add(currentItem);
+		}).Select(tuple => tuple.First);
 	}
 
 	private IList<BuildInfo> CombineBuildDiscussionState(List<BuildInfo> buildInfos, 
