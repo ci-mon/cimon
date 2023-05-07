@@ -48,9 +48,10 @@ public class BuildDiscussionStoreService
 		_notificationService = notificationService;
 	}
 
-	public IObservable<BuildDiscussionService> GetDiscussionService(string buildId) {
-		return _allDiscussions.SelectMany(b => b).Where(b => b.BuildId == buildId);
+	public IObservable<IBuildDiscussionService> GetDiscussionService(string buildId) {
+		return _allDiscussions.SelectMany(x=>x).Where(s=>s.BuildId == buildId);
 	}
+
 	public async Task<Option<BuildDiscussionService>> OpenDiscussion(string buildId) {
 		var currentDiscussions = await _allDiscussions.FirstAsync();
 		if (currentDiscussions.Any(x => x.BuildId == buildId)) {
@@ -72,7 +73,17 @@ public class BuildDiscussionStoreService
 	}
 }
 
-public class BuildDiscussionService
+public interface IBuildDiscussionService
+{
+	IObservable<BuildDiscussionState> State { get; }
+	string BuildId { get; }
+	Task AddComment(CommentData data);
+	Task Close();
+	Task RemoveComment(BuildComment comment);
+	Task UpdateComment(BuildComment comment);
+}
+
+public class BuildDiscussionService : IBuildDiscussionService
 {
 
 	private readonly INotificationService _notificationService;

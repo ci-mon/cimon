@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Optional;
 
 namespace Cimon.Data;
 
@@ -36,36 +37,63 @@ public class BuildInfoService : IDisposable
 			.TakeUntil(_ => _watchCts.IsCancellationRequested).Replay().RefCount(1);
 	}
 
-	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildLocator>> builds) {
-		var locators = builds
-			.Do(list => {
-				var locators = new HashSet<BuildLocator>(_trackedLocators.Value.Concat(list));
-				if (!_trackedLocators.Value.SetEquals(locators)) {
-					_trackedLocators.OnNext(locators);
-				}
-			});
-		var comments = locators.SelectMany(locatorsList => locatorsList
-			.Select(locator =>
-				_discussionStore.GetDiscussionService(locator.Id)
-					.SelectMany(s => s.State.Select(discussionState=>(locator, discussionState))))
-			.Merge());
-		return locators
-			.CombineLatest(_buildInfos).Select(CombineBuildInfos)
-			.CombineLatest(comments.StartWith(default((BuildLocator, BuildDiscussionState))))
-			.Select(CombineBuildDiscussionState);
+	record BuildDiscussionInfo(BuildLocator Locator, BuildDiscussionState State);
+	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildLocator>> locators) {
+		var trackedLocators = locators.Do(TrackLocators);
+		var comments = GetComments(trackedLocators);
+		// TODO get current group for each locator using join
+		return trackedLocators
+			.CombineLatest(_buildInfos)
+			.Select(CombineBuildInfos)
+			.CombineLatest(comments)
+			.Select(tuple => CombineBuildDiscussionState(tuple.First, tuple.Second));
 	}
 
-	private List<BuildInfo> CombineBuildDiscussionState(
-			(List<BuildInfo> buildInfos, (BuildLocator, BuildDiscussionState) buildDiscussionState) tuple) {
-		var buildInfos = tuple.buildInfos;
-		if (tuple.buildDiscussionState == default) {
-			return buildInfos;
-		}
-		var buildInfo = buildInfos.Find(x => x.BuildId == tuple.buildDiscussionState.Item1.Id);
-		if (buildInfo != null) {
-			buildInfo.CommentsCount = tuple.buildDiscussionState.Item2.Comments.Count;
+	private IObservable<IReadOnlyCollection<BuildDiscussionInfo?>> GetComments(
+			IObservable<IReadOnlyList<BuildLocator>> trackedLocators) {
+		var result =
+			new BehaviorSubject<Dictionary<string, BuildDiscussionInfo>>(new Dictionary<string, BuildDiscussionInfo>());
+		var comments = trackedLocators
+			.SelectMany(locators =>
+				locators.Select(
+					locator => 
+						_discussionStore.GetDiscussionService(locator.Id)
+							.Select(s => s.State.Select(discussionState => 
+								(locator, discussionState)))
+							.Switch()
+					)).Switch();
+		return result.CombineLatest(comments).Do(tuple => {
+			var current = tuple.First;
+			var (locator, discussionState) = tuple.Second;
+			if (discussionState.Status == BuildDiscussionStatus.Closed) {
+				if (current.ContainsKey(locator.Id)) {
+					current.Remove(locator.Id);
+				}
+				return;
+			}
+			if (!current.TryGetValue(locator.Id, out var state)) {
+				state = new BuildDiscussionInfo(locator, discussionState);
+			} else {
+				state = state with { State = discussionState };
+			}
+			current[locator.Id] = state;
+		}).Select(tuple => tuple.First.Values);
+	}
+
+	private IList<BuildInfo> CombineBuildDiscussionState(List<BuildInfo> buildInfos, 
+		IReadOnlyCollection<BuildDiscussionInfo> buildDiscussionStates) {
+		foreach (var buildInfo in buildInfos) {
+			var discussionState = buildDiscussionStates.FirstOrDefault(x => x.Locator.Id == buildInfo.BuildId);
+			buildInfo.CommentsCount = discussionState?.State.Comments.Count ?? 0;
 		}
 		return buildInfos;
+	}
+
+	private void TrackLocators(IReadOnlyList<BuildLocator> list) {
+		var locators = new HashSet<BuildLocator>(_trackedLocators.Value.Concat(list));
+		if (!_trackedLocators.Value.SetEquals(locators)) {
+			_trackedLocators.OnNext(locators);
+		}
 	}
 
 	private List<BuildInfo> CombineBuildInfos((IReadOnlyList<BuildLocator> locators, List<BuildInfo> buildInfos) result) {

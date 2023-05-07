@@ -35,7 +35,7 @@ public record BuildInfo
 	public string BranchName { get; set; }
 
 	public string Commiters { get; set; }
-	public IList<User> CommitterUsers => Commiters.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => new User(x)).ToList();
+	public IList<User>? CommitterUsers => Commiters?.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => new User(x)).ToList();
 
 	private IList<string> _lastModificationBy;
 

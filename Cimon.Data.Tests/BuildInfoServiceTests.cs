@@ -141,6 +141,8 @@ public class BuildInfoServiceTests
 		var current = await GetNextAsync();
 		current.Should().Contain(x => x.CommentsCount == 1);
 		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator1.Id);
+		current = await GetNextAsync();
+		current.Should().Contain(x => x.CommentsCount == 0 && x.BuildId == _sampleBuildLocator1.Id);
 		await _buildDiscussionStoreService.CloseDiscussion(_sampleBuildLocator2.Id);
 		current = await GetNextAsync();
 		current.Should().Contain(x => x.CommentsCount == 0);
