@@ -1,3 +1,4 @@
+/*
 import {IRetryPolicy, RetryContext} from "@microsoft/signalr/src/IRetryPolicy";
 import {app, BrowserWindow, session} from "electron";
 import {HubConnectionBuilder} from "@microsoft/signalr"
@@ -16,13 +17,16 @@ const createWindow = async () => {
     const win = new BrowserWindow({
         width: 400,
         height: 800,
+        show: false
         //autoHideMenuBar: true
     });
 
+
     // TODO open login page, get access token and use it in signalR connection
-    win.loadURL('http://localhost:5001/auth/token');
+    await win.loadURL('http://localhost:5001/auth/token');
+
 }
 
-app.whenReady().then(() => {
-    createWindow()
-})
+app.whenReady().then(async () => {
+    await createWindow()
+})*/
