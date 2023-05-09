@@ -58,22 +58,27 @@ public class BuildInfoService : IDisposable
 				.Switch()
 				.Select(state => (locator, state)));
 		return combinedState.CombineLatest(comments).Do(tuple => {
-			var currentItems = tuple.First;
-			var (locator, discussionState) = tuple.Second;
-			var currentItem = currentItems.Find(x => x.Locator.Id == locator.Id);
-			if (currentItem != null) {
-				currentItems.Remove(currentItem);
-			}
-			if (discussionState.Status == BuildDiscussionStatus.Closed) {
-				return;
-			}
-			if (currentItem != null) {
-				currentItem = currentItem with { State = discussionState };
-			} else {
-				currentItem = new BuildDiscussionInfo(locator, discussionState);
-			}
-			currentItems.Add(currentItem);
-		}).Select(tuple => tuple.First);
+				var currentItems = tuple.First;
+				var (locator, discussionState) = tuple.Second;
+				var currentItem = currentItems.Find(x => x.Locator.Id == locator.Id);
+				if (currentItem != null) {
+					currentItems.Remove(currentItem);
+				}
+
+				if (discussionState.Status == BuildDiscussionStatus.Closed) {
+					return;
+				}
+
+				if (currentItem != null) {
+					currentItem = currentItem with { State = discussionState };
+				}
+				else {
+					currentItem = new BuildDiscussionInfo(locator, discussionState);
+				}
+
+				currentItems.Add(currentItem);
+			}).Select(tuple => tuple.First)
+			.StartWith((IReadOnlyCollection<BuildDiscussionInfo>)new List<BuildDiscussionInfo>());
 	}
 
 	private IList<BuildInfo> CombineBuildDiscussionState(List<BuildInfo> buildInfos, 
