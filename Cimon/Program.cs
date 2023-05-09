@@ -4,6 +4,7 @@ using Cimon.Data;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.Hubs;
+using Cimon.Shared;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using Radzen;
@@ -14,6 +15,8 @@ builder.Services.AddCors();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
+builder.Services.AddTransient<UnprotectedLocalStorage>();
+
 builder.Services.AddCimonData();
 
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
@@ -28,6 +31,7 @@ builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 		return state.User;
 	};
 });
+
 
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))

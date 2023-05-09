@@ -1,0 +1,26 @@
+﻿@page
+@model Cimon.Pages.Desktop
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<div>
+    <script>
+    (async function() {
+        if (!window.CimonDesktop){
+            console.log('CimonDesktop not ready');
+        }
+        await window.CimonDesktop?.init()
+    })();
+    </script>
+</div>
+</body>
+</html>
