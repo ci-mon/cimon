@@ -7,7 +7,7 @@
         <RadzenRow AlignItems="AlignItems.End">
             <RadzenColumn Size="1">
                 <RadzenStack Orientation="Orientation.Vertical">
-                    <RadzenGravatar Email="@UserListService.GetEmail(BuildComment.Author)"></RadzenGravatar>
+                    <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn>
@@ -15,7 +15,7 @@
                     <p class="comment-content">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
                             <RadzenStack Orientation="Orientation.Horizontal" Style="width: 50%;">
-                                <RadzenText TextStyle="TextStyle.H6" Text="@BuildComment.Author"/>
+                                <RadzenText TextStyle="TextStyle.H6" Text="@BuildComment.Author.Name"/>
                                 <RadzenText TextStyle="TextStyle.Body2" class="comment-date" Text="@GetDateDescription()" />
                             </RadzenStack>
                             <RadzenStack Orientation="Orientation.Horizontal"  Style="width: 50%;" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">

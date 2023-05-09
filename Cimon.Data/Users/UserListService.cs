@@ -24,7 +24,5 @@ public class UserListService
 		yield return new UserInfo("bob", new TeamInfo("rnd"));
 		yield return new UserInfo("alice", new TeamInfo("rnd"));
 	}
-	
-	public string GetEmail(string userName) => $"{userName}@creatio.com";
 
 }

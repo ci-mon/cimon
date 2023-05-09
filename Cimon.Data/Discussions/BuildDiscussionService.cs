@@ -13,7 +13,9 @@ public class BuildDiscussionService : IBuildDiscussionService
 	private readonly INotificationService _notificationService;
 	private readonly BehaviorSubject<BuildDiscussionState> _state = new(new BuildDiscussionState());
 	public IObservable<BuildDiscussionState> State => _state;
-	public IObservable<IImmutableList<BuildComment>> Comments => _state.Select(x => x.Comments);
+
+	public IObservable<IImmutableList<BuildComment>> Comments => _state.Select(x =>
+		x.Status == BuildDiscussionStatus.Open ? x.Comments : ImmutableArray<BuildComment>.Empty);
 
 	public BuildDiscussionService(string buildId, INotificationService notificationService) {
 		BuildId = buildId;
@@ -24,7 +26,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 
 	public async Task AddComment(CommentData data) {
 		var comment = new BuildComment {
-			Author = data.Author.Id,
+			Author = data.Author,
 			Comment = data.Comment,
 			Mentions = await ExtractMentionedUsers(data.Comment)
 		};

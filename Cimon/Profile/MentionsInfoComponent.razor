@@ -25,7 +25,7 @@
 
     void ShowTooltip(ElementReference elementReference) {
         var message = $"You were mentioned {_mentionsCount} times";
-        var color = _mentionsCount > 0 ? "--rz-secondary" : "--rz-primary";
+        var color = _mentionsCount > 0 ? "--rz-danger" : "--rz-primary";
         TooltipService.Open(elementReference, message, new TooltipOptions {
             Style = $"background-color: var({color}); color: var(--rz-text-contrast-color)",
             Position = TooltipPosition.Bottom,
