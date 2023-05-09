@@ -1,4 +1,5 @@
 ﻿using Cimon.Data;
+using Cimon.Data.Users;
 using Cimon.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -13,8 +14,8 @@ public class NotificationService : INotificationService
 	}
 
 	public async Task Notify(string buildId, string commentId, string messageAuthor, 
-			IReadOnlyCollection<string> groups, string comment) {
-		await _hubContext.Clients.Groups(groups).NotifyWithUrl($"/buildDiscussion/{buildId}#{commentId}",
+			IReadOnlyCollection<UserId> groups, string comment) {
+		await _hubContext.Clients.Groups(groups.Select(x=>x.Id)).NotifyWithUrl($"/buildDiscussion/{buildId}#{commentId}",
 			$"Hi there {messageAuthor} mentioned you in a comment", comment);
 	}
 }

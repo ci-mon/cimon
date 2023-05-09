@@ -1,13 +1,16 @@
 ﻿@using Cimon.Auth
-<RadzenProfileMenu>
-    <Template>
-        <RadzenLabel>@_name</RadzenLabel>
-        <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_email"></RadzenGravatar>
-    </Template>
-    <ChildContent>
-        <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
-    </ChildContent>
-</RadzenProfileMenu>
+<RadzenStack Orientation="Orientation.Horizontal">
+    <RadzenProfileMenu>
+        <Template>
+            <RadzenLabel>@_name</RadzenLabel>
+            <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_email"></RadzenGravatar>
+        </Template>
+        <ChildContent>
+            <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
+        </ChildContent>
+    </RadzenProfileMenu>
+    <MentionsInfoComponent />
+</RadzenStack>
 <style>
     .rz-menu.rz-profile-menu{
         padding: 0;

@@ -2,7 +2,9 @@ using Cimon;
 using Cimon.Auth;
 using Cimon.Data;
 using Cimon.Data.TeamCity;
+using Cimon.Data.Users;
 using Cimon.Hubs;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using Radzen;
 
@@ -17,6 +19,15 @@ builder.Services.AddCimonData();
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
 builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
+	return async () => {
+		var authState = provider.GetService<Task<AuthenticationState>>();
+		if (authState == null) return provider.GetService<IHttpContextAccessor>()?.HttpContext?.User;
+		var state = await authState;
+		return state.User;
+	};
+});
 
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOption"))

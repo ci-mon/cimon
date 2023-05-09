@@ -1,4 +1,6 @@
 ﻿using Cimon.Data;
+using Cimon.Data.Discussions;
+using Cimon.Data.Users;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -10,7 +12,10 @@ public static class DI
 			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<BuildInfoService>()
 			.AddSingleton<BuildDiscussionStoreService>()
-			.AddSingleton<UserService>()
+			.AddSingleton<UserListService>()
+			.AddSingleton<MentionsService>()
+			.AddSingleton<ITechnicalUsers, TechnicalUsers>()
+			.AddScoped<ICurrentUserAccessor, CurrentCurrentUserAccessor>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
 			.AddSingleton<MonitorService>();
 	}

@@ -1,9 +1,9 @@
-﻿namespace Cimon.Data;
+﻿namespace Cimon.Data.Users;
 
 public record UserInfo(string Name, TeamInfo Team);
 
 public record TeamInfo(string Name);
-public class UserService
+public class UserListService
 {
 	public async IAsyncEnumerable<TeamInfo> GetAllTeams() {
 		yield return new TeamInfo("rnd");

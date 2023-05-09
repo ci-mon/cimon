@@ -1,17 +1,6 @@
+using Cimon.Data.Users;
+
 namespace Cimon.Data;
-
-public record User
-{
-	public User(string fullName) {
-		FullName = fullName;
-		Name = fullName.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
-	}
-
-	public string FullName { get; init; }
-	public string Name { get; set; }
-	public string Email => $"{Name}@creatio.com";
-
-}
 
 public record BuildInfo
 {
@@ -35,7 +24,7 @@ public record BuildInfo
 	public string BranchName { get; set; }
 
 	public string Commiters { get; set; }
-	public IList<User>? CommitterUsers => Commiters?.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => new User(x)).ToList();
+	public IList<User>? CommitterUsers => Commiters?.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(User.FromFullName).ToList();
 
 	private IList<string> _lastModificationBy;
 

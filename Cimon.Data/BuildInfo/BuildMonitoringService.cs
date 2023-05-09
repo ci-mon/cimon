@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Cimon.Data.Users;
 using Optional;
 using Optional.Collections;
 
@@ -13,9 +14,11 @@ public class BuildMonitoringService : IBuildMonitoringService
 {
 	private readonly BuildDiscussionStoreService _discussionStore;
 	private Option<ImmutableArray<BuildInfo>> _previousState;
+	private ITechnicalUsers _technicalUsers;
 
-	public BuildMonitoringService(BuildDiscussionStoreService discussionStore) {
+	public BuildMonitoringService(BuildDiscussionStoreService discussionStore, ITechnicalUsers technicalUsers) {
 		_discussionStore = discussionStore;
+		_technicalUsers = technicalUsers;
 	}
 
 	public async Task CheckBuildInfo(ImmutableArray<BuildInfo> buildInfos) {
@@ -39,7 +42,7 @@ public class BuildMonitoringService : IBuildMonitoringService
 	private async Task OpenDiscussion(BuildInfo current) {
 		var discussion = await _discussionStore.OpenDiscussion(current.BuildId);
 		await discussion.MatchSomeAsync(x => x.AddComment(new CommentData {
-			Author = "Monitor bot",
+			Author = _technicalUsers.MonitoringBot,
 			Comment = BuildCommentMessage(current)
 		}));
 	}

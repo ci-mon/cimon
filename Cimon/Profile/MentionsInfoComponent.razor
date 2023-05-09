@@ -1,0 +1,39 @@
+﻿@using Cimon.Data.Discussions
+@using Cimon.Data.Users
+@inherits ReactiveComponent
+@inject TooltipService TooltipService
+@inject NavigationManager NavigationManager
+@inject MentionsService MentionsService
+@inject ICurrentUserAccessor CurrentUserAccessor
+<RadzenBadge class="mentions-badge"  BadgeStyle="@BadgeStyle" MouseEnter="@(ShowTooltip)">
+    <RadzenButton Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="OpenMentions" Text="@_mentionsCount.ToString()" 
+                  Style="color: var(--rz-white);"/>
+</RadzenBadge>
+<style>
+    .mentions-badge {
+        align-self: center;
+    }
+</style>
+@code {
+    private int _mentionsCount = 0;
+    private BadgeStyle BadgeStyle => _mentionsCount > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
+
+    protected override async Task OnInitializedAsync() {
+        var user = await CurrentUserAccessor.Current;
+        MentionsService.GetMentionsCount(user).Subscribe(this, () => _mentionsCount);
+    }
+
+    void ShowTooltip(ElementReference elementReference) {
+        var message = $"You were mentioned {_mentionsCount} times";
+        var color = _mentionsCount > 0 ? "--rz-secondary" : "--rz-primary";
+        TooltipService.Open(elementReference, message, new TooltipOptions {
+            Style = $"background-color: var({color}); color: var(--rz-text-contrast-color)",
+            Position = TooltipPosition.Bottom,
+        });
+    }
+
+    private void OpenMentions() {
+        NavigationManager.NavigateTo("/mentions");
+    }
+
+}

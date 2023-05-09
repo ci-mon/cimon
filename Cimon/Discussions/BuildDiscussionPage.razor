@@ -1,8 +1,10 @@
 ﻿@namespace Cimon.Discussions
 @page "/buildDiscussion/{buildId?}"
 @using System.Reactive.Linq
+@using Cimon.Data.Users
 @inject BuildDiscussionStoreService DiscussionStoreService
 @inject IJSRuntime JsRuntime;
+@inject ICurrentUserAccessor CurrentUserAccessor;
 @inherits ReactiveComponent
 
 @if (_state != null) {
@@ -88,13 +90,11 @@
 @code {
     [Parameter]
     public string? BuildId { get; set; }
-    
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthenticationState { get; set; }
 
     private BuildDiscussionService? _discussionService;
     private BuildDiscussionState? _state;
     private CommentData _newComment = new();
+    private User _user;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
@@ -103,15 +103,15 @@
 
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
+        _user = await CurrentUserAccessor.Current;
         DiscussionStoreService.GetDiscussionService(BuildId).Subscribe(this, () => _discussionService)
             .SelectMany(x => x.State).Subscribe(this, () => _state);
         await ClearComment();
     }
 
     private async Task ClearComment() {
-        var authenticationState = await AuthenticationState;
         _newComment = new CommentData {
-            Author = authenticationState.User.Identity.Name ?? "Guest"
+            Author = _user
         };
     }
 

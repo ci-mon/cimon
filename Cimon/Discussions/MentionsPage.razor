@@ -1,0 +1,36 @@
+﻿@page "/mentions"
+@using Cimon.Data.Discussions
+@using Cimon.Data.Users
+@inherits ReactiveComponent
+@inject MentionsService MentionsService
+@inject ICurrentUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+<PageTitle>Mentions</PageTitle>
+<RadzenCard>
+    @if (_mentions == null) {
+        <RadzenText TextStyle="TextStyle.H2" Text="All good..." />
+    } else {
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start">
+            <RadzenText Text="@StatusText" />
+            @foreach (var mention in _mentions) {
+                <RadzenStack Orientation="Orientation.Horizontal">
+                    <RadzenButton Text="@mention.BuildId" Click="() => GoToDiscussion(mention.BuildId)"/>
+                </RadzenStack>
+            }
+        </RadzenStack>
+    }
+</RadzenCard>
+@code {
+    private IReadOnlyCollection<MentionInfo> _mentions;
+    private string StatusText => $"You was mentioned in {_mentions.Count} builds";
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        var user = await UserAccessor.Current;
+        MentionsService.GetMentions(user).Subscribe(this, () => _mentions);
+    }
+
+    private void GoToDiscussion(string buildId) {
+        NavigationManager.NavigateTo($"buildDiscussion/{buildId}");
+    }
+
+}

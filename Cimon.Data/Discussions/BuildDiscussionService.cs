@@ -1,88 +1,11 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Security.Claims;
 using AngleSharp;
 using AngleSharp.Html.Parser;
-using Optional;
+using Cimon.Data.Users;
 
 namespace Cimon.Data;
-
-public class BuildComment
-{
-	public static string UnknownAuthor { get; } = "Guest";
-	public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-	public string Comment { get; set; }
-	public string Author { get; set; }
-	public IImmutableList<string> Mentions { get; set; } = ImmutableList<string>.Empty;
-	public string Id { get; set; } = $"c_{Guid.NewGuid():N}";
-	public DateTime? ModifiedOn { get; set; }
-
-	public bool GetCanEdit(ClaimsPrincipal? user) {
-		return Author == user?.Identity?.Name || Author == UnknownAuthor;
-	}
-}
-
-public enum BuildDiscussionStatus
-{
-	Open, Closed
-}
-public record BuildDiscussionState
-{
-	public IImmutableList<BuildComment> Comments { get; set; } = ImmutableList<BuildComment>.Empty;
-	public BuildDiscussionStatus Status { get; set; }
-}
-
-public class CommentData
-{
-	public string Author { get; set; } = BuildComment.UnknownAuthor;
-	public string Comment { get; set; } = string.Empty;
-}
-
-public class BuildDiscussionStoreService
-{
-	private readonly INotificationService _notificationService;
-	private readonly BehaviorSubject<ImmutableList<BuildDiscussionService>> _allDiscussions =
-		new(ImmutableList<BuildDiscussionService>.Empty);
-
-	public BuildDiscussionStoreService(INotificationService notificationService) {
-		_notificationService = notificationService;
-	}
-
-	public IObservable<IBuildDiscussionService> GetDiscussionService(string buildId) {
-		return _allDiscussions.SelectMany(x=>x).Where(s=>s.BuildId == buildId);
-	}
-
-	public async Task<Option<BuildDiscussionService>> OpenDiscussion(string buildId) {
-		var currentDiscussions = await _allDiscussions.FirstAsync();
-		if (currentDiscussions.Any(x => x.BuildId == buildId)) {
-			return Option.None<BuildDiscussionService>();
-		}
-		var service = new BuildDiscussionService(buildId, _notificationService);
-		_allDiscussions.OnNext(currentDiscussions.Add(service));
-		return service.Some();
-	}
-
-	public async Task CloseDiscussion(string buildId) {
-		var currentDiscussions = await _allDiscussions.FirstAsync();
-		var exiting = currentDiscussions.Find(x => x.BuildId == buildId);
-		if (exiting == null) {
-			return;
-		}
-		await exiting.Close();
-		_allDiscussions.OnNext(currentDiscussions.Remove(exiting));
-	}
-}
-
-public interface IBuildDiscussionService
-{
-	IObservable<BuildDiscussionState> State { get; }
-	string BuildId { get; }
-	Task AddComment(CommentData data);
-	Task Close();
-	Task RemoveComment(BuildComment comment);
-	Task UpdateComment(BuildComment comment);
-}
 
 public class BuildDiscussionService : IBuildDiscussionService
 {
@@ -90,6 +13,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 	private readonly INotificationService _notificationService;
 	private readonly BehaviorSubject<BuildDiscussionState> _state = new(new BuildDiscussionState());
 	public IObservable<BuildDiscussionState> State => _state;
+	public IObservable<IImmutableList<BuildComment>> Comments => _state.Select(x => x.Comments);
 
 	public BuildDiscussionService(string buildId, INotificationService notificationService) {
 		BuildId = buildId;
@@ -100,7 +24,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 
 	public async Task AddComment(CommentData data) {
 		var comment = new BuildComment {
-			Author = data.Author,
+			Author = data.Author.Id,
 			Comment = data.Comment,
 			Mentions = await ExtractMentionedUsers(data.Comment)
 		};
@@ -109,7 +33,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 			Comments = currentState.Comments.Add(comment)
 		};
 		var commentSimpleText = ExtractText(comment);
-		await _notificationService.Notify(BuildId, comment.Id, data.Author, comment.Mentions, commentSimpleText);
+		await _notificationService.Notify(BuildId, comment.Id, data.Author.Name, comment.Mentions, commentSimpleText);
 		_state.OnNext(state);
 	}
 
@@ -120,11 +44,12 @@ public class BuildDiscussionService : IBuildDiscussionService
 		return document.DocumentElement.TextContent;
 	}
 
-	private async Task<IImmutableList<string>> ExtractMentionedUsers(string content) {
+	private async Task<IImmutableList<UserId>> ExtractMentionedUsers(string content) {
 		var parser = new HtmlParser();
 		var document = await parser.ParseDocumentAsync(content);
 		var mentionElements = document.QuerySelectorAll("span.mention");
-		return mentionElements.Select(mention => mention.GetAttribute("data-id")).Where(x=>x != null).ToImmutableList()!;
+		return mentionElements.Select(mention => mention.GetAttribute("data-id")).Where(x => x != null)
+			.Select(x => new UserId(x!)).ToImmutableList();
 	}
 
 	public async Task Close() {

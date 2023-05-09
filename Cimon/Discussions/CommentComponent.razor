@@ -1,11 +1,13 @@
 ﻿@using System.Globalization
-@inject UserService UserService
+@using Cimon.Data.Users
+@inject UserListService UserListService
+@inject ICurrentUserAccessor CurrentUserAccessor
 <div id="@BuildComment.Id">
     <RadzenCard class="@CardClasses">
         <RadzenRow AlignItems="AlignItems.End">
             <RadzenColumn Size="1">
                 <RadzenStack Orientation="Orientation.Vertical">
-                    <RadzenGravatar Email="@UserService.GetEmail(BuildComment.Author)"></RadzenGravatar>
+                    <RadzenGravatar Email="@UserListService.GetEmail(BuildComment.Author)"></RadzenGravatar>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn>
@@ -31,8 +33,6 @@
     </RadzenCard>
 </div>
 @code {
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthenticationState { get; set; }
     [Parameter]
     public BuildComment BuildComment { get; set; }
     [Parameter]
@@ -44,10 +44,8 @@
     private string CardClasses => $"comment-item {(_editing ? "editing" : "")}";
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        if (AuthenticationState != null) {
-            var state = await AuthenticationState;
-            _canEdit = BuildComment.GetCanEdit(state.User);
-        }
+        var user = await CurrentUserAccessor.Current;
+        _canEdit = BuildComment.GetCanEditBy(user);
     }
 
     private async Task RemoveComment() {
