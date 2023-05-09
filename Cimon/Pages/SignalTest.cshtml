@@ -18,7 +18,8 @@
     <p>{{ UserName }}</p>
     <button @@click="notify">+</button>
     <li v-for="item in messages">
-        <a v-bind:href="item.url">{{ item.msg }}</a>
+        <a v-bind:href="item.url">{{ item.header }}</a>
+        <p>{{ item.message }}</p>
     </li>
 </div>
 <script type="module" src="/js/SignalTest.js"></script>

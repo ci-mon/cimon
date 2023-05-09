@@ -4,7 +4,7 @@
 <div class="@Class" @ref="editorContainer"></div>
 @code {
     private ElementReference editorContainer;
-    private IJSObjectReference quillInstance;
+    private IJSObjectReference? _quillInstance;
     private string _content;
     private bool _readonly;
 
@@ -16,7 +16,7 @@
         set {
             if (_readonly == value) return;
             _readonly = value;
-            quillInstance?.InvokeVoidAsync("setReadonly", value);
+            _quillInstance?.InvokeVoidAsync("setReadonly", value);
         }
     }
 
@@ -37,7 +37,7 @@
     {
         if (firstRender)
         {
-            quillInstance = await JsRuntime.InvokeAsync<IJSObjectReference>(
+            _quillInstance = await JsRuntime.InvokeAsync<IJSObjectReference>(
                 "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this), Readonly});
             await SetContent(Content);
         }
@@ -58,6 +58,6 @@
     }
 
     private async Task SetContent(string content) {
-        await quillInstance.InvokeVoidAsync("setContent", content);
+        if (_quillInstance != null) await _quillInstance.InvokeVoidAsync("setContent", content);
     }
 }

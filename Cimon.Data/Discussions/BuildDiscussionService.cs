@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Security.Claims;
+using AngleSharp;
 using AngleSharp.Html.Parser;
 using Optional;
 
@@ -14,7 +15,7 @@ public class BuildComment
 	public string Comment { get; set; }
 	public string Author { get; set; }
 	public IImmutableList<string> Mentions { get; set; } = ImmutableList<string>.Empty;
-	public string Id { get; set; } = Guid.NewGuid().ToString("N");
+	public string Id { get; set; } = $"c_{Guid.NewGuid():N}";
 	public DateTime? ModifiedOn { get; set; }
 
 	public bool GetCanEdit(ClaimsPrincipal? user) {
@@ -107,10 +108,18 @@ public class BuildDiscussionService : IBuildDiscussionService
 		var state = currentState with {
 			Comments = currentState.Comments.Add(comment)
 		};
-		await _notificationService.Notify(BuildId, comment.Id, data.Author, comment.Mentions);
+		var commentSimpleText = ExtractText(comment);
+		await _notificationService.Notify(BuildId, comment.Id, data.Author, comment.Mentions, commentSimpleText);
 		_state.OnNext(state);
 	}
-	
+
+	private string ExtractText(BuildComment comment) {
+		var context = BrowsingContext.New(Configuration.Default);
+		var parser = context.GetService<IHtmlParser>();
+		var document = parser.ParseDocument(comment.Comment);
+		return document.DocumentElement.TextContent;
+	}
+
 	private async Task<IImmutableList<string>> ExtractMentionedUsers(string content) {
 		var parser = new HtmlParser();
 		var document = await parser.ParseDocumentAsync(content);

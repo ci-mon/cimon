@@ -12,8 +12,9 @@ public class NotificationService : INotificationService
 		_hubContext = hubContext;
 	}
 
-	public async Task Notify(string buildId, string commentId, string messageAuthor, IReadOnlyCollection<string> groups) {
-		await _hubContext.Clients.Groups(groups).NotifyWithUrl($"/buildStatus/{buildId}#{commentId}",
-			$"Hi there {messageAuthor} mentioned you in a comment");
+	public async Task Notify(string buildId, string commentId, string messageAuthor, 
+			IReadOnlyCollection<string> groups, string comment) {
+		await _hubContext.Clients.Groups(groups).NotifyWithUrl($"/buildDiscussion/{buildId}#{commentId}",
+			$"Hi there {messageAuthor} mentioned you in a comment", comment);
 	}
 }

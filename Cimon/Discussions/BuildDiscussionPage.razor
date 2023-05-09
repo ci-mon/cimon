@@ -2,6 +2,7 @@
 @page "/buildDiscussion/{buildId?}"
 @using System.Reactive.Linq
 @inject BuildDiscussionStoreService DiscussionStoreService
+@inject IJSRuntime JsRuntime;
 @inherits ReactiveComponent
 
 @if (_state != null) {
@@ -80,19 +81,8 @@
         border-radius: 1em 1em 1em 0;
         padding: 1.5em;
     }
-    .comment-content-icon{
-        border: 5px solid white;
-        border-top: none;
-        border-left: none;
-        width: 1em;
-        height: 1em;
-        position: relative;
-        left: -1.5em;
-        bottom: -0.5em;
-    }
-    .comment-content-icon::after {
-        content: '';
-        background-color: #a2e7ff;
+    .highlighted-by-hash .comment-content {
+        box-shadow: inset 0 0 5px 3px #0bc3a775, 0 0 5px 4px #0aa38b91;
     }
 </style>
 @code {
@@ -105,6 +95,11 @@
     private BuildDiscussionService? _discussionService;
     private BuildDiscussionState? _state;
     private CommentData _newComment = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await base.OnAfterRenderAsync(firstRender);
+        await JsRuntime.InvokeVoidAsync("interactiveAPI.highlightElementByHash");
+    }
 
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();

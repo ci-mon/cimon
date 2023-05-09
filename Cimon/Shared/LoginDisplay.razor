@@ -1,17 +1,10 @@
 ﻿@using Cimon.Auth
+@using Cimon.Profile
 @inject ContextMenuService ContextMenuService
 @inject NavigationManager NavigationManager
 <AuthorizeView>
     <Authorized>
-        <RadzenProfileMenu>
-            <Template>
-                <RadzenLabel>@_name</RadzenLabel>
-                <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_email"></RadzenGravatar>
-            </Template>
-            <ChildContent>
-                <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
-            </ChildContent>
-        </RadzenProfileMenu>
+        <ProfileComponent />
     </Authorized>
     <NotAuthorized>
         <RadzenMenu >
@@ -22,27 +15,8 @@
         </RadzenMenu>
     </NotAuthorized>
 </AuthorizeView>
-<style>
-    .rz-menu.rz-profile-menu{
-        padding: 0;
-    }
-</style>
+
 @code {
-
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthenticationState { get; set; }
-
-    private string _email;
-    private string? _name;
-
-    protected override async Task OnInitializedAsync() {
-        await base.OnInitializedAsync();
-        AuthenticationState state = await AuthenticationState;
-        if (state.User.Identity != null) {
-            _email = $"{state.User.Identity.GetUserName()}@creatio.com";
-            _name = state.User.Identity.Name;
-        }
-    }
 
     void OnLoginMenuClicked(MenuItemEventArgs args) {
         NavigationManager.NavigateTo(args.Path);

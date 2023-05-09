@@ -8,7 +8,7 @@ namespace Cimon.Hubs;
 
 public interface IUserClientApi
 {
-	Task NotifyWithUrl(string url, string message);
+	Task NotifyWithUrl(string url, string header, string message);
 }
 
 [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme}")]
