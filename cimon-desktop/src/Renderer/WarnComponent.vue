@@ -5,7 +5,8 @@ import {useRoute} from "vue-router";
 const route = useRoute();
 
 enum WarnCodes {
-    Unavailable = 'unavailable'
+    Unavailable = 'unavailable',
+    Refused = 'ERR_CONNECTION_REFUSED',
 }
 
 interface Alert {
@@ -15,6 +16,7 @@ interface Alert {
 let message: string;
 switch (route.params.messageCode){
     case WarnCodes.Unavailable:
+    case WarnCodes.Refused:
         message = "Application unavailable";
         break;
     default:

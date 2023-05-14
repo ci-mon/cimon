@@ -29,7 +29,7 @@ contextBridge.exposeInMainWorld('CimonDesktop', {
 
 window.onload = async () => {
     if (window.location.protocol === 'chrome-error:') {
-        await ipcRenderer.invoke('cimon-app-show-warn', 'unavailable');
+        await ipcRenderer.invoke('cimon-load', 'warn/unavailable');
         return
     }
     window.localStorage.setItem('SidebarCollapsed', 'true');
