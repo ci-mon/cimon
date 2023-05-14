@@ -19,6 +19,9 @@ if (require('electron-squirrel-startup')) {
 
 const options = {
   baseUrl: 'http://localhost:5001',
+  get entrypoint() {
+    return `${options.baseUrl}/Desktop`;
+  }
 }
 
 ipcMain.handle('cimon-get-base-url', () => options.baseUrl);
@@ -29,21 +32,26 @@ const createWindow = async () => {
   const mainWindow = new BrowserWindow({
     height: 600,
     width: 800,
+    fullscreen: true,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       session: currentSession,
       allowRunningInsecureContent: true
     },
-    show: false
+    show: true
   });
-  //mainWindow.webContents.openDevTools();
+  ipcMain.handle('cimon-app-show-error', async (event, type) => {
+    await event.sender.loadURL(`${MAIN_WINDOW_WEBPACK_ENTRY}?warn=${type}`)
+  })
+  mainWindow.webContents.openDevTools();
   ipcMain.once('cimon-token-ready', async (event, tokenData) => {
     const {userName, token} = tokenData;
     const signalR = new SignalRClient(options.baseUrl, token, userName);
     await mainWindow.loadURL(`${options.baseUrl}/monitor/all`)
     await signalR.start(mainWindow);
   });
-  await mainWindow.loadURL(`${options.baseUrl}/Desktop`);
+  //options.entrypoint
+  await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 };
 
 // This method will be called when Electron has finished

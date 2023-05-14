@@ -1,14 +1,30 @@
-export interface ICimonAPI {
-    init: () => Promise<void>,
-}
+import {createApp} from 'vue';
 
-declare global {
-    interface Window {
-        CimonDesktop: ICimonAPI
-    }
-}
+import { createVuetify } from 'vuetify'
+import 'vuetify/dist/vuetify.css'
+import '@mdi/font/css/materialdesignicons.css'
+import {components, directives} from "vuetify/dist/vuetify";
+import App from './Renderer/App.vue'
 
-(async function(){
-    await window.CimonDesktop.init()
-})();
-console.log('👋 This message is being logged by "renderer.js", included via webpack');
+import { createRouter, createWebHashHistory } from 'vue-router'
+import WarnComponent from "./Renderer/WarnComponent.vue";
+
+const vuetify = createVuetify({
+    components,
+    directives
+})
+
+window.CimonDesktop.skipInit();
+
+const router = createRouter({
+    history: createWebHashHistory(),
+    routes: [
+        {
+            path: '/warn/:messageCode',
+            name: 'warnPage',
+            component: WarnComponent
+        }
+    ],
+})
+
+createApp(App).use(vuetify).use(router).mount('#app');

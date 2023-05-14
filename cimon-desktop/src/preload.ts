@@ -2,9 +2,10 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import {contextBridge, ipcRenderer} from "electron";
 
-window.localStorage.setItem('SidebarCollapsed', 'true');
-const cimon = {
-    init: async () => {
+class Cimon {
+    private _disabled: boolean;
+    async init() {
+        if (this._disabled) return;
         const baseUrl = await ipcRenderer.invoke('cimon-get-base-url');
         const tokenUrl = `${baseUrl}/auth/token`;
         const result = await fetch(tokenUrl);
@@ -16,9 +17,25 @@ const cimon = {
         }
         window.location.href = tokenUrl;
     }
+    skipInit(){
+        this._disabled = true;
+    }
 }
-contextBridge.exposeInMainWorld('CimonDesktop', cimon);
+const cimon = new Cimon();
+contextBridge.exposeInMainWorld('CimonDesktop', {
+    init: () => cimon.init(),
+    skipInit: () => cimon.skipInit(),
+});
 
-(async function (){
-    await cimon.init()
+window.onload = async () => {
+    await cimon.init();
+};
+
+(async ()=>{
+    if (window.location.protocol === 'chrome-error:') {
+        await ipcRenderer.invoke('cimon-app-show-warn', 'unavailable');
+        return
+    }
+    window.localStorage.setItem('SidebarCollapsed', 'true');
 })();
+
