@@ -28,14 +28,11 @@ contextBridge.exposeInMainWorld('CimonDesktop', {
 });
 
 window.onload = async () => {
-    await cimon.init();
-};
-
-(async ()=>{
     if (window.location.protocol === 'chrome-error:') {
         await ipcRenderer.invoke('cimon-app-show-warn', 'unavailable');
         return
     }
     window.localStorage.setItem('SidebarCollapsed', 'true');
-})();
+    await cimon.init();
+};
 
