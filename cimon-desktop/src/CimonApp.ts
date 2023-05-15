@@ -52,10 +52,10 @@ export class CimonApp {
         //await window.webContents.openDevTools();
         try {
             await window.loadURL(options.entrypoint);
-            window.close();
         } catch (e) {
             if (e.code == 'ERR_CONNECTION_REFUSED') {
                 this._onDisconnected();
+                window.close();
             } else {
                 this._tray.setImage(options.icons.red.tray);
                 await window.loadURL(`${MAIN_WINDOW_WEBPACK_ENTRY}#warn/${e.code ?? "unavailable"}`);
@@ -101,6 +101,7 @@ export class CimonApp {
         });
 
         ipcMain.on('cimon-token-ready', async (event, tokenData) => {
+            event.sender.close({waitForBeforeUnload: false});
             const {userName, token} = tokenData;
             if (this._signalR) {
                 this._signalR.setTokenData(userName, token);
