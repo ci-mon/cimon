@@ -6,11 +6,16 @@
 @inject NavigationManager NavManager
 
 <PageTitle>Cimon</PageTitle>
-<RadzenButton Visible="_sidebarCollapsed" Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" class="full-screen-toggle full-screen-toggle-float" />
+<RadzenButton Visible="_headerCollapsed" Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" class="full-screen-toggle full-screen-toggle-float" />
 <RadzenLayout class="@pageClass()" Style="grid-template-columns: auto 1fr auto; grid-template-areas: 'rz-header rz-header rz-header' 'rz-sidebar rz-body rz-right-sidebar'">
-    <RadzenHeader>
+    <RadzenHeader Style="font-size: 1.2em;">
         <RadzenRow AlignItems="AlignItems.Center">
             <RadzenColumn>
+                <RadzenLink Text="Home" Icon="home" Path=""/>
+                 <RadzenLink Text="Monitors" Icon="monitor" Path="monitorList"/>
+                    @if (_showSignalsDebugPage) {
+                        <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
+                    }
             </RadzenColumn>
             <RadzenColumn>
                 <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
@@ -21,15 +26,6 @@
             </RadzenColumn>
         </RadzenRow>
     </RadzenHeader>
-    <RadzenSidebar Expanded="!_sidebarCollapsed" Responsive="false">
-        <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="Home" Icon="home" Path="" />
-            <RadzenPanelMenuItem Text="Monitors" Icon="monitor" Path="monitorList"/>
-            @if (_showSignalsDebugPage) {
-                <RadzenPanelMenuItem Text="SignalTest" Icon="monitor" Path="SignalTest"/>
-            }
-        </RadzenPanelMenu>
-    </RadzenSidebar>
     <RadzenBody Style="padding: unset">
         @Body
     </RadzenBody>
@@ -62,7 +58,7 @@
     }
 </style>
 @code {
-    private bool _sidebarCollapsed;
+    private bool _headerCollapsed;
     private bool _showSignalsDebugPage;
     
     protected override void OnInitialized() {
@@ -73,16 +69,16 @@
         var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("full-screen", out var value) 
                 && bool.TryParse(value, out var fullScreen)) {
-            _sidebarCollapsed = fullScreen;
+            _headerCollapsed = fullScreen;
         }
     }
 
-    private string pageClass() => _sidebarCollapsed ? "sidebar-expanded full-screen" : string.Empty;
+    private string pageClass() => _headerCollapsed ? "header-expanded full-screen" : string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         if (firstRender) {
-            (await InitFromStorage("SidebarCollapsed", _sidebarCollapsed)).MatchSome(res => {
-                _sidebarCollapsed = res;
+            (await InitFromStorage("HeaderCollapsed", _headerCollapsed)).MatchSome(res => {
+                _headerCollapsed = res;
                 StateHasChanged();
             });
         }
@@ -94,8 +90,8 @@
     }
 
     private async Task ToggleFullscreenAsync() {
-        _sidebarCollapsed = !_sidebarCollapsed;
-        await BrowserStorage.SetAsync("SidebarCollapsed", _sidebarCollapsed);
+        _headerCollapsed = !_headerCollapsed;
+        await BrowserStorage.SetAsync("SidebarCollapsed", _headerCollapsed);
     }
 
 

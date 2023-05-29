@@ -1,5 +1,10 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
 
 <PageTitle>Index</PageTitle>
-
-Welcome to ci monitor app.
+@code{
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        NavigationManager.NavigateTo("/monitorList");
+    }
+}

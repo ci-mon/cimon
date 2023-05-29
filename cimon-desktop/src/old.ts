@@ -8,7 +8,6 @@ class ReconnectionPolicy implements IRetryPolicy {
     nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {
         return 5000;
     }
-
 }
 
 const createWindow = async () => {

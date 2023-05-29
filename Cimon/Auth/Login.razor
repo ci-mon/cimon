@@ -1,5 +1,7 @@
 ﻿@page "/Login"
-<RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px;">
+@layout EmptyLayout
+
+<RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px; margin: 2em !important;">
     
     <RadzenTemplateForm Data=@("SimpleLogin") Action="/auth/login" Method="POST">
         <RadzenLogin AllowRegister="false" AllowResetPassword="false" />

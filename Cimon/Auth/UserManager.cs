@@ -42,7 +42,7 @@ public class UserManager
 			Success = true,
 			Team = "all"
 		};
-		if (userName == "test" && password == "test") {
+		if ((userName == "test1" || userName == "test2") && password == "test") {
 			result.Team = "testers";
 			return result;
 		}
