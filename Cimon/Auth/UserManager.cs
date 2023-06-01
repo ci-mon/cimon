@@ -21,7 +21,7 @@ public class UserManager
 	public bool IsDeactivated(ClaimsPrincipal principal) =>
 		principal.Identity?.Name is { Length: > 0 } name && _revokedUsers.Contains(name);
 
-	public bool SignOut(string securityTokenId) => _revokedUsers.Add(securityTokenId);
+	public bool Deactivate(string securityTokenId) => _revokedUsers.Add(securityTokenId);
 
 	public string GetToken(ClaimsPrincipal principal) {
 		var identityUser = new IdentityUser(principal.Identity.Name);

@@ -61,6 +61,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
+app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList")));
 app.MapFallbackToPage("/_Host");
 app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");
+
 app.Run();

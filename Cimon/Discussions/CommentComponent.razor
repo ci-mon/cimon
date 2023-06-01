@@ -4,8 +4,8 @@
 @inject ICurrentUserAccessor CurrentUserAccessor
 <div id="@BuildComment.Id">
     <RadzenCard class="@CardClasses">
-        <RadzenRow AlignItems="AlignItems.End">
-            <RadzenColumn Size="1">
+        <RadzenRow AlignItems="AlignItems.End" >
+            <RadzenColumn Size="1" Visible="_authorIsNotMe">
                 <RadzenStack Orientation="Orientation.Vertical">
                     <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
                 </RadzenStack>
@@ -29,6 +29,11 @@
                     </p>
                 </RadzenStack>
             </RadzenColumn>
+            <RadzenColumn Size="1" Visible="_authorIsMe">
+                <RadzenStack Orientation="Orientation.Vertical">
+                    <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
+                </RadzenStack>
+            </RadzenColumn>
         </RadzenRow>
     </RadzenCard>
 </div>
@@ -39,6 +44,8 @@
     public BuildDiscussionService DiscussionService { get; set; }
 
     private bool _canEdit;
+    private bool _authorIsMe;
+    private bool _authorIsNotMe => !_authorIsMe;
     private bool _editing;
     private bool EditButtonVisible => _canEdit && !_editing;
     private string CardClasses => $"comment-item {(_editing ? "editing" : "")}";
@@ -46,6 +53,7 @@
         await base.OnInitializedAsync();
         var user = await CurrentUserAccessor.Current;
         _canEdit = BuildComment.GetCanEditBy(user);
+        _authorIsMe = BuildComment.Author.Id == user.Id;
     }
 
     private async Task RemoveComment() {

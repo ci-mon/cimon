@@ -10,6 +10,7 @@
             const targetElement = document.querySelector(hash);
             if (targetElement) {
                 targetElement.classList.add(className);
+                targetElement.scrollIntoViewIfNeeded();
             }
         }
     }

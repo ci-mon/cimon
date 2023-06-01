@@ -39,8 +39,8 @@ public class AuthController : Controller
 	[Route("logoutUser")]
 	[HttpPost]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
-	public async Task<IActionResult> LogoutUser([FromBody]SignOutRequest req) {
-		_userManager.SignOut(req.UserName);
+	public async Task<IActionResult> DeactivateUser([FromBody]SignOutRequest req) {
+		_userManager.Deactivate(req.UserName);
 		return Ok();
 	}
 	
@@ -48,7 +48,6 @@ public class AuthController : Controller
 	[HttpGet]
 	[Authorize]
 	public async Task<IActionResult> Logout() {
-		_userManager.SignOut(User.Identity.Name);
 		await HttpContext.SignOutAsync();
 		return Redirect("/");
 	}

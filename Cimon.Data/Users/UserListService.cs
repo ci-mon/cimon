@@ -20,7 +20,8 @@ public class UserListService
 
 	private static async IAsyncEnumerable<UserInfo> GetAll() {
 		await Task.Yield();
-		yield return new UserInfo("test", new TeamInfo("testers"));
+		yield return new UserInfo("test1", new TeamInfo("testers"));
+		yield return new UserInfo("test2", new TeamInfo("testers"));
 		yield return new UserInfo("bob", new TeamInfo("rnd"));
 		yield return new UserInfo("alice", new TeamInfo("rnd"));
 	}
