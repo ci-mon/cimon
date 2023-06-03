@@ -5,7 +5,7 @@
 <div id="@BuildComment.Id">
     <RadzenCard class="@CardClasses">
         <RadzenRow AlignItems="AlignItems.End" >
-            <RadzenColumn Size="1" Visible="_authorIsNotMe">
+            <RadzenColumn Size="1" Visible="AuthorIsNotMe">
                 <RadzenStack Orientation="Orientation.Vertical">
                     <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
                 </RadzenStack>
@@ -21,7 +21,7 @@
                             <RadzenStack Orientation="Orientation.Horizontal"  Style="width: 50%;" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">
                                 <RadzenButton Icon="edit" Visible="EditButtonVisible" Size="ButtonSize.Small" Variant="Variant.Text" Click="EditComment" />
                                 <RadzenButton Icon="save" Visible="_editing" Size="ButtonSize.Small" Variant="Variant.Text" Click="SaveComment" />
-                                <RadzenButton Icon="delete" Visible="_canEdit" Size="ButtonSize.Small" Variant="Variant.Text" Click="RemoveComment" />
+                                <RadzenButton Icon="delete" Visible="CanEdit" Size="ButtonSize.Small" Variant="Variant.Text" Click="RemoveComment" />
                             </RadzenStack>
                         </RadzenStack>
                         <QuillEditor Class="comment-editor" Readonly="@(!_editing)" @bind-Content="@BuildComment.Comment"/>
@@ -29,7 +29,7 @@
                     </p>
                 </RadzenStack>
             </RadzenColumn>
-            <RadzenColumn Size="1" Visible="_authorIsMe">
+            <RadzenColumn Size="1" Visible="AuthorIsMe">
                 <RadzenStack Orientation="Orientation.Vertical">
                     <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
                 </RadzenStack>
@@ -39,21 +39,20 @@
 </div>
 @code {
     [Parameter]
-    public BuildComment BuildComment { get; set; }
+    public BuildComment? BuildComment { get; set; }
     [Parameter]
     public BuildDiscussionService DiscussionService { get; set; }
 
-    private bool _canEdit;
-    private bool _authorIsMe;
-    private bool _authorIsNotMe => !_authorIsMe;
+    private bool CanEdit => BuildComment?.GetCanEditBy(_user ?? User.Guest) ?? false;
+    private bool AuthorIsMe => BuildComment?.Author.Id == _user?.Id;
+    private bool AuthorIsNotMe => !AuthorIsMe;
     private bool _editing;
-    private bool EditButtonVisible => _canEdit && !_editing;
+    private User? _user;
+    private bool EditButtonVisible => CanEdit && !_editing;
     private string CardClasses => $"comment-item {(_editing ? "editing" : "")}";
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        var user = await CurrentUserAccessor.Current;
-        _canEdit = BuildComment.GetCanEditBy(user);
-        _authorIsMe = BuildComment.Author.Id == user.Id;
+        _user = await CurrentUserAccessor.Current;
     }
 
     private async Task RemoveComment() {
