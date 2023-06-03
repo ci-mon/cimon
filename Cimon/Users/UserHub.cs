@@ -3,21 +3,26 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Principal;
+using Cimon.Data;
+using Cimon.Data.Discussions;
+using MediatR;
 
 namespace Cimon.Hubs;
 
 public interface IUserClientApi
 {
-	Task NotifyWithUrl(string url, string header, string message);
+	Task NotifyWithUrl(string buildId, string url, string header, string message);
 }
 
 [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme}")]
 public class UserHub : Hub<IUserClientApi>
 {
 	private readonly ILogger _logger;
+	private readonly IMediator _mediator;
 
-	public UserHub(ILogger<UserHub> logger) {
+	public UserHub(ILogger<UserHub> logger, IMediator mediator) {
 		_logger = logger;
+		_mediator = mediator;
 	}
 
 	public override async Task OnConnectedAsync() {
@@ -42,4 +47,13 @@ public class UserHub : Hub<IUserClientApi>
 			identity?.Name, identity?.IsAuthenticated);
 	}
 
+	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string? comment) {
+		await _mediator.Publish(new AddCommentNotification {
+			BuildId = buildId,
+			QuickReplyType = quickReplyType,
+			Comment = comment
+		});
+	}
+
 }
+

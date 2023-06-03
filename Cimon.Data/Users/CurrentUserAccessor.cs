@@ -1,9 +1,9 @@
 ﻿namespace Cimon.Data.Users;
 
-public class CurrentCurrentUserAccessor : ICurrentUserAccessor
+public class CurrentUserAccessor : ICurrentUserAccessor
 {
 	private readonly GetCurrentPrincipal _currentPrincipal;
-	public CurrentCurrentUserAccessor(GetCurrentPrincipal currentPrincipal) {
+	public CurrentUserAccessor(GetCurrentPrincipal currentPrincipal) {
 		_currentPrincipal = currentPrincipal;
 		Current = GetCurrentUser();
 	}

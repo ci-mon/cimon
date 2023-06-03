@@ -11,6 +11,9 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
+  "build": {
+    "appId": "cimon.desktop.app"
+  },
   "keywords": [],
   "author": {
     "name": "Vadym Artemchuk",

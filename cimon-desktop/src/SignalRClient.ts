@@ -61,20 +61,37 @@ export class SignalRClient {
    }
   }
 
-  private _onNotifyWithUrl(url: string, title: string, comment: string) {
+  private _onNotifyWithUrl(buildId: string, url: string, title: string, comment: string) {
     notifier.notify(
       {
         title: title,
-        subtitle: "cimon",
         message: comment,
-        actions: ["Open", "Dismiss"],
-        reply: true,
+        actions: ["Open", "Dismiss", "WIP", "Rollback", "Mute"],
+        dropdownLabel: "Action",
+        wait: true
       },
-      (_: Error, result: string) => {
+      async (_: Error, result: string) => {
         if (result === "open") {
           this.onOpenDiscussionWindow?.(url);
+          return;
+        }
+        if (result === "wip") {
+          await this._replyToNotification(buildId, NotificationQuickReply.Wip);
+        } else if (result === "Rollback".toLowerCase()) {
+          await this._replyToNotification(buildId, NotificationQuickReply.RequestingRollback)
+        } else if (result === "Mute".toLowerCase()) {
+          await this._replyToNotification(buildId, NotificationQuickReply.RequestingMute)
         }
       }
     );
   }
+  private async _replyToNotification(buildId: string, type: NotificationQuickReply){
+    await this._connection.invoke('ReplyToNotification', buildId, type, null);
+  }
+}
+export enum NotificationQuickReply {
+  None = 0,
+  Wip = 1,
+  RequestingRollback = 2,
+  RequestingMute = 3,
 }

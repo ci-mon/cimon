@@ -15,7 +15,7 @@ public class NotificationService : INotificationService
 
 	public async Task Notify(string buildId, string commentId, string messageAuthor, 
 			IReadOnlyCollection<UserId> groups, string comment) {
-		await _hubContext.Clients.Groups(groups.Select(x=>x.Id)).NotifyWithUrl($"/buildDiscussion/{buildId}#{commentId}",
+		await _hubContext.Clients.Groups(groups.Select(x=>x.Id)).NotifyWithUrl(buildId, $"/buildDiscussion/{buildId}#{commentId}",
 			$"{messageAuthor} mentioned you in a comment", comment);
 	}
 }

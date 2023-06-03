@@ -4,6 +4,6 @@ namespace Cimon.Data;
 
 public class CommentData
 {
-	public User Author { get; set; }
+	public User Author { get; init; }
 	public string Comment { get; set; } = string.Empty;
 }

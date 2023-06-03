@@ -8,6 +8,7 @@ import { CimonApp } from "./CimonApp";
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
+app.setAppUserModelId("cimon.desktop.app");
 const cimonApp = new CimonApp();
 app.on("ready", async () => {
   await cimonApp.init();

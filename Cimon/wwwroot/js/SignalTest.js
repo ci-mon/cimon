@@ -58,6 +58,8 @@ createApp({
             await connection.start();
             this.state = 'connected';
 
+            //connection.invoke('ReplyToNotification', "buildId", 1, null);
+            window.connection = connection;
         }
     }
 }).mount('#app')

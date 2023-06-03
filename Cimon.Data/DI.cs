@@ -15,8 +15,11 @@ public static class DI
 			.AddSingleton<UserListService>()
 			.AddSingleton<MentionsService>()
 			.AddSingleton<ITechnicalUsers, TechnicalUsers>()
-			.AddScoped<ICurrentUserAccessor, CurrentCurrentUserAccessor>()
+			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
-			.AddSingleton<MonitorService>();
+			.AddSingleton<MonitorService>()
+			.AddMediatR(configuration => {
+				configuration.RegisterServicesFromAssemblyContaining<AddCommentNotificationHandler>();
+			});
 	}
 }
