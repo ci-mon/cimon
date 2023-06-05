@@ -1,0 +1,40 @@
+version: '3'
+services:
+  ldap:
+    image: osixia/openldap
+    ports:
+      - '389:389'
+      - '636:636'
+    environment:
+      - LDAP_ORGANISATION=Cimon org
+      - LDAP_DOMAIN=cimon.com
+      - LDAP_ADMIN_PASSWORD=adminpassword
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "ldapsearch",
+          "-x",
+          "-LLL",
+          "-s",
+          "base",
+          "-b",
+          "",
+          "dn"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  ldif-importer:
+    image: osixia/openldap
+    command:
+      [
+        "sh",
+        "-c",
+        "ldapadd -x -D cn=admin,dc=cimon,dc=com -w adminpassword -H ldap://ldap:389 -f /ldif/cimon.ldif"
+      ]
+    depends_on:
+      ldap:
+        condition: service_healthy
+    volumes:
+      - ./ldif:/ldif

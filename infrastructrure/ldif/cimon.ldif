@@ -1,0 +1,28 @@
+version: 1
+
+dn: cn=testers,dc=cimon,dc=com
+objectClass: groupOfNames
+objectClass: top
+cn: testers
+member: dc=cimon,dc=com
+
+dn: cn=test1+givenName=Test user 1+sn=test1@cimon.com,cn=testers,dc=cimon,dc
+ =com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: test1
+sn: test1@cimon.com
+givenName: Test user 1
+
+dn: cn=test2+givenName=Test user 2+sn=test2@cimon.com,cn=testers,dc=cimon,dc
+ =com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: test2
+sn: test2@cimon.com
+givenName: Test user 2
+
