@@ -51,6 +51,7 @@ public class UserManager
 		LdapConnection connection = new(server);
 		NetworkCredential credential = new(userName.Name, password, userName.Domain);
 		/*
+		 todo this should be in other place 
 		  var context = new PrincipalContext (ContextType.Domain, server);
 		 * UserPrincipal user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, userName.Name);
 		user.DisplayName.Dump();

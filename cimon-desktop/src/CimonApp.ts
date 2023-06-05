@@ -1,4 +1,6 @@
 import Path from "path";
+import request from "electron-request";
+
 import { app, BrowserWindow, ipcMain, Menu, session, Tray } from "electron";
 import { ConnectionState, SignalRClient } from "./SignalRClient";
 import notifier from "node-notifier";
@@ -21,6 +23,8 @@ class IconLocator {
 
 const options = {
   baseUrl: "http://localhost:5001",
+  waitForConnectionRetryDelay: 10000,
+
   get entrypoint() {
     return `${options.baseUrl}`;
   },
@@ -38,10 +42,22 @@ const options = {
     red: new IconLocator("red"),
   },
 };
+type TokenInfo = {
+  userName: string;
+  token: string;
+};
+type PromiseInfo<T> = {
+  resolve: (value: T) => void;
+  reject: () => void;
+};
+
+type TokenDataReceiver = PromiseInfo<TokenInfo>;
 
 export class CimonApp {
   private _window: Electron.CrossProcessExports.BrowserWindow;
   private _discussionWindow: Electron.CrossProcessExports.BrowserWindow;
+
+  private tokenDataReceiver: TokenDataReceiver;
 
   private _initToken(): Promise<{
     userName: string;
@@ -50,22 +66,19 @@ export class CimonApp {
     return new Promise((resolve, reject) => {
       (async () => {
         try {
-          ipcMain.once(
-            "cimon-token-ready",
-            async function (
-              event: IpcMainEvent,
-              tokenData: {
-                userName: string;
-                token: string;
-              }
-            ) {
-              resolve(tokenData);
-            }.bind(this)
-          );
+          if (this.tokenDataReceiver) {
+            this.tokenDataReceiver.reject();
+          }
+          this.tokenDataReceiver = {
+            resolve: (tokenData) => resolve(tokenData),
+            reject: reject,
+          };
           this._window.hide();
           await this._window.loadURL(options.entrypoint);
         } catch (e) {
-          if (e.code == "ERR_CONNECTION_REFUSED") {
+          this.tokenDataReceiver.reject();
+          this.tokenDataReceiver = null;
+          if (["ERR_CONNECTION_REFUSED", "ERR_FAILED"].includes(e.code)) {
             this._onDisconnected();
           } else {
             this._tray.setImage(options.icons.red.tray);
@@ -102,13 +115,23 @@ export class CimonApp {
   }
 
   private _onDisconnected() {
+    this._window.hide();
     this._tray.setImage(options.icons.red.tray);
-    this._tray.setToolTip(`Failed to connect to: ${options.baseUrl}`);
-   this._setReconnectVisible(true);
+    this._tray.setToolTip(`Waiting for connection to: ${options.baseUrl}. `);
   }
-  private _setReconnectVisible(value: boolean){
-    this._trayContextMenu.items.find((i) => i.id === "reconnect").visible =
-        value;
+
+  private _trayContextMenuVisibilityConfigs: Array<{
+    id: string;
+    fn: () => boolean;
+  }> = [];
+
+  private _updateContextMenuVisibility() {
+    for (const item of this._trayContextMenuVisibilityConfigs) {
+      const menu = this._trayContextMenu.items.find((x) => x.id === item.id);
+      if (menu) {
+        menu.visible = item.fn();
+      }
+    }
   }
 
   private _onConnected() {
@@ -116,7 +139,6 @@ export class CimonApp {
     this._tray.setToolTip(
       `cimon - continuous integration monitoring [${options.baseUrl}]`
     );
-    this._setReconnectVisible(false);
   }
 
   private _tray: Tray;
@@ -148,23 +170,128 @@ export class CimonApp {
     this._discussionWindow.show();
   }
 
+  private _currentState: ConnectionState;
+
   private _onConnectionStateChanged(state: ConnectionState) {
+    if (this._currentState == state) {
+      return;
+    }
+    const previousState = this._currentState;
+    this._currentState = state;
+    this._updateContextMenuVisibility();
     if (state === ConnectionState.Connected) {
       this._onConnected();
       return;
     }
-    if (state === ConnectionState.Disconnected) {
+    if (ConnectionState.Disconnected === state) {
       this._onDisconnected();
       notifier.notify({
         title: "Something went wrong",
-        subtitle: "cimon",
         message: `Connection lost`,
+      });
+      return;
+    }
+    if (
+      ConnectionState.FailedToConnect === state &&
+      previousState !== ConnectionState.Disconnected
+    ) {
+      this._onDisconnected();
+      notifier.notify({
+        title: "Oops",
+        message: "Can't connect",
       });
       return;
     }
   }
 
   public async init() {
+    this._subscribeForEvents();
+    this._tray = new Tray(options.icons.red.tray);
+    this._trayContextMenu = Menu.buildFromTemplate([
+      {
+        id: "showMonitor",
+        label: "Show",
+        type: "normal",
+        visible: false,
+        click: async () => await this.showMonitors(),
+      },
+      {
+        id: "reconnect",
+        label: "Reconnect",
+        type: "normal",
+        click: async () => await this.reconnect(),
+        visible: false,
+      },
+      { id: "exit", label: "Exit", type: "normal", click: () => app.exit() },
+    ]);
+    this._trayContextMenuVisibilityConfigs.push({
+      id: "reconnect",
+      fn: () =>
+        this._currentState !== ConnectionState.Connected &&
+        !this._waitForConnectionTimeout,
+    });
+    this._trayContextMenuVisibilityConfigs.push({
+      id: "showMonitor",
+      fn: () => this._currentState === ConnectionState.Connected,
+    });
+    this._tray.setToolTip("cimon - connecting...");
+    this._tray.setContextMenu(this._trayContextMenu);
+    this._tray.on("click", async () => this.showMonitors());
+    await this._initMainWindow();
+    this._signalR = new SignalRClient(options.baseUrl, (error) =>
+      this._getToken(error)
+    );
+    this._signalR.onConnectionStateChanged =
+      this._onConnectionStateChanged.bind(this);
+    this._signalR.onOpenDiscussionWindow =
+      this._onOpenDiscussionWindow.bind(this);
+    await this._startSignalR();
+  }
+
+  private async _startSignalR() {
+    await this._waitForConnection();
+    await this._signalR.start();
+  }
+
+  private _waitForConnectionTimeout: NodeJS.Timeout;
+
+  private _connectionWaiter: PromiseInfo<void>;
+
+  private _waitForConnection() {
+    if (this._currentState === ConnectionState.Connected) {
+      return;
+    }
+    if (this._connectionWaiter) {
+      this._connectionWaiter.reject();
+    }
+    return new Promise<void>((resolve, reject) => {
+      this._connectionWaiter = {
+        reject: reject,
+        resolve: resolve,
+      };
+      this._tryToConnect();
+    });
+  }
+
+  private async _tryToConnect() {
+    try {
+      const response = await request(options.baseUrl);
+      if (response.ok) {
+        this._connectionWaiter.resolve();
+        this._connectionWaiter = null;
+        return;
+      }
+    } catch (e) {
+      /* empty */
+    }
+    this._waitForConnectionTimeout = setTimeout(
+      () => this._tryToConnect(),
+      options.waitForConnectionRetryDelay
+    );
+    this._onConnectionStateChanged(ConnectionState.FailedToConnect);
+  }
+
+  private _subscribeForEvents() {
     ipcMain.handle("cimon-get-base-url", () => options.baseUrl);
     ipcMain.handle("cimon-show-window", (event, code: "login" | string) => {
       if (code == "login") {
@@ -180,42 +307,22 @@ export class CimonApp {
     ipcMain.handle("cimon-load", async (event, relativeUrl) => {
       await event.sender.loadURL(`${MAIN_WINDOW_WEBPACK_ENTRY}#${relativeUrl}`);
     });
-
-    this._tray = new Tray(options.icons.red.tray);
-    this._trayContextMenu = Menu.buildFromTemplate([
-      {
-        id: "showMonitor",
-        label: "Show",
-        type: "normal",
-        click: async () => await this.showMonitors(),
-      },
-      {
-        id: "reconnect",
-        label: "Reconnect",
-        type: "normal",
-        click: async () => await this.reconnect(),
-        visible: false,
-      },
-      { id: "exit", label: "Exit", type: "normal", click: () => app.exit() },
-    ]);
-    this._tray.setToolTip("cimon - connecting...");
-    this._tray.setContextMenu(this._trayContextMenu);
-    this._tray.on("click", async () => this.showMonitors());
-    await this._initMainWindow();
-    this._signalR = new SignalRClient(options.baseUrl, () => this._getToken());
-    this._signalR.onConnectionStateChanged =
-      this._onConnectionStateChanged.bind(this);
-    this._signalR.onOpenDiscussionWindow =
-      this._onOpenDiscussionWindow.bind(this);
-    await this._signalR.start();
+    ipcMain.on(
+      "cimon-token-ready",
+      (event: IpcMainEvent, tokenData: TokenInfo) => {
+        this.tokenDataReceiver?.resolve(tokenData);
+        this.tokenDataReceiver = null;
+      }
+    );
   }
 
   private _token: string = null;
   private _userName: string = null;
   private _lastProvidedToken: string = null;
 
-  private async _getToken() {
-    if (!this._token || this._lastProvidedToken === this._token) {
+  private async _getToken(error: Error) {
+    if (!this._token || (error && this._lastProvidedToken === this._token)) {
+      await this._waitForConnection();
       const { token, userName } = await this._initToken();
       this._token = token;
       this._userName = userName;
@@ -225,8 +332,7 @@ export class CimonApp {
   }
 
   public async reconnect() {
-    this._setReconnectVisible(false);
-    await this._signalR.start();
+    await this._startSignalR();
   }
 
   public async showMonitors(): Promise<void> {

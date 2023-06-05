@@ -10,10 +10,17 @@ import {
 export enum ConnectionState {
   Connected,
   Disconnected,
+  FailedToConnect,
 }
 
 class ReconnectionPolicy implements IRetryPolicy {
+  private _lastError: Error;
+  public get lastError(): Error {
+    return this._lastError;
+  }
+
   nextRetryDelayInMilliseconds(retryContext: RetryContext): number | null {
+    this._lastError = retryContext.retryReason;
     return 5000;
   }
 }
@@ -29,14 +36,16 @@ export class SignalRClient {
 
   constructor(
     private _baseUrl: string,
-    private accessTokenFactory: () => Promise<string>
+    private accessTokenFactory: (error: Error) => Promise<string>
   ) {
+    const reconnectPolicy = new ReconnectionPolicy();
     this._connection = new HubConnectionBuilder()
       .withUrl(`${this._baseUrl}/hubs/user`, {
-        accessTokenFactory: this.accessTokenFactory,
+        accessTokenFactory: () =>
+          this.accessTokenFactory(reconnectPolicy.lastError),
         withCredentials: true,
       })
-      .withAutomaticReconnect(new ReconnectionPolicy())
+      .withAutomaticReconnect(reconnectPolicy)
       .build();
     this._connection.onreconnecting((error) => {
       this.onConnectionStateChanged(
@@ -51,24 +60,25 @@ export class SignalRClient {
   }
 
   async start() {
-   try {
-     await this._connection.start();
-     if (this._connection.state === HubConnectionState.Connected) {
-       this.onConnectionStateChanged?.(ConnectionState.Connected);
-     }
-   } catch (e){
-     this.onConnectionStateChanged?.(ConnectionState.Disconnected);
-   }
+    await this._connection.start();
+    if (this._connection.state === HubConnectionState.Connected) {
+      this.onConnectionStateChanged?.(ConnectionState.Connected);
+    }
   }
 
-  private _onNotifyWithUrl(buildId: string, url: string, title: string, comment: string) {
+  private _onNotifyWithUrl(
+    buildId: string,
+    url: string,
+    title: string,
+    comment: string
+  ) {
     notifier.notify(
       {
         title: title,
         message: comment,
         actions: ["Open", "Dismiss", "WIP", "Rollback", "Mute"],
         dropdownLabel: "Action",
-        wait: true
+        wait: true,
       },
       async (_: Error, result: string) => {
         if (result === "open") {
@@ -78,17 +88,28 @@ export class SignalRClient {
         if (result === "wip") {
           await this._replyToNotification(buildId, NotificationQuickReply.Wip);
         } else if (result === "Rollback".toLowerCase()) {
-          await this._replyToNotification(buildId, NotificationQuickReply.RequestingRollback)
+          await this._replyToNotification(
+            buildId,
+            NotificationQuickReply.RequestingRollback
+          );
         } else if (result === "Mute".toLowerCase()) {
-          await this._replyToNotification(buildId, NotificationQuickReply.RequestingMute)
+          await this._replyToNotification(
+            buildId,
+            NotificationQuickReply.RequestingMute
+          );
         }
       }
     );
   }
-  private async _replyToNotification(buildId: string, type: NotificationQuickReply){
-    await this._connection.invoke('ReplyToNotification', buildId, type, null);
+
+  private async _replyToNotification(
+    buildId: string,
+    type: NotificationQuickReply
+  ) {
+    await this._connection.invoke("ReplyToNotification", buildId, type, null);
   }
 }
+
 export enum NotificationQuickReply {
   None = 0,
   Wip = 1,
