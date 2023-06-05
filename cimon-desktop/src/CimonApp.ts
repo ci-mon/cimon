@@ -320,8 +320,11 @@ export class CimonApp {
   private _userName: string = null;
   private _lastProvidedToken: string = null;
 
-  private async _getToken(error: Error) {
-    if (!this._token || (error && this._lastProvidedToken === this._token)) {
+  private async _getToken(error: Error & {errorType?: string}) {
+    if (error?.errorType === 'FailedToNegotiateWithServerError') {
+      this._token = null;
+    }
+    if (!this._token || (this._lastProvidedToken === this._token)) {
       await this._waitForConnection();
       const { token, userName } = await this._initToken();
       this._token = token;
