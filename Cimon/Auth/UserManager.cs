@@ -47,8 +47,18 @@ public class UserManager
 			return result;
 		}
 		string domain = userName.Domain.ToLowerInvariant(); // TODO get from where?
-		LdapConnection connection = new($"{domain}.com");
+		var server = $"{domain}.com";
+		LdapConnection connection = new(server);
 		NetworkCredential credential = new(userName.Name, password, userName.Domain);
+		/*
+		  var context = new PrincipalContext (ContextType.Domain, server);
+		 * UserPrincipal user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, userName.Name);
+		user.DisplayName.Dump();
+		foreach (GroupPrincipal group in user.GetGroups(context))
+		{
+		    group.Name.Dump();
+		}
+		 */
 		try {
 			connection.Bind(credential);
 			connection.Dispose();
