@@ -36,7 +36,8 @@ public class UserManager
 				user.Roles.Select(x => x.Name).ToList());
 		}
 		/*
-		 todo this should be in other place 
+		 TODO create user
+		 var server = $"{domain}.com";
 		  var context = new PrincipalContext (ContextType.Domain, server);
 		 * UserPrincipal user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, userName.Name);
 		user.DisplayName.Dump();
