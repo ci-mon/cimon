@@ -7,7 +7,7 @@ using FluentAssertions.Execution;
 public static class Wait
 {
 	public static Task ForAssert(Action func,
-		[CallerArgumentExpression("func")] string expression = null) {
+		[CallerArgumentExpression("func")] string? expression = null) {
 		return ForAssert(() => {
 			func();
 			return Task.CompletedTask;
@@ -15,7 +15,7 @@ public static class Wait
 	}
 
 	public static Task ForAssert(Func<Task> func, 
-			[CallerArgumentExpression("func")] string expression = null) {
+			[CallerArgumentExpression("func")] string? expression = null) {
 		return For(async () => {
 			await func();
 			return true;
@@ -23,7 +23,7 @@ public static class Wait
 	}
 
 	private static async Task For(Func<Task<bool>> func, bool catchExceptions = false,
-			[CallerArgumentExpression("func")] string expression = null) {
+			[CallerArgumentExpression("func")] string? expression = null) {
 		Exception? lastException = null;
 		try {
 			using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(10));
@@ -47,7 +47,7 @@ public static class Wait
 	}
 
 	public static Task ForConditionNotChanged(Action func, 
-		[CallerArgumentExpression("func")] string expression = null) {
+		[CallerArgumentExpression("func")] string? expression = null) {
 		return ForConditionNotChanged(() => {
 			func();
 			return true;
@@ -55,7 +55,7 @@ public static class Wait
 	}
 
 	private static async Task ForConditionNotChanged(Func<bool> func, bool catchExceptions = false,
-		[CallerArgumentExpression("func")] string expression = null) {
+		[CallerArgumentExpression("func")] string? expression = null) {
 		Exception? lastException = null;
 		try {
 			using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(10));

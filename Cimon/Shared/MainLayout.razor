@@ -13,9 +13,11 @@
             <RadzenColumn>
                 <RadzenLink Text="Home" Icon="home" Path=""/>
                  <RadzenLink Text="Monitors" Icon="monitor" Path="monitorList"/>
-                    @if (_showSignalsDebugPage) {
-                        <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
-                    }
+                   <AuthorizeView Roles="admin">
+                       <Authorized>
+                            <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
+                       </Authorized>
+                   </AuthorizeView>
             </RadzenColumn>
             <RadzenColumn>
                 <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
@@ -59,13 +61,9 @@
 </style>
 @code {
     private bool _headerCollapsed;
-    private bool _showSignalsDebugPage;
     
     protected override void OnInitialized() {
         base.OnInitialized();
-        #if DEBUG
-        _showSignalsDebugPage = true;
-        #endif
         var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("full-screen", out var value) 
                 && bool.TryParse(value, out var fullScreen)) {

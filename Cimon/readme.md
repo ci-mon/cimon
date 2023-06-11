@@ -11,7 +11,7 @@
 7. Blame (+)
 8. Save last viewed monitor
 9. Teams
-10. Users in DB
+10. Users in DB (+-)
 11. Available plans in DB (TC)
 12. Available plans in DB (Jenkins)
 13. Store discussions in DB

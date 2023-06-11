@@ -1,12 +1,14 @@
-﻿namespace Cimon.Data.Users;
+﻿using Cimon.Auth;
 
-public record User(UserId Id, string Name, string? Team = null)
+namespace Cimon.Data.Users;
+
+public record User(UserId Id, UserName Name, IList<string>? Teams = null, IList<string>? Roles = null)
 {
 	public static User Guest { get; } = new User("guest", "Guest");
 
 	public static User FromFullName(string fullName) {
 		var id = fullName.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
-		return new User(id, fullName, String.Empty);
+		return new User(id, fullName);
 	}
 	public string Email => $"{Id}@creatio.com";
 }

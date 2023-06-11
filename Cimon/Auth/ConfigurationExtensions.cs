@@ -1,4 +1,6 @@
-﻿namespace Cimon.Auth;
+﻿using System.IdentityModel.Tokens.Jwt;
+
+namespace Cimon.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -16,20 +18,19 @@ public static class ConfigurationExtensions
 	{
 
 		private readonly CimonOptions _options;
-		private readonly UserManager _userManager;
-
-		public AuthConfigurator(IOptions<CimonOptions> options, UserManager userManager) {
+		public AuthConfigurator(IOptions<CimonOptions> options) {
 			_options = options.Value;
-			_userManager = userManager;
 		}
 
 		public void Configure(JwtBearerOptions options) {
 			options.Events = new JwtBearerEvents {
-				OnTokenValidated = context => {
-					if (_userManager.IsDeactivated(context.SecurityToken)) {
+				OnTokenValidated = async context => {
+					if (context.SecurityToken is JwtSecurityToken jwtSecurityToken &&
+						jwtSecurityToken.Payload.TryGetValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+							out object? name) && await context.HttpContext.RequestServices.GetRequiredService<UserManager>()
+								.IsDeactivated(name?.ToString())) {
 						context.Fail("Token not active");
 					}
-					return Task.CompletedTask;
 				},
 				OnMessageReceived = context => {
 					StringValues accessToken = context.Request.Query["access_token"];
@@ -67,16 +68,12 @@ public static class ConfigurationExtensions
 	class UserManagerFilter: IStartupFilter
 	{
 
-		private readonly UserManager _userManager;
-
-		public UserManagerFilter(UserManager userManager) {
-			_userManager = userManager;
-		}
-
 		public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) {
 			return builder => {
 				builder.Use(async (httpContext, func) => {
-					if (_userManager.IsDeactivated(httpContext.User)) {
+					if (httpContext.User.Identity?.Name is { Length: > 0 } name 
+							&& await httpContext.RequestServices.GetRequiredService<UserManager>()
+								.IsDeactivated(name)) {
 						await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 					}
 					await func.Invoke(httpContext);
@@ -88,7 +85,7 @@ public static class ConfigurationExtensions
 
 	public static void AddAuth(this IServiceCollection services) {
 		services.AddSingleton<TokenService, TokenService>();
-		services.AddSingleton<UserManager, UserManager>();
+		services.AddScoped<UserManager, UserManager>();
 		services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
 			.AddNegotiate()
 			.AddCookie()

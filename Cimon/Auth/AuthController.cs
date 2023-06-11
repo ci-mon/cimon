@@ -1,4 +1,6 @@
-﻿namespace Cimon.Auth;
+﻿using Cimon.Data.Users;
+
+namespace Cimon.Auth;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
@@ -26,21 +28,22 @@ public class AuthController : Controller
 	[Route("token")]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Token() {
-		string token = _userManager.GetToken(User);
-		return Ok(new AuthResponse { UserName = User.Identity.Name, Token = token });
+		var user = await _userManager.FindOrCreateUser(User.Identity!.Name!);
+		string token = _tokenService.CreateToken(user);
+		return Ok(new AuthResponse { UserName = User.Identity!.Name!, Token = token });
 	}
 
 	[Route("checkToken")]
 	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-	public async Task<IActionResult> CheckToken() {
-		return Ok(User.Identity.Name);
+	public IActionResult CheckToken() {
+		return Ok(User.Identity?.Name);
 	}
 
 	[Route("logoutUser")]
 	[HttpPost]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> DeactivateUser([FromBody]SignOutRequest req) {
-		_userManager.Deactivate(req.UserName);
+		await _userManager.Deactivate(req.UserName);
 		return Ok();
 	}
 	
@@ -59,24 +62,23 @@ public class AuthController : Controller
 		if (string.IsNullOrWhiteSpace(userName)) {
 			return Unauthorized();
 		}
-		// TODO Negotiate: get team
-		var team = "all";
-		return await LoginUsingCookie(returnUrl, userName, team);
+		return await SignInUsingCookie(returnUrl, userName);
 	}
 
 	[HttpPost]
 	[Route("login")]
 	public async Task<IActionResult> Login([FromForm]string userName, [FromForm]string password) {
-		PasswordSignInResult loginResult = await _userManager.SignInAsync(userName, password);
-		if (!loginResult.Success) {
+		var loginResult = await _userManager.SignInAsync(userName, password);
+		if (!loginResult) {
 			return Unauthorized();
 		}
-		return await LoginUsingCookie("/", loginResult.UserName, loginResult.Team);
+		return await SignInUsingCookie("/", userName);
 	}
 
-	private async Task<IActionResult> LoginUsingCookie(string returnUrl, string userName, string team) {
-		var identityUser = new IdentityUser(userName);
-		var claimsIdentity = new ClaimsIdentity(_tokenService.CreateClaims(identityUser, team),
+	private async Task<IActionResult> SignInUsingCookie(string returnUrl, string userName) {
+		var user = await _userManager.FindOrCreateUser(userName);
+		var claims = _tokenService.CreateClaims(user);
+		var claimsIdentity = new ClaimsIdentity(claims,
 			CookieAuthenticationDefaults.AuthenticationScheme);
 		var authProperties = new AuthenticationProperties {
 			AllowRefresh = true,

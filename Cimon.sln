@@ -8,6 +8,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Tests", "Cimon.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.TeamCity", "Cimon.Data.TeamCity\Cimon.Data.TeamCity.csproj", "{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.DB", "Cimon.DB\Cimon.DB.csproj", "{2F8FCC57-B328-4426-B835-83A98C4EC555}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.DB.Migrations.Sqlite", "Cimon.DB.Migrations.Sqlite\Cimon.DB.Migrations.Sqlite.csproj", "{0276271B-EF0F-46BE-B459-63432839AEE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.DB.Migrations.SqlServer", "Cimon.DB.Migrations.SqlServer\Cimon.DB.Migrations.SqlServer.csproj", "{08B2A9C3-C727-4429-941D-EAADA3F25651}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +36,17 @@ Global
 		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62BEDFD4-8EBD-41A1-B5E9-5C4AD3D3B7C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F8FCC57-B328-4426-B835-83A98C4EC555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F8FCC57-B328-4426-B835-83A98C4EC555}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F8FCC57-B328-4426-B835-83A98C4EC555}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F8FCC57-B328-4426-B835-83A98C4EC555}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0276271B-EF0F-46BE-B459-63432839AEE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0276271B-EF0F-46BE-B459-63432839AEE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0276271B-EF0F-46BE-B459-63432839AEE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0276271B-EF0F-46BE-B459-63432839AEE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08B2A9C3-C727-4429-941D-EAADA3F25651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08B2A9C3-C727-4429-941D-EAADA3F25651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08B2A9C3-C727-4429-941D-EAADA3F25651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08B2A9C3-C727-4429-941D-EAADA3F25651}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

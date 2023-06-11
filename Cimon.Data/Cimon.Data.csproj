@@ -11,8 +11,13 @@
       <PackageReference Include="MediatR" Version="12.0.1" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
       <PackageReference Include="Optional" Version="4.0.0" />
+      <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
       <PackageReference Include="System.Linq.Async" Version="6.0.1" />
       <PackageReference Include="System.Reactive" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Cimon.DB\Cimon.DB.csproj" />
     </ItemGroup>
 
 </Project>

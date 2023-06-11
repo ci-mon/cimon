@@ -19,6 +19,8 @@
     <ItemGroup>
       <ProjectReference Include="..\Cimon.Data.TeamCity\Cimon.Data.TeamCity.csproj" />
       <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
+      <ProjectReference Include="..\Cimon.DB.Migrations.Sqlite\Cimon.DB.Migrations.Sqlite.csproj" />
+      <ProjectReference Include="..\Cimon.DB.Migrations.SqlServer\Cimon.DB.Migrations.SqlServer.csproj" />
     </ItemGroup>
 
 </Project>

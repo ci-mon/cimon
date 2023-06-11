@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Cimon.Data.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
@@ -19,7 +20,7 @@ public class TokenService
 		_signingCredentials = CreateSigningCredentials();
 	}
 
-	public string CreateToken(IdentityUser user) {
+	public string CreateToken(User user) {
 		var claims = CreateClaims(user);
 		JwtSecurityToken token = CreateJwtToken(claims);
 		var tokenHandler = new JwtSecurityTokenHandler();
@@ -31,16 +32,17 @@ public class TokenService
 			expires: DateTime.UtcNow + _options.Auth.Expiration,
 			signingCredentials: _signingCredentials);
 
-	public List<Claim> CreateClaims(IdentityUser user, string team = "all") {
-		var userName = user.UserName ?? user.Id;
+	public List<Claim> CreateClaims(User userInfo) {
+		var userName = userInfo.Name.Name;
 		var claims = new List<Claim> {
 			new(JwtRegisteredClaimNames.Sub, userName),
-			new(JwtRegisteredClaimNames.Jti, user.Id),
+			new(JwtRegisteredClaimNames.Jti, userInfo.Id.Id),
 			new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
-			new(ClaimTypes.NameIdentifier, user.Id),
-			new(ClaimTypes.Name, userName),
-			new(TeamClaimName, team)
+			new(ClaimTypes.NameIdentifier, userInfo.Id.Id),
+			new(ClaimTypes.Name, userName)
 		};
+		claims.AddRange(userInfo.Teams?.Select(x => new Claim(TeamClaimName, x)) ?? Array.Empty<Claim>());
+		claims.AddRange(userInfo.Roles?.Select(x => new Claim(ClaimTypes.Role, x)) ?? Array.Empty<Claim>());
 		return claims;
 	}
 

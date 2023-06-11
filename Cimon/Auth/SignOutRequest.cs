@@ -2,5 +2,5 @@
 
 public class SignOutRequest
 {
-	public string UserName { get; set; }
+	public string? UserName { get; set; }
 }
