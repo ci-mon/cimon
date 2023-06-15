@@ -1,0 +1,80 @@
+﻿@page "/UsersList"
+@using Cimon.DB
+@using Cimon.Auth
+@attribute [Authorize(Roles = "admin")]
+
+@inherits DbContextComponent<User>;
+@inject UserManager UserManager;
+<RadzenLayout Style="padding: 1em">
+    <RadzenStack Orientation="Orientation.Vertical">
+        <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                        Data="@Items" TItem="User" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+            <Columns>
+                <RadzenDataGridColumn TItem="User" Property="Name" Title="Name" Width="180px">
+                    <Template Context="user">
+                        @user.Name
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="FullName" Title="FullName" Width="180px">
+                                    <Template Context="user">
+                                        @user.FullName
+                                    </Template>
+                                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
+                                    <Template Context="user">
+                                        @user.Roles
+                                    </Template>
+                                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
+                                    <Template Context="user">
+                                        @user.Teams
+                                    </Template>
+                                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="180px">
+                                    <Template Context="user">
+                                        @user.AllowLocalLogin
+                                    </Template>
+                                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="IsDeactivated" Title="IsDeactivated" Width="180px">
+                                    <Template Context="user">
+                                        @user.IsDeactivated
+                                    </Template>
+                                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                    <Template Context="user">
+                        @if (user.IsDeactivated) {
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="activate" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                        } else {
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="deactivate" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                        }
+                       
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))" @onclick:stopPropagation="true">
+                        </RadzenButton>
+                    </Template>
+                    <EditTemplate Context="user">
+                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(user))">
+                        </RadzenButton>
+                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(user))">
+                        </RadzenButton>
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))">
+                        </RadzenButton>
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenStack>
+</RadzenLayout>
+
+@code {
+
+    private async Task Deactivate(User value) {
+        await UserManager.Deactivate(value.Name);
+    }
+
+    private async Task Activate(User value) {
+        await UserManager.Activate(value.Name);
+    }
+
+}

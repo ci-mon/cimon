@@ -9,13 +9,16 @@
 <PageTitle>Setup monitor @MonitorId</PageTitle>
 <RadzenCard Visible="_monitor != null">
     <RadzenButton Text="Save" Icon="save" Click="Save"/>
-    <RadzenCard class="rz-mb-4">
+    <RadzenCard class="rz-mb-4 rz-mt-4">
         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
         <RadzenTextBox @bind-Value=@_monitor.Title class="w-100"/>
     </RadzenCard>
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
-            <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Refresh" Icon="refresh" Click="RefreshAvailableBuilds"></RadzenButton>
+        </RadzenStack>
+        <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
@@ -80,6 +83,10 @@
 
     private void OnSelectAllChanged(bool args) {
         SetSelectedLocators(args ? _locators?.ToList() : null);
+    }
+
+    private void RefreshAvailableBuilds() {
+        throw new NotImplementedException();
     }
 
 }

@@ -1,16 +1,16 @@
 ﻿@page "/SetupTeams"
 @using Cimon.DB
-@using Microsoft.EntityFrameworkCore
 @attribute [Authorize(Roles = "teams-editor")]
 
-@inject CimonDbContext DbContext;
+@inherits DbContextComponent<Team>;
+
 <RadzenLayout Style="padding: 1em">
     <RadzenStack Orientation="Orientation.Vertical">
         <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" class="mt-2 mb-4" Text="Add" Click="@InsertRow" Disabled=@(teamToInsert != null || teamToUpdate != null)/>
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" class="mt-2 mb-4" Text="Add" Click="@InsertRow" Disabled=@(itemToInsert != null || itemToUpdate != null)/>
         </RadzenStack>
-        <RadzenDataGrid @ref="teamsGrid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
-                        Data="@teams" TItem="Team" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+        <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                        Data="@Items" TItem="Team" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
             <Columns>
                 <RadzenDataGridColumn TItem="Team" Property="Name" Title="Name" Width="280px">
                     <Template Context="team">
@@ -42,80 +42,5 @@
 </RadzenLayout>
 
 @code {
-    RadzenDataGrid<Team> teamsGrid;
-    IEnumerable<Team> teams;
-
-    Team teamToInsert;
-    Team teamToUpdate;
-
-    void Reset() {
-        teamToInsert = null;
-        teamToUpdate = null;
-    }
-
-    protected override async Task OnInitializedAsync() {
-        await base.OnInitializedAsync();
-
-        teams = DbContext.Teams;
-    }
-
-    async Task EditRow(Team team) {
-        teamToUpdate = team;
-        await teamsGrid.EditRow(team);
-    }
-
-    void OnUpdateRow(Team team) {
-        if (team == teamToInsert) {
-            teamToInsert = null;
-        }
-        teamToUpdate = null;
-        DbContext.Update(team);
-        DbContext.SaveChanges();
-    }
-
-    async Task SaveRow(Team team) {
-        await teamsGrid.UpdateRow(team);
-    }
-
-    void CancelEdit(Team team) {
-        if (team == teamToInsert) {
-            teamToInsert = null;
-        }
-        teamToUpdate = null;
-        teamsGrid.CancelEditRow(team);
-        var teamEntry = DbContext.Entry(team);
-        if (teamEntry.State == EntityState.Modified) {
-            teamEntry.CurrentValues.SetValues(teamEntry.OriginalValues);
-            teamEntry.State = EntityState.Unchanged;
-        }
-    }
-
-    async Task DeleteRow(Team team) {
-        if (team == teamToInsert) {
-            teamToInsert = null;
-        }
-        if (team == teamToUpdate) {
-            teamToUpdate = null;
-        }
-        if (teams.Contains(team)) {
-            DbContext.Remove(team);
-            await DbContext.SaveChangesAsync();
-            await teamsGrid.Reload();
-        } else {
-            teamsGrid.CancelEditRow(team);
-            await teamsGrid.Reload();
-        }
-    }
-
-    async Task InsertRow() {
-        teamToInsert = new Team();
-        await teamsGrid.InsertRow(teamToInsert);
-    }
-
-    void OnCreateRow(Team team) {
-        DbContext.Add(team);
-        DbContext.SaveChanges();
-        teamToInsert = null;
-    }
-
+    
 }

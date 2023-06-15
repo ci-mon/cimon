@@ -27,6 +27,12 @@ public class UserManager
 		user.IsDeactivated = true;
 		await _dbContext.SaveChangesAsync();
 	}
+	
+	public async Task Activate(UserName name) {
+		var user = await _dbContext.Users.SingleAsync(x => x.Name == name.Name);
+		user.IsDeactivated = false;
+		await _dbContext.SaveChangesAsync();
+	}
 
 	public async Task<bool> IsDeactivated(UserName name) {
 		var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Name == name.Name);
@@ -92,4 +98,5 @@ public class UserManager
 		}
 		return false;
 	}
+
 }

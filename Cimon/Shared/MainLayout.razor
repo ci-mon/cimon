@@ -13,11 +13,14 @@
             <RadzenColumn>
                 <RadzenLink Text="Home" Icon="home" Path=""/>
                  <RadzenLink Text="Monitors" Icon="monitor" Path="monitorList"/>
+                   <AuthorizeView Roles="teams-editor">
+                       <RadzenLink Text="SetupTeams" Icon="groups" Path="SetupTeams"/>
+                   </AuthorizeView>
                    <AuthorizeView Roles="admin">
-                       <Authorized>
-                            <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
-                            <RadzenLink Text="SetupTeams" Icon="groups" Path="SetupTeams"/>
-                       </Authorized>
+                       <RadzenLink Text="Users" Icon="groups" Path="UsersList"/>
+                   </AuthorizeView>
+                   <AuthorizeView Roles="admin">
+                       <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
                    </AuthorizeView>
             </RadzenColumn>
             <RadzenColumn>
