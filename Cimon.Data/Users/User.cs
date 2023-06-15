@@ -2,7 +2,7 @@
 
 namespace Cimon.Data.Users;
 
-public record User(UserId Id, UserName Name, IList<string>? Teams = null, IList<string>? Roles = null)
+public record User(UserId Id, UserName Name, IReadOnlyCollection<string>? Teams = null, IReadOnlyCollection<string>? Roles = null)
 {
 	public static User Guest { get; } = new User("guest", "Guest");
 

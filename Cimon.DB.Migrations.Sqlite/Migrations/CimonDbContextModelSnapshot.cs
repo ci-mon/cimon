@@ -71,6 +71,21 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("RoleRole", b =>
+                {
+                    b.Property<int>("OwnedRolesId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("OwnedRolesId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("RoleRole");
+                });
+
             modelBuilder.Entity("RoleUser", b =>
                 {
                     b.Property<int>("RolesId")
@@ -99,6 +114,21 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("TeamUser");
+                });
+
+            modelBuilder.Entity("RoleRole", b =>
+                {
+                    b.HasOne("Cimon.DB.Role", null)
+                        .WithMany()
+                        .HasForeignKey("OwnedRolesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RoleUser", b =>

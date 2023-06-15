@@ -7,29 +7,33 @@
 
 <RadzenCard class="rz-mt-4 main-panel">
     <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="true"
-                    Data="@_monitors.Where(m=>!m.Removed)" TItem="Monitor">
+                    Data="@_monitors.Where(m => !m.Removed)" TItem="Monitor">
         <Template Context="monitor">
             <RadzenCard class="monitor-item">
                 <RadzenRow>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString()) />
+                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
                 </RadzenRow>
                 <div>
                     <RadzenRow>
                         <RadzenText TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                     </RadzenRow>
                     <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
-                        <RadzenButton Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
-                        <RadzenButton Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
+                        <AuthorizeView Roles="monitor-editor">
+                            <RadzenButton Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
+                            <RadzenButton Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
+                        </AuthorizeView>
                         <RadzenButton Variant="Variant.Text" Text="Open" Click="() => ViewMonitor(monitor)"/>
                     </RadzenRow>
                 </div>
             </RadzenCard>
         </Template>
     </RadzenDataList>
-    
+
 </RadzenCard>
-<RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End" >
-    <RadzenButton Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8" />
+<RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
+    <AuthorizeView Roles="monitor-editor">
+        <RadzenButton Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
+    </AuthorizeView>
 </RadzenStack>
 <style>
     .bottom-panel {
@@ -73,10 +77,11 @@
         bottom: 0px;
     }
 </style>
+
 @code {
 
     private readonly IReadOnlyList<Monitor> _monitors = new List<Monitor>();
-    
+
     protected override void OnInitialized() {
         Subscribe(MonitorService.GetMonitors(), () => _monitors);
     }
@@ -87,12 +92,12 @@
 
     private void ViewMonitor(Monitor monitor) {
         string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Id}");
-        NavigationManager.NavigateTo(url); 
+        NavigationManager.NavigateTo(url);
     }
 
     private void SetupMonitor(Monitor monitor) {
         string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Id}");
-        NavigationManager.NavigateTo(url); 
+        NavigationManager.NavigateTo(url);
     }
 
     private async Task Remove(Monitor monitor) {

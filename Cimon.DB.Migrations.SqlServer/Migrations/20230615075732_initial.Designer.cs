@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cimon.DB.Migrations.SqlServer.Migrations
 {
     [DbContext(typeof(CimonDbContext))]
-    [Migration("20230611224208_initial")]
+    [Migration("20230615075732_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -85,6 +85,21 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("RoleRole", b =>
+                {
+                    b.Property<int>("OwnedRolesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OwnedRolesId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("RoleRole");
+                });
+
             modelBuilder.Entity("RoleUser", b =>
                 {
                     b.Property<int>("RolesId")
@@ -113,6 +128,21 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("TeamUser");
+                });
+
+            modelBuilder.Entity("RoleRole", b =>
+                {
+                    b.HasOne("Cimon.DB.Role", null)
+                        .WithMany()
+                        .HasForeignKey("OwnedRolesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RoleUser", b =>

@@ -1,4 +1,6 @@
 ﻿@page "/SetupMonitor/{monitorId?}"
+@attribute [Authorize(Roles = "monitor-editor")]
+
 @inject MonitorService MonitorService
 @inject IEnumerable<IBuildLocatorProvider> BuildLocatorProviders
 @inject NavigationManager NavigationManager

@@ -4,6 +4,8 @@ using Cimon.DB;
 using Microsoft.EntityFrameworkCore;
 using User = Cimon.Data.Users.User;
 using System.Net;
+using Cimon.Data;
+using Microsoft.Extensions.Options;
 
 namespace Cimon.Auth;
 
@@ -11,10 +13,13 @@ public class UserManager
 {
 	private readonly ILogger _logger;
 	private readonly CimonDbContext _dbContext;
+	private readonly CimonDataSettings _cimonDataSettings;
 
-	public UserManager(ILogger<UserManager> logger, CimonDbContext dbContext) {
+	public UserManager(ILogger<UserManager> logger, CimonDbContext dbContext, 
+			IOptions<CimonDataSettings> cimonDataSettings) {
 		_logger = logger;
 		_dbContext = dbContext;
+		_cimonDataSettings = cimonDataSettings.Value;
 	}
 
 	public async Task Deactivate(UserName name) {
@@ -28,13 +33,32 @@ public class UserManager
 		return user?.IsDeactivated ?? false;
 	}
 
+	private IReadOnlyCollection<string> GetRoles(List<Role> rootRoles, List<Role> allRoles) {
+		var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		var toProcess = new Queue<Role>(rootRoles);
+		while (toProcess.Count > 0) {
+			var role = toProcess.Dequeue();
+			if (!result.Add(role.Name)) continue;
+			foreach (var owned in role.OwnedRoles) {
+				var ownedWithData = allRoles.First(x => x.Id == owned.Id);
+				toProcess.Enqueue(ownedWithData);
+			}
+		}
+		return result;
+	}
+
 	public async Task<User> FindOrCreateUser(UserName name) {
-		var user = await _dbContext.Users.Include(x => x.Roles).Include(x => x.Teams)
+		var user = await _dbContext.Users
+			.Include(x => x.Roles)
+			.Include(x => x.Teams)
 			.FirstOrDefaultAsync(x => x.Name == name.Name);
 		if (user != null) {
-			return new User(user.Name, user.Name, user.Teams.Select(x => x.Name).ToList(),
-				user.Roles.Select(x => x.Name).ToList());
+			var teams = user.Teams.Select(x => x.Name).ToList();
+			var allRoles = await _dbContext.Roles.Include(x => x.OwnedRoles).ToListAsync();
+			var roles = GetRoles(user.Roles, allRoles);
+			return new User(user.Name, user.Name, teams, roles);
 		}
+		var allTeams = await _dbContext.Teams.ToListAsync();
 		/*
 		 TODO create user
 		 var server = $"{domain}.com";
@@ -50,13 +74,15 @@ public class UserManager
 	}
 
 	public async Task<bool> SignInAsync(UserName userName, string password) {
-		if (userName == "test" || userName == "admin") {
+		var name = userName.Name;
+		if (_cimonDataSettings.IsDevelopment &&
+				await _dbContext.Users.AnyAsync(u=>u.Name == name && u.AllowLocalLogin)) {
 			return true;
 		}
 		string domain = userName.Domain.ToLowerInvariant(); // TODO get from where?
 		var server = $"{domain}.com";
 		LdapConnection connection = new(server);
-		NetworkCredential credential = new(userName.Name, password, userName.Domain);
+		NetworkCredential credential = new(name, password, userName.Domain);
 		try {
 			connection.Bind(credential);
 			connection.Dispose();

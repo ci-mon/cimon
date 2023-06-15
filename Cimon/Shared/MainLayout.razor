@@ -8,7 +8,7 @@
 <PageTitle>Cimon</PageTitle>
 <RadzenButton Visible="_headerCollapsed" Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" class="full-screen-toggle full-screen-toggle-float" />
 <RadzenLayout class="@pageClass()" Style="grid-template-columns: auto 1fr auto; grid-template-areas: 'rz-header rz-header rz-header' 'rz-sidebar rz-body rz-right-sidebar'">
-    <RadzenHeader Style="font-size: 1.2em;">
+    <RadzenHeader class="header-line">
         <RadzenRow AlignItems="AlignItems.Center">
             <RadzenColumn>
                 <RadzenLink Text="Home" Icon="home" Path=""/>
@@ -16,6 +16,7 @@
                    <AuthorizeView Roles="admin">
                        <Authorized>
                             <RadzenLink Text="SignalTest" Icon="monitor" Path="SignalTest"/>
+                            <RadzenLink Text="SetupTeams" Icon="groups" Path="SetupTeams"/>
                        </Authorized>
                    </AuthorizeView>
             </RadzenColumn>
@@ -38,6 +39,13 @@
 </RadzenLayout>
 
 <style>
+    .header-line {
+        font-size: 1.2em;
+        padding-left: 1em;
+    }
+    .header-line a {
+        margin-left: 0.5em;
+    }
     .full-screen .rz-sidebar {
         display: none;
     }

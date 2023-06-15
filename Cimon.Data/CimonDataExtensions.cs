@@ -5,9 +5,9 @@ using Cimon.Data.Users;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class CimonDataExtensions
+public static class DI
 {
-	public static IServiceCollection AddCimonData(this IServiceCollection services) {
+	public static IServiceCollection AddCimonData(this IServiceCollection services, bool isDevelopment) {
 		return services
 			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<BuildInfoService>()
@@ -20,6 +20,7 @@ public static class CimonDataExtensions
 			.AddSingleton<MonitorService>()
 			.AddMediatR(configuration => {
 				configuration.RegisterServicesFromAssemblyContaining<AddCommentNotificationHandler>();
-			});
+			})
+			.Configure<CimonDataSettings>(settings => settings.IsDevelopment = isDevelopment);
 	}
 }

@@ -13,5 +13,6 @@ public class CimonDbContext : DbContext
 	protected override void OnModelCreating(ModelBuilder modelBuilder) {
 		base.OnModelCreating(modelBuilder);
 		modelBuilder.Entity<User>().HasIndex(x => x.Name).IsUnique();
+		modelBuilder.Entity<Role>().HasMany(x => x.OwnedRoles).WithMany();
 	}
 }

@@ -18,8 +18,9 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
 builder.Services.AddTransient<UnprotectedLocalStorage>();
 
-builder.Services.AddCimonData();
-builder.Services.AddCimonDb(builder.Configuration, builder.Environment.IsDevelopment());
+var isDevelopment = builder.Environment.IsDevelopment();
+builder.Services.AddCimonData(isDevelopment);
+builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();

@@ -31,6 +31,7 @@ public class DbInitializer
 		if (_options.UseTestData) {
 			await AddTestData(_dbContext);
 		}
+
 		await _dbContext.SaveChangesAsync();
 	}
 
@@ -47,13 +48,30 @@ public class DbInitializer
 		var allTeam = await context.Teams.AddAsync(new Team {
 			Name = "all"
 		});
+		var monitorEditorRole = await context.Roles.AddAsync(new Role {
+			Name = "monitor-editor"
+		});
+		var teamsEditorRole = await context.Roles.AddAsync(new Role {
+			Name = "teams-editor"
+		});
+		var allEditorRole = await context.Roles.AddAsync(new Role {
+			Name = "all-editor",
+			OwnedRoles = {
+				monitorEditorRole.Entity,
+				teamsEditorRole.Entity
+			}
+		});
 		var adminRole = await context.Roles.AddAsync(new Role {
-			Name = "admin"
+			Name = "admin",
+			OwnedRoles = {
+				allEditorRole.Entity
+			}
 		});
 		await context.Users.AddAsync(new User
-			{ Name = "test", FullName = "Test User", Teams = { usersTeam.Entity, allTeam.Entity } });
+			{ Name = "test", FullName = "Test User", AllowLocalLogin = true,
+				Teams = { usersTeam.Entity, allTeam.Entity } });
 		await context.Users.AddAsync(new User {
-			Name = "admin", FullName = "Test Admin", Roles = { adminRole.Entity },
+			Name = "admin", FullName = "Test Admin", Roles = { adminRole.Entity }, AllowLocalLogin = true,
 			Teams = { adminTeam.Entity, allTeam.Entity }
 		});
 	}
