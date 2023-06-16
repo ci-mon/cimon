@@ -25,10 +25,12 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 
 	private async Task ConfigureAsync(TSecrets options) {
 		IAuthMethodInfo authMethod = new TokenAuthMethodInfo(_vaultSettings.Token);
-		var vaultClientSettings = new VaultClientSettings(_vaultSettings.Url, authMethod);
+		var vaultClientSettings = new VaultClientSettings(_vaultSettings.Url, authMethod) {
+			VaultServiceTimeout = TimeSpan.FromSeconds(30)
+		};
 		IVaultClient vaultClient = new VaultClient(vaultClientSettings);
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
-			.ReadSecretAsync(path: _vaultSettings.Path, mountPoint: _vaultSettings.MountPoint);
+			.ReadSecretAsync(path: _vaultSettings.Path, mountPoint: _vaultSettings.MountPoint).ConfigureAwait(false);
 		foreach (var property in typeof(TSecrets).GetProperties()) {
 			var key = $"{_prefix}.{property.Name.ToLowerInvariant()}";
 			if (!secrets.Data.Data.TryGetValue(key, out var value)) continue;

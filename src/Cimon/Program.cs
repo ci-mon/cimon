@@ -24,6 +24,7 @@ builder.Services.AddTransient<UnprotectedLocalStorage>();
 var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddCimonData();
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
+builder.Services.AddCimonDataTeamCity();
 
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
 builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();

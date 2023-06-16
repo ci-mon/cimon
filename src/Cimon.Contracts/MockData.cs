@@ -24,7 +24,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:02:41",
-        "GetStartDateString": "18:27"
+        "GetStartDateString": "18:27",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
@@ -39,7 +40,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:59:50",
-        "GetStartDateString": "20:36"
+        "GetStartDateString": "20:36",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=NetCoreAppUnitTests&tab=buildTypeStatusDiv",
@@ -54,7 +56,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:29:51",
-        "GetStartDateString": "21:03"
+        "GetStartDateString": "21:03",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=Team_CoreCraft_Custom_Net6_UnitNet6&tab=buildTypeStatusDiv",
@@ -69,7 +72,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:42:20",
-        "GetStartDateString": "21:23"
+        "GetStartDateString": "21:23",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=UnitTestIntegration780&tab=buildTypeStatusDiv",
@@ -84,7 +88,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:17:46",
-        "GetStartDateString": "20:43"
+        "GetStartDateString": "20:43",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=IntegrationPostgreSQL&tab=buildTypeStatusDiv",
@@ -99,7 +104,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 19:43:39",
-        "GetStartDateString": "19:13"
+        "GetStartDateString": "19:13",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=DotNetOracleIntegrationTests&tab=buildTypeStatusDiv",
@@ -114,7 +120,8 @@ public class MockData
         "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:07:33",
-        "GetStartDateString": "19:14"
+        "GetStartDateString": "19:14",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.shell/job/master/4850/",
@@ -128,7 +135,8 @@ public class MockData
         "BranchName": null,
         "Committers": "test,Vadym Artemchuk,",
         "GetFinishDateString": "01.01.0001 00:00:00",
-        "GetStartDateString": "00:00"
+        "GetStartDateString": "00:00",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
@@ -142,7 +150,8 @@ public class MockData
         "BranchName": null,
         "Committers": "test,",
         "GetFinishDateString": "01.01.0001 00:00:00",
-        "GetStartDateString": "00:00"
+        "GetStartDateString": "00:00",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.process-designer/job/master/7727/",
@@ -156,7 +165,8 @@ public class MockData
         "BranchName": null,
         "Committers": "",
         "GetFinishDateString": "01.01.0001 00:00:00",
-        "GetStartDateString": "00:00"
+        "GetStartDateString": "00:00",
+        "BuildId": ""
     },
     {
         "BuildHomeUrl": "https://ts1-infr-jenkins.bpmonline.com/job/lib.studio-enterprise.process/job/master/257/",
@@ -170,7 +180,8 @@ public class MockData
         "BranchName": null,
         "Committers": "",
         "GetFinishDateString": "01.01.0001 00:00:00",
-        "GetStartDateString": "00:00"
+        "GetStartDateString": "00:00",
+        "BuildId": ""
     }
 ]
 """)!

@@ -2,6 +2,7 @@
 @using Cimon.DB
 @using Cimon.Auth
 @using Cimon.Data.Users
+@using Microsoft.EntityFrameworkCore
 @attribute [Authorize(Roles = "admin")]
 
 @inherits DbContextComponent<User>;
@@ -23,12 +24,12 @@
                                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
                                     <Template Context="user">
-                                        @user.Roles
+                                        @string.Join(",", user.Roles.Select(x=>x.Name))
                                     </Template>
                                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
                                     <Template Context="user">
-                                        @user.Teams
+                                        @string.Join(",", user.Teams.Select(x=>x.Name))
                                     </Template>
                                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="180px">
@@ -44,10 +45,10 @@
                 <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
                     <Template Context="user">
                         @if (user.IsDeactivated) {
-                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="activate" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Activate" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
                             </RadzenButton>
                         } else {
-                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="deactivate" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person_off" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Deactivate" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
                             </RadzenButton>
                         }
                        
@@ -69,6 +70,10 @@
 </RadzenLayout>
 
 @code {
+
+    protected override IQueryable<User> InitItems() {
+        return DbContext.Users.Include(x => x.Teams).Include(x => x.Roles);
+    }
 
     private async Task Deactivate(User value) {
         await UserManager.Deactivate(value.Name);

@@ -2,5 +2,5 @@
 
 public interface IBuildLocatorProvider
 {
-	IAsyncEnumerable<BuildLocatorDescriptor> GetLocators();
+	IAsyncEnumerable<BuildConfig> GetLocators();
 }

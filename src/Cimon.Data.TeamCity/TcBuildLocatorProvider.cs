@@ -6,11 +6,24 @@ namespace Cimon.Data.TeamCity;
 public class TcBuildLocatorProvider : IBuildLocatorProvider
 {
 
-	public async IAsyncEnumerable<BuildLocatorDescriptor> GetLocators() {
-		foreach (BuildInfo x in MockData.TestBuildInfos) yield return new BuildLocatorDescriptor {
-			Id = x.Name,
-			CiSystem = CISystem.TeamCity,
-			Path = x.ProjectName
-		};
+	private readonly TcClient _client;
+	public TcBuildLocatorProvider(TcClient client) {
+		_client = client;
+	}
+
+#pragma warning disable CS1998
+	public async IAsyncEnumerable<BuildConfig> GetLocators() {
+#pragma warning restore CS1998
+		var buildConfigs = _client.GetBuildConfigs().All();
+		foreach (var buildConfig in buildConfigs) {
+			if (buildConfig.Personal is true || buildConfig.Cancelled is true) {
+				continue;
+			}
+			yield return new BuildConfig {
+				Id = buildConfig.Id,
+				CiSystem = CISystem.TeamCity,
+				Path = buildConfig.ProjectName
+			};
+		}
 	}
 }

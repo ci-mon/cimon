@@ -10,7 +10,7 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 	[Inject] protected CimonDbContext DbContext { get; set; } = null!;
 
 	protected RadzenDataGrid<TItem> Grid = null!;
-	protected IEnumerable<TItem?> Items = null!;
+	protected IQueryable<TItem?> Items = null!;
 
 	protected TItem? ItemToInsert;
 	protected TItem? ItemToUpdate;
@@ -22,7 +22,11 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 
 	protected override async Task OnInitializedAsync() {
 		await base.OnInitializedAsync();
-		Items = DbContext.Set<TItem>();
+		Items = InitItems();
+	}
+
+	protected virtual IQueryable<TItem> InitItems() {
+		return DbContext.Set<TItem>();
 	}
 
 	protected async Task EditRow(TItem team) {

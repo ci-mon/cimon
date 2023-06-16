@@ -7,7 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
+        <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
+        <PackageReference Include="TeamCitySharp-forked-mavezeau" Version="2.0.16" />
     </ItemGroup>
 
 </Project>
