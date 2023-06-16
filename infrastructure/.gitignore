@@ -1,0 +1,6 @@
+data_dir/*
+agent/*
+buildserver_pgdata/
+teamcity-server-logs/
+jenkins_configuration/
+vault/
