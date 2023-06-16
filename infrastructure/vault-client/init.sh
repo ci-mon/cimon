@@ -1,4 +1,5 @@
 #!/bin/bash
+
 VAULT_RETRIES=5
 echo "Vault is starting..."
 until vault status > /dev/null 2>&1 || [ "$VAULT_RETRIES" -eq 0 ]; do

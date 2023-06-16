@@ -5,5 +5,7 @@ RUN apt-get update && apt-get install -y software-properties-common curl gnupg2 
   apt-get update && apt-get install -y \
   vault && \
   setcap cap_ipc_lock= /usr/bin/vault
-CMD /init.sh
+RUN touch /init.sh
+WORKDIR /
+ENTRYPOINT [ "bash", "init.sh" ] 
 ENV VAULT_DEV_ROOT_TOKEN_ID=root
