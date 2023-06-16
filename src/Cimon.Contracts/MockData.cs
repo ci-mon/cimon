@@ -1,9 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-using Cimon.Contracts;
 using Monitor = Cimon.Data.BuildInformation.Monitor;
 
-namespace Cimon.Data;
+namespace Cimon.Contracts;
 
 public class MockData
 {

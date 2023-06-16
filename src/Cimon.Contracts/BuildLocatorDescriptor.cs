@@ -1,6 +1,4 @@
-﻿using Cimon.Contracts;
-
-namespace Cimon.Data.BuildInformation;
+﻿namespace Cimon.Contracts;
 
 public record BuildLocatorDescriptor : BuildLocator
 {

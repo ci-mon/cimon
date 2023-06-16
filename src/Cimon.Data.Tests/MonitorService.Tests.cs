@@ -1,5 +1,6 @@
 ﻿using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using Cimon.Contracts;
 using Cimon.Data.BuildInformation;
 using Monitor = Cimon.Data.BuildInformation.Monitor;
 

@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Cimon.Contracts;
+using Cimon.Contracts.Services;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;

@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
+      <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

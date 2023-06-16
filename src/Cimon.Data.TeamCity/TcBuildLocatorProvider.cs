@@ -1,5 +1,5 @@
 ﻿using Cimon.Contracts;
-using Cimon.Data.BuildInformation;
+using Cimon.Contracts.Services;
 
 namespace Cimon.Data.TeamCity;
 

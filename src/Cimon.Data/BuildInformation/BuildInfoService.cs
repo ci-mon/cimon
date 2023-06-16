@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Cimon.Contracts;
+using Cimon.Contracts.Services;
 using Cimon.Data.Discussions;
 using Microsoft.Extensions.Options;
 

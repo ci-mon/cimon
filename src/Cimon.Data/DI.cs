@@ -1,4 +1,5 @@
-﻿using Cimon.Data;
+﻿using Cimon.Contracts.Services;
+using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;
@@ -8,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DI
 {
-	public static IServiceCollection AddCimonData(this IServiceCollection services, bool isDevelopment) {
+	public static IServiceCollection AddCimonData(this IServiceCollection services) {
 		return services
 			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<BuildInfoService>()
@@ -21,7 +22,6 @@ public static class DI
 			.AddSingleton<MonitorService>()
 			.AddMediatR(configuration => {
 				configuration.RegisterServicesFromAssemblyContaining<AddCommentNotificationHandler>();
-			})
-			.Configure<CimonDataSettings>(settings => settings.IsDevelopment = isDevelopment);
+			});
 	}
 }

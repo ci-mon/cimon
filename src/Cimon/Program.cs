@@ -1,7 +1,9 @@
 using Cimon;
 using Cimon.Auth;
+using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
+using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.DB;
@@ -20,7 +22,7 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<UnprotectedLocalStorage>();
 
 var isDevelopment = builder.Environment.IsDevelopment();
-builder.Services.AddCimonData(isDevelopment);
+builder.Services.AddCimonData();
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 
 builder.Services.AddSingleton<IBuildLocatorProvider, TcBuildLocatorProvider>();
@@ -36,9 +38,13 @@ builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 	};
 });
 
-
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOptions"))
+	.Configure<CimonDataSettings>(settings => {
+		settings.IsDevelopment = isDevelopment;
+	})
+	.ConfigureVaultSecrets<TeamCitySecrets>()
+	.Configure<VaultSettings>(builder.Configuration.GetSection("Vault"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
 	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)
 	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Jwt);
@@ -50,6 +56,7 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 
 WebApplication app = builder.Build();
+
 await DbInitializer.Init(app.Services);
 if (!app.Environment.IsDevelopment()) {
 	app.UseExceptionHandler("/Error");

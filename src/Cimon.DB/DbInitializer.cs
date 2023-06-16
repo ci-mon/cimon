@@ -31,7 +31,6 @@ public class DbInitializer
 		if (_options.UseTestData) {
 			await AddTestData(_dbContext);
 		}
-
 		await _dbContext.SaveChangesAsync();
 	}
 

@@ -1,4 +1,5 @@
-﻿using Cimon.Data;
+﻿using Cimon.Contracts;
+using Cimon.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
