@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using Cimon.Data.Users;
 
 namespace Cimon.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;

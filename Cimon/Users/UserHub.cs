@@ -27,11 +27,11 @@ public class UserHub : Hub<IUserClientApi>
 
 	public override async Task OnConnectedAsync() {
 		await base.OnConnectedAsync();
-		IIdentity identity = Context.User.Identity;
+		var identity = Context.User?.Identity;
 		var userName = identity?.Name;
 		if (!string.IsNullOrWhiteSpace(userName)) {
 			await Groups.AddToGroupAsync(Context.ConnectionId, userName!);
-			var team = Context.User.Claims.FirstOrDefault(c => c.Type == TokenService.TeamClaimName)?.Value;
+			var team = Context.User?.Claims.FirstOrDefault(c => c.Type == TokenService.TeamClaimName)?.Value;
 			if (team != null) {
 				await Groups.AddToGroupAsync(Context.ConnectionId, team);
 			}
@@ -42,12 +42,12 @@ public class UserHub : Hub<IUserClientApi>
 
 	public override async Task OnDisconnectedAsync(Exception? exception) {
 		await base.OnDisconnectedAsync(exception);
-		IIdentity identity = Context.User.Identity;
+		var identity = Context.User?.Identity;
 		_logger.LogInformation("User {Identifier} ({Name} {IsAuthenticated}) disconnected", Context.UserIdentifier,
 			identity?.Name, identity?.IsAuthenticated);
 	}
 
-	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string? comment) {
+	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string comment) {
 		await _mediator.Publish(new AddCommentNotification {
 			BuildId = buildId,
 			QuickReplyType = quickReplyType,

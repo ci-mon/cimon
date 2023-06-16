@@ -1,13 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using System.DirectoryServices.Protocols;
+﻿using System.DirectoryServices.Protocols;
+using System.Net;
+using Cimon.Contracts;
 using Cimon.DB;
 using Microsoft.EntityFrameworkCore;
-using User = Cimon.Data.Users.User;
-using System.Net;
-using Cimon.Data;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using User = Cimon.Contracts.User;
 
-namespace Cimon.Auth;
+namespace Cimon.Data.Users;
 
 public class UserManager
 {
@@ -53,7 +53,7 @@ public class UserManager
 		return result;
 	}
 
-	public async Task<User> FindOrCreateUser(UserName name) {
+	public async Task<User?> FindOrCreateUser(UserName name) {
 		var user = await _dbContext.Users
 			.Include(x => x.Roles)
 			.Include(x => x.Teams)

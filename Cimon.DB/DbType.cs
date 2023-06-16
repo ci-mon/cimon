@@ -1,4 +1,4 @@
-﻿namespace Cimon.Data;
+﻿namespace Cimon.DB;
 
 public enum DbType
 {

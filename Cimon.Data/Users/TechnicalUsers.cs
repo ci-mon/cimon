@@ -1,4 +1,6 @@
-﻿namespace Cimon.Data.Users;
+﻿using Cimon.Contracts;
+
+namespace Cimon.Data.Users;
 
 class TechnicalUsers : ITechnicalUsers
 {

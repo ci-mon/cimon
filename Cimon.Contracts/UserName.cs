@@ -1,4 +1,4 @@
-﻿namespace Cimon.Auth;
+﻿namespace Cimon.Contracts;
 
 public readonly record struct UserName(string Domain, string Name)
 {

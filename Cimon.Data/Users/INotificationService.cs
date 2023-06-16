@@ -1,6 +1,6 @@
-﻿using Cimon.Data.Users;
+﻿using Cimon.Contracts;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Users;
 
 public interface INotificationService
 {

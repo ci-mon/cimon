@@ -4,6 +4,9 @@
 @inject MonitorService MonitorService
 @inject IEnumerable<IBuildLocatorProvider> BuildLocatorProviders
 @inject NavigationManager NavigationManager
+@using Cimon.Data.Common
+@using Cimon.Contracts
+@using Cimon.Data.BuildInformation
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -44,7 +47,7 @@
 
 @code {
 
-    private Monitor? _monitor;
+    private Monitor _monitor = null!;
     RadzenDataGrid<BuildLocatorDescriptor> grid;
     IEnumerable<BuildLocatorDescriptor> _locators;
     IList<BuildLocatorDescriptor> _selectedLocators = new List<BuildLocatorDescriptor>();
@@ -69,7 +72,7 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _locators = await BuildLocatorProviders.SelectMany(x => x.GetLocators()).ToListAsync();
-        Subscribe(MonitorService.GetMonitorById(MonitorId), () => _monitor, monitor => {
+        MonitorService.GetMonitorById(MonitorId).Subscribe(this, () => _monitor, monitor => {
             var descriptors = _locators.Where(l => monitor.Builds.Any(b => l.Id == b.Id)).ToList();
             SetSelectedLocators(descriptors);
         });

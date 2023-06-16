@@ -21,8 +21,8 @@
     }
 </RadzenCard>
 @code {
-    private IReadOnlyCollection<MentionInfo> _mentions;
-    private string StatusText => $"You was mentioned in {_mentions.Count} builds";
+    private IReadOnlyCollection<MentionInfo>? _mentions;
+    private string StatusText => $"You was mentioned in {_mentions?.Count ?? 0} builds";
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         var user = await UserAccessor.Current;

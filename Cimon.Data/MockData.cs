@@ -1,5 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
+using Cimon.Contracts;
+using Monitor = Cimon.Data.BuildInformation.Monitor;
 
 namespace Cimon.Data;
 
@@ -20,7 +22,7 @@ public class MockData
         "FinishDate": "2023-03-31T20:02:41+03:00",
         "StartDate": "2023-03-31T18:27:36+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:02:41",
         "GetStartDateString": "18:27"
@@ -35,7 +37,7 @@ public class MockData
         "FinishDate": "2023-03-31T20:59:50+03:00",
         "StartDate": "2023-03-31T20:36:28+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:59:50",
         "GetStartDateString": "20:36"
@@ -50,7 +52,7 @@ public class MockData
         "FinishDate": "2023-03-31T21:29:51+03:00",
         "StartDate": "2023-03-31T21:03:35+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:29:51",
         "GetStartDateString": "21:03"
@@ -65,7 +67,7 @@ public class MockData
         "FinishDate": "2023-03-31T21:42:20+03:00",
         "StartDate": "2023-03-31T21:23:25+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:42:20",
         "GetStartDateString": "21:23"
@@ -80,7 +82,7 @@ public class MockData
         "FinishDate": "2023-03-31T21:17:46+03:00",
         "StartDate": "2023-03-31T20:43:54+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 21:17:46",
         "GetStartDateString": "20:43"
@@ -95,7 +97,7 @@ public class MockData
         "FinishDate": "2023-03-31T19:43:39+03:00",
         "StartDate": "2023-03-31T19:13:17+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 19:43:39",
         "GetStartDateString": "19:13"
@@ -110,7 +112,7 @@ public class MockData
         "FinishDate": "2023-03-31T20:07:33+03:00",
         "StartDate": "2023-03-31T19:14:52+03:00",
         "BranchName": "trunk",
-        "Commiters": "",
+        "Committers": "",
         "LastModificationBy": [],
         "GetFinishDateString": "31.03.2023 20:07:33",
         "GetStartDateString": "19:14"
@@ -125,7 +127,7 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Commiters": "test,Vadym Artemchuk,",
+        "Committers": "test,Vadym Artemchuk,",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00"
     },
@@ -139,7 +141,7 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Commiters": "test,",
+        "Committers": "test,",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00"
     },
@@ -153,7 +155,7 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Commiters": "",
+        "Committers": "",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00"
     },
@@ -167,14 +169,14 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Commiters": "",
+        "Committers": "",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00"
     }
 ]
 """)!
 		.Select(info => {
-			info.BuildId = info.Name;
+			info.BuildId = info.Name!;
 			if (AllBuildsAreGreen) {
 				info.Status = BuildStatus.Success;
 			}
@@ -182,19 +184,19 @@ public class MockData
 		}).ToArray();
 
 		public static ImmutableList<Monitor> Monitors { get; } = new List<Monitor> {
-			new Monitor {
+			new() {
 				Id = "Team 1",
 				Title = "Team 1",
-				Builds = TestBuildInfos.Where(x=>x.Name.Contains(".")).Select(x=>new BuildLocator {
-					Id = x.Name,
+				Builds = TestBuildInfos.Where(x=>x.Name!.Contains('.')).Select(x=>new BuildLocator {
+					Id = x.Name!,
 					CiSystem = CISystem.TeamCity
 				}).ToList()
 			},
-			new Monitor() {
+			new() {
 				Id = "all",
 				Title = "all",
 				Builds = TestBuildInfos.Select(x=>new BuildLocator {
-					Id = x.Name,
+					Id = x.Name!,
 					CiSystem = CISystem.TeamCity
 				}).ToList(),
 				AlwaysOnMonitoring = true

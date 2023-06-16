@@ -1,6 +1,7 @@
 @using Cimon.Data
 @using Microsoft.AspNetCore.Components
 @using System.Text.Encodings.Web
+@using Cimon.Contracts
 @inject NavigationManager NavigationManager
 
 <div class="build-info-item @GetClasses()">
@@ -34,7 +35,7 @@
 @code {
 
     [Parameter]
-    public BuildInfo? Info { get; set; }
+    public BuildInfo Info { get; set; } = null!;
 
     private string GetStatus() => string.IsNullOrWhiteSpace(Info.StatusText) ? Info.Status.ToString() : Info.StatusText;
 

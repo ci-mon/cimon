@@ -1,13 +1,13 @@
 ﻿using System.Collections.Immutable;
-using Cimon.Data.Users;
+using Cimon.Contracts;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Discussions;
 
 public class BuildComment
 {
 	public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-	public string Comment { get; set; }
-	public User Author { get; set; }
+	public required string Comment { get; set; }
+	public User Author { get; set; } = User.Guest;
 	public IImmutableList<UserId> Mentions { get; set; } = ImmutableList<UserId>.Empty;
 	public string Id { get; set; } = $"c_{Guid.NewGuid():N}";
 	public DateTime? ModifiedOn { get; set; }

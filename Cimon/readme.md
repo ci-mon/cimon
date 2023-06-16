@@ -21,7 +21,7 @@
 2. Broken build notification (+)
 3. Blame reaction (+)
 4. Auto update
-5. Reconnection
+5. Reconnection (+)
 6. Mentions (show/subscribe)
 7. Monitor list
 

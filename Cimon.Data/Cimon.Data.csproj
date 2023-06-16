@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
       <ProjectReference Include="..\Cimon.DB\Cimon.DB.csproj" />
     </ItemGroup>
 

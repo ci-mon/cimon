@@ -1,5 +1,4 @@
-﻿using Cimon.Data;
-using Cimon.DB;
+﻿using Cimon.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 

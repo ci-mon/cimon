@@ -5,19 +5,19 @@ using Radzen.Blazor;
 
 namespace Cimon.Shared;
 
-public class DbContextComponent<TItem> : ComponentBase where TItem : class, new()
+public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEntityCreator<TItem>
 {
 	[Inject] protected CimonDbContext DbContext { get; set; } = null!;
 
-	protected RadzenDataGrid<TItem?> Grid;
+	protected RadzenDataGrid<TItem> Grid = null!;
 	protected IEnumerable<TItem?> Items = null!;
 
-	protected TItem? itemToInsert;
-	protected TItem? itemToUpdate;
+	protected TItem? ItemToInsert;
+	protected TItem? ItemToUpdate;
 
 	protected void Reset() {
-		itemToInsert = default;
-		itemToUpdate = default;
+		ItemToInsert = default;
+		ItemToUpdate = default;
 	}
 
 	protected override async Task OnInitializedAsync() {
@@ -25,62 +25,68 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, new(
 		Items = DbContext.Set<TItem>();
 	}
 
-	protected async Task EditRow(TItem? team) {
-		itemToUpdate = team;
+	protected async Task EditRow(TItem team) {
+		ItemToUpdate = team;
 		await Grid.EditRow(team);
 	}
 
 	protected void OnUpdateRow(TItem team) {
-		if (team == itemToInsert) {
-			itemToInsert = null;
+		if (team == ItemToInsert) {
+			ItemToInsert = null;
 		}
-		itemToUpdate = null;
+		ItemToUpdate = null;
 		DbContext.Update(team);
 		DbContext.SaveChanges();
 	}
 
-	protected async Task SaveRow(TItem? team) {
-		await Grid.UpdateRow(team);
+	protected async Task SaveRow(TItem item) {
+		await Grid.UpdateRow(item);
 	}
 
-	protected void CancelEdit(TItem? team) {
-		if (team == itemToInsert) {
-			itemToInsert = null;
+	protected void CancelEdit(TItem? item) {
+		if (item == null) {
+			return;
 		}
-		itemToUpdate = null;
-		Grid.CancelEditRow(team);
-		var entry = DbContext.Entry(team);
+		if (item == ItemToInsert) {
+			ItemToInsert = null;
+		}
+		ItemToUpdate = null;
+		Grid.CancelEditRow(item);
+		var entry = DbContext.Entry(item);
 		if (entry.State == EntityState.Modified) {
 			entry.CurrentValues.SetValues(entry.OriginalValues);
 			entry.State = EntityState.Unchanged;
 		}
 	}
 
-	protected async Task DeleteRow(TItem? team) {
-		if (team == itemToInsert) {
-			itemToInsert = null;
+	protected async Task DeleteRow(TItem? item) {
+		if (item == null) {
+			return;
 		}
-		if (team == itemToUpdate) {
-			itemToUpdate = null;
+		if (item == ItemToInsert) {
+			ItemToInsert = null;
 		}
-		if (Items.Contains(team)) {
-			DbContext.Remove(team);
+		if (item == ItemToUpdate) {
+			ItemToUpdate = null;
+		}
+		if (Items.Contains(item)) {
+			DbContext.Remove(item);
 			await DbContext.SaveChangesAsync();
 			await Grid.Reload();
 		} else {
-			Grid.CancelEditRow(team);
+			Grid.CancelEditRow(item);
 			await Grid.Reload();
 		}
 	}
 
 	protected async Task InsertRow() {
-		itemToInsert = new TItem();
-		await Grid.InsertRow(itemToInsert);
+		ItemToInsert = TItem.Create();
+		await Grid.InsertRow(ItemToInsert);
 	}
 
 	protected void OnCreateRow(TItem team) {
 		DbContext.Add(team);
 		DbContext.SaveChanges();
-		itemToInsert = null;
+		ItemToInsert = null;
 	}
 }

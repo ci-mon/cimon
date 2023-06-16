@@ -1,4 +1,6 @@
-﻿namespace Cimon.Data;
+﻿using Cimon.Contracts;
+
+namespace Cimon.Data.BuildInformation;
 
 public interface IBuildInfoProvider
 {

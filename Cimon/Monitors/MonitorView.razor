@@ -1,6 +1,8 @@
 @page "/monitor/{monitorId?}"
 @using Cimon.Data
 @using System.Reactive.Linq
+@using Cimon.Contracts
+@using Cimon.Data.BuildInformation
 @inject MonitorService MonitorService
 @inject BuildInfoService BuildInfoService
 @inherits ReactiveComponent
@@ -72,7 +74,7 @@
     [Parameter]
     public string? MonitorId { get; set; }
 
-    private IList<BuildInfo>? _buildInfos = new List<BuildInfo>();
+    private readonly IList<BuildInfo>? _buildInfos = new List<BuildInfo>();
     private Monitor? _monitor;
 
     private string GetTitle() => _monitor?.Title ?? MonitorId ?? string.Empty;

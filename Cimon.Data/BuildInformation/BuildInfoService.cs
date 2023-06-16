@@ -1,26 +1,25 @@
 ﻿using System.Collections.Immutable;
-using Optional;
-
-namespace Cimon.Data;
-
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using Cimon.Contracts;
+using Cimon.Data.Discussions;
 using Microsoft.Extensions.Options;
+
+namespace Cimon.Data.BuildInformation;
 
 public class BuildInfoService : IDisposable
 {
-	private readonly CancellationTokenSource _watchCts;
+	private readonly CancellationTokenSource _watchCts = new ();
 	private readonly BuildDiscussionStoreService _discussionStore;
 
 	private readonly BehaviorSubject<HashSet<BuildLocator>> _trackedLocators =
 		new(new HashSet<BuildLocator>());
-	private IObservable<List<BuildInfo>> _buildInfos;
+	private readonly IObservable<List<BuildInfo>> _buildInfos;
 
 	public BuildInfoService(IOptions<BuildInfoMonitoringSettings> settings,
 			IList<IBuildInfoProvider> buildInfoProviders, BuildDiscussionStoreService discussionStore,
 			IBuildMonitoringService buildMonitoringService, Func<TimeSpan, IObservable<long>>? timerFactory = null) {
 		_discussionStore = discussionStore;
-		_watchCts = new CancellationTokenSource();
 		timerFactory ??= Observable.Interval;
 		_buildInfos = _trackedLocators.CombineLatest(timerFactory(settings.Value.Delay).StartWith(0))
 			.SelectMany(async tuple => {
@@ -64,18 +63,15 @@ public class BuildInfoService : IDisposable
 				if (currentItem != null) {
 					currentItems.Remove(currentItem);
 				}
-
 				if (discussionState.Status == BuildDiscussionStatus.Closed) {
 					return;
 				}
-
 				if (currentItem != null) {
 					currentItem = currentItem with { State = discussionState };
 				}
 				else {
 					currentItem = new BuildDiscussionInfo(locator, discussionState);
 				}
-
 				currentItems.Add(currentItem);
 			}).Select(tuple => tuple.First)
 			.StartWith((IReadOnlyCollection<BuildDiscussionInfo>)new List<BuildDiscussionInfo>());
@@ -104,13 +100,8 @@ public class BuildInfoService : IDisposable
 		return infos;
 	}
 
-	private void Stop() {
-		_watchCts?.Cancel();
-		_watchCts?.Dispose();
-		_buildInfos = null;
-	}
-
 	public void Dispose() {
-		Stop();
+		_watchCts.Cancel();
+		_watchCts.Dispose();
 	}
 }

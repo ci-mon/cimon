@@ -1,4 +1,6 @@
-﻿namespace Cimon;
+﻿using Cimon.Data.BuildInformation;
+
+namespace Cimon;
 
 using Cimon.Auth;
 using Cimon.Data;

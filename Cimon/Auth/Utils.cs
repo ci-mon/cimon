@@ -1,4 +1,6 @@
-﻿namespace Cimon.Auth;
+﻿using Cimon.Contracts;
+
+namespace Cimon.Auth;
 
 using System.Security.Principal;
 

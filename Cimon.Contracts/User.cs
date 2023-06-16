@@ -1,6 +1,4 @@
-﻿using Cimon.Auth;
-
-namespace Cimon.Data.Users;
+﻿namespace Cimon.Contracts;
 
 public record User(UserId Id, UserName Name, IReadOnlyCollection<string>? Teams = null, IReadOnlyCollection<string>? Roles = null)
 {

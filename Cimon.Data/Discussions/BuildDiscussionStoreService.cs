@@ -1,9 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using Cimon.Data.Users;
 using Optional;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Discussions;
 
 public class BuildDiscussionStoreService
 {

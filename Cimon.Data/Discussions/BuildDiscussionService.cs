@@ -3,9 +3,10 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using Cimon.Contracts;
 using Cimon.Data.Users;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Discussions;
 
 public class BuildDiscussionService : IBuildDiscussionService
 {
@@ -41,7 +42,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 
 	private string ExtractText(BuildComment comment) {
 		var context = BrowsingContext.New(Configuration.Default);
-		var parser = context.GetService<IHtmlParser>();
+		var parser = context.GetService<IHtmlParser>() ?? throw new Exception("Can't get parser");
 		var document = parser.ParseDocument(comment.Comment);
 		return document.DocumentElement.TextContent;
 	}

@@ -1,6 +1,8 @@
 ﻿@namespace Cimon.Discussions
 @page "/buildDiscussion/{buildId?}"
 @using System.Reactive.Linq
+@using Cimon.Contracts
+@using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @inject BuildDiscussionStoreService DiscussionStoreService
 @inject IJSRuntime JsRuntime;
@@ -9,29 +11,29 @@
 
 @if (_state != null) {
     <div class="container">
-    <RadzenRow JustifyContent="JustifyContent.Center">
-        <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
-            <RadzenCard class="status-item">
-               <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Status.ToString()"></RadzenLabel>
-            </RadzenCard>
-            @foreach (var comment in _state.Comments) {
-                <CommentComponent BuildComment="comment" DiscussionService="_discussionService" ></CommentComponent>
-            }
-            <RadzenCard class="comment-editor-block">
-                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
-                    <div style="width: 100%">
-                        <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
-                    </div>
-                    <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
-                        <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+        <RadzenRow JustifyContent="JustifyContent.Center">
+            <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
+                <RadzenCard class="status-item">
+                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Status.ToString()"></RadzenLabel>
+                </RadzenCard>
+                @foreach (var comment in _state.Comments) {
+                    <CommentComponent BuildComment="comment" DiscussionService="_discussionService"></CommentComponent>
+                }
+                <RadzenCard class="comment-editor-block">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                        <div style="width: 100%">
+                            <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
+                        </div>
+                        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
+                            <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+                        </RadzenStack>
                     </RadzenStack>
-                </RadzenStack>
-            </RadzenCard>
-        </RadzenColumn>
-    </RadzenRow>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
     </div>
 } else {
-    <RadzenText TextStyle="TextStyle.H1" Text="Discussion not found" />
+    <RadzenText TextStyle="TextStyle.H1" Text="Discussion not found"/>
 }
 <style>
     .container{
@@ -88,14 +90,16 @@
         box-shadow: inset 0 0 5px 3px #0bc3a775, 0 0 5px 4px #0aa38b91;
     }
 </style>
+
 @code {
+
     [Parameter]
-    public string? BuildId { get; set; }
+    public string BuildId { get; set; } = null!;
 
     private BuildDiscussionService? _discussionService;
     private BuildDiscussionState? _state;
     private CommentData _newComment = new();
-    private User _user;
+    private User _user = null!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
@@ -107,18 +111,20 @@
         _user = await CurrentUserAccessor.Current;
         DiscussionStoreService.GetDiscussionService(BuildId).Subscribe(this, () => _discussionService)
             .SelectMany(x => x.State).Subscribe(this, () => _state);
-        await ClearComment();
+        ClearComment();
     }
 
-    private async Task ClearComment() {
+    private void ClearComment() {
         _newComment = new CommentData {
             Author = _user
         };
     }
 
     private async Task AddComment() {
-        await _discussionService.AddComment(_newComment);
-        await ClearComment();
+        if (_discussionService != null) {
+            await _discussionService.AddComment(_newComment);
+        }
+        ClearComment();
         StateHasChanged();
     }
 

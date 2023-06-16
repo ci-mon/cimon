@@ -1,4 +1,5 @@
 ﻿using Cimon.Data;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;
 

@@ -1,4 +1,6 @@
 ﻿@using System.Globalization
+@using Cimon.Contracts
+@using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @inject UserListService UserListService
 @inject ICurrentUserAccessor CurrentUserAccessor
@@ -39,12 +41,13 @@
 </div>
 @code {
     [Parameter]
-    public BuildComment? BuildComment { get; set; }
-    [Parameter]
-    public BuildDiscussionService DiscussionService { get; set; }
+    public BuildComment BuildComment { get; set; } = null!;
 
-    private bool CanEdit => BuildComment?.GetCanEditBy(_user ?? User.Guest) ?? false;
-    private bool AuthorIsMe => BuildComment?.Author.Id == _user?.Id;
+    [Parameter]
+    public BuildDiscussionService DiscussionService { get; set; } = null!;
+
+    private bool CanEdit => BuildComment.GetCanEditBy(_user ?? User.Guest);
+    private bool AuthorIsMe => BuildComment.Author.Id == _user?.Id;
     private bool AuthorIsNotMe => !AuthorIsMe;
     private bool _editing;
     private User? _user;
@@ -59,7 +62,7 @@
         await DiscussionService.RemoveComment(BuildComment);
     }
 
-    private async Task EditComment() {
+    private void EditComment() {
         _editing = true;
         StateHasChanged();
     }

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Cimon.Contracts;
 using Cimon.Data.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -39,7 +40,8 @@ public class TokenService
 			new(JwtRegisteredClaimNames.Jti, userInfo.Id.Id),
 			new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
 			new(ClaimTypes.NameIdentifier, userInfo.Id.Id),
-			new(ClaimTypes.Name, userName)
+			new(ClaimTypes.Name, userName),
+			new(ClaimTypes.Email, userInfo.Email),
 		};
 		claims.AddRange(userInfo.Teams?.Select(x => new Claim(TeamClaimName, x)) ?? Array.Empty<Claim>());
 		claims.AddRange(userInfo.Roles?.Select(x => new Claim(ClaimTypes.Role, x)) ?? Array.Empty<Claim>());

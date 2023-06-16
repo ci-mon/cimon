@@ -30,6 +30,9 @@ public class AuthController : Controller
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Token() {
 		var user = await _userManager.FindOrCreateUser(User.Identity!.Name!);
+		if (user == null) {
+			return NotFound();
+		}
 		string token = _tokenService.CreateToken(user);
 		return Ok(new AuthResponse { UserName = User.Identity!.Name!, Token = token });
 	}
@@ -78,6 +81,9 @@ public class AuthController : Controller
 
 	private async Task<IActionResult> SignInUsingCookie(string returnUrl, string userName) {
 		var user = await _userManager.FindOrCreateUser(userName);
+		if (user == null) {
+			return BadRequest();
+		}
 		var claims = _tokenService.CreateClaims(user);
 		var claimsIdentity = new ClaimsIdentity(claims,
 			CookieAuthenticationDefaults.AuthenticationScheme);

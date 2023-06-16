@@ -1,4 +1,4 @@
-﻿namespace Cimon.Data.Users;
+﻿namespace Cimon.Contracts;
 
 public readonly record struct UserId(string Id)
 {

@@ -1,14 +1,16 @@
 ﻿@namespace Cimon.Discussions
 @inject IJSRuntime JsRuntime
 
-<div class="@Class" @ref="editorContainer"></div>
+<div class="@Class" @ref="_editorContainer"></div>
+
 @code {
-    private ElementReference editorContainer;
+    private ElementReference _editorContainer;
     private IJSObjectReference? _quillInstance;
-    private string _content;
+    private string? _content;
     private bool _readonly;
 
-    [Parameter] public string Class { get; set; }
+    [Parameter]
+    public string? Class { get; set; }
 
     [Parameter]
     public bool Readonly {
@@ -21,43 +23,42 @@
     }
 
     [Parameter]
-    public string Content {
+    public string? Content {
         get => _content;
         set {
             if (_content == value) return;
             _content = value;
-            SetContent(Content);
+            SetContent(Content).Wait();
         }
     }
 
-    [Parameter] public EventCallback<string> ContentChanged { get; set; }
-    [Parameter] public EventCallback OnSend { get; set; }
+    [Parameter]
+    public EventCallback<string> ContentChanged { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
+    [Parameter]
+    public EventCallback OnSend { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
             _quillInstance = await JsRuntime.InvokeAsync<IJSObjectReference>(
-                "quillInterop.initQuill", new object[]{editorContainer, DotNetObjectReference.Create(this), Readonly});
+                "quillInterop.initQuill", new object[] { _editorContainer, DotNetObjectReference.Create(this), Readonly });
             await SetContent(Content);
         }
-       
     }
 
     [JSInvokable]
-    public async Task UpdateContent(string content)
-    {
+    public async Task UpdateContent(string content) {
         _content = content;
         await ContentChanged.InvokeAsync(content);
     }
-    
+
     [JSInvokable]
-    public async Task Send()
-    {
+    public async Task Send() {
         await OnSend.InvokeAsync();
     }
 
-    private async Task SetContent(string content) {
-        if (_quillInstance != null) await _quillInstance.InvokeVoidAsync("setContent", content);
+    private async Task SetContent(string? content) {
+        if (_quillInstance != null) await _quillInstance.InvokeVoidAsync("setContent", content ?? "");
     }
+
 }

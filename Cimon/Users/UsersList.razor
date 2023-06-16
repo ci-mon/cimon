@@ -1,6 +1,7 @@
 ﻿@page "/UsersList"
 @using Cimon.DB
 @using Cimon.Auth
+@using Cimon.Data.Users
 @attribute [Authorize(Roles = "admin")]
 
 @inherits DbContextComponent<User>;

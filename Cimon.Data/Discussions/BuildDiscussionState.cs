@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Discussions;
 
 public record BuildDiscussionState
 {

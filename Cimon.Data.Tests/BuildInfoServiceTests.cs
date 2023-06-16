@@ -1,4 +1,8 @@
 using System.Reactive.Linq;
+using Cimon.Contracts;
+using Cimon.Data.BuildInformation;
+using Cimon.Data.Discussions;
+using Cimon.Data.Users;
 
 namespace Cimon.Data.Tests;
 
@@ -16,6 +20,19 @@ public class BuildInfoServiceTests
 	private BuildLocator _sampleBuildLocator2;
 	private Subject<long> _timer;
 	private BuildDiscussionStoreService _buildDiscussionStoreService;
+
+	private BuildInfo CreateBuildInfo(string name, string id) {
+		return new BuildInfo() {
+			Name = "name",
+			BuildId = id,
+			BuildHomeUrl = "",
+			ProjectName = "",
+			Number = "",
+			StatusText = "",
+			BranchName = "",
+			Committers = ""
+		};
+	}
 
 	[SetUp]
 	public void Setup() {
@@ -43,13 +60,10 @@ public class BuildInfoServiceTests
 
 	[Test]
 	public async Task Watch_UpdateByTimer() {
-		_buildInfoProvider.GetInfo(null)
+		_buildInfoProvider.GetInfo(null!)
 			.ReturnsForAnyArgs(ci => {
 				var locators = ci.Arg<IEnumerable<BuildLocator>>();
-				var buildInfos = locators.Reverse().Select(l => new BuildInfo {
-					Name = "Test build",
-					BuildId = l.Id
-				}).ToList();
+				var buildInfos = locators.Reverse().Select(l => CreateBuildInfo("Test build", l.Id)).ToList();
 				return Task.FromResult((IReadOnlyCollection<BuildInfo>)buildInfos);
 			});
 		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {
@@ -60,13 +74,9 @@ public class BuildInfoServiceTests
 		IList<BuildInfo>? infos = null;
 		IList<BuildInfo>? infosForOtherSubscriber = null;
 		using (items.Subscribe(x => infos = x)) {
-			await Wait.ForAssert(() => infos.Should().HaveCount(2).And.ContainInOrder(new BuildInfo {
-				Name = "Test build",
-				BuildId = _sampleBuildLocator1.Id
-			}, new BuildInfo {
-				Name = "Test build",
-				BuildId = _sampleBuildLocator2.Id
-			}));
+			await Wait.ForAssert(() => infos.Should().HaveCount(2).And.ContainInOrder(
+				CreateBuildInfo("Test build", _sampleBuildLocator1.Id),
+				CreateBuildInfo("Test build", _sampleBuildLocator2.Id)));
 			using (items.Subscribe(x => infosForOtherSubscriber = x)) {
 				_timer.OnNext(1);
 				await Wait.ForAssert(() => infos.Should().HaveCount(2));
@@ -85,13 +95,10 @@ public class BuildInfoServiceTests
 
 	[Test]
 	public async Task Watch_UpdateCommentsInfo() {
-		_buildInfoProvider.GetInfo(null)
+		_buildInfoProvider.GetInfo(null!)
 			.ReturnsForAnyArgs(ci => {
 				var locators = ci.Arg<IEnumerable<BuildLocator>>();
-				var buildInfos = locators.Reverse().Select(l => new BuildInfo {
-					Name = "Test build",
-					BuildId = l.Id
-				}).ToList();
+				var buildInfos = locators.Reverse().Select(l => CreateBuildInfo("Test build", l.Id)).ToList();
 				return Task.FromResult((IReadOnlyCollection<BuildInfo>)buildInfos);
 			});
 		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {
@@ -116,13 +123,10 @@ public class BuildInfoServiceTests
 
 	[Test]
 	public async Task Watch_SubscribeAndUnsubscribe() {
-		_buildInfoProvider.GetInfo(null)
+		_buildInfoProvider.GetInfo(null!)
 			.ReturnsForAnyArgs(ci => {
 				var locators = ci.Arg<IEnumerable<BuildLocator>>();
-				var buildInfos = locators.Reverse().Select(l => new BuildInfo {
-					Name = "Test build " + l.Id,
-					BuildId = l.Id
-				}).ToList();
+				var buildInfos = locators.Reverse().Select(l => CreateBuildInfo("Test build" + l.Id, l.Id)).ToList();
 				return Task.FromResult((IReadOnlyCollection<BuildInfo>)buildInfos);
 			});
 		var locators = new BehaviorSubject<List<BuildLocator>>(new List<BuildLocator> {

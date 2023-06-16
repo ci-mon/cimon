@@ -1,4 +1,7 @@
-﻿namespace Cimon.Data.TeamCity;
+﻿using Cimon.Contracts;
+using Cimon.Data.BuildInformation;
+
+namespace Cimon.Data.TeamCity;
 
 public class TcBuildLocatorProvider : IBuildLocatorProvider
 {

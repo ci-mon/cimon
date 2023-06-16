@@ -1,13 +1,7 @@
-﻿using System.Reactive;
-using System.Reactive.Linq;
+﻿using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
-namespace Cimon.Data;
-
-public interface IReactiveRepositoryApi<T>
-{
-	Task<T> LoadData(CancellationToken token);
-}
+namespace Cimon.Data.Common;
 
 public class ReactiveRepository<T>
 {

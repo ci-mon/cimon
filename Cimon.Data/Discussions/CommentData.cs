@@ -1,9 +1,9 @@
-﻿using Cimon.Data.Users;
+﻿using Cimon.Contracts;
 
-namespace Cimon.Data;
+namespace Cimon.Data.Discussions;
 
 public class CommentData
 {
-	public User Author { get; init; }
+	public User Author { get; init; } = User.Guest;
 	public string Comment { get; set; } = string.Empty;
 }

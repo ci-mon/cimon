@@ -1,6 +1,7 @@
 using Cimon;
 using Cimon.Auth;
 using Cimon.Data;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.DB;

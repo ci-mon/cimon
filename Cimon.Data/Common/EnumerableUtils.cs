@@ -1,4 +1,4 @@
-﻿namespace Cimon.Data;
+﻿namespace Cimon.Data.Common;
 
 public static class EnumerableUtils
 {

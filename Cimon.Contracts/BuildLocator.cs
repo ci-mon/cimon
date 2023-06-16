@@ -1,9 +1,9 @@
-﻿namespace Cimon.Data;
+﻿namespace Cimon.Contracts;
 
 public record BuildLocator
 {
 	public CISystem CiSystem { get; set; }
 
-	public string Id { get; set; }
+	public required string Id { get; set; }
 	
 }

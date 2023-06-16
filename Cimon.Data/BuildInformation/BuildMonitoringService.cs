@@ -1,27 +1,24 @@
 ﻿using System.Collections.Immutable;
+using Cimon.Data.Common;
+using Cimon.Data.Discussions;
 using Cimon.Data.Users;
 using Optional;
 using Optional.Collections;
 
-namespace Cimon.Data;
-
-public interface IBuildMonitoringService
-{
-	Task CheckBuildInfo(ImmutableArray<BuildInfo> buildInfos);
-}
+namespace Cimon.Data.BuildInformation;
 
 public class BuildMonitoringService : IBuildMonitoringService
 {
 	private readonly BuildDiscussionStoreService _discussionStore;
-	private Option<ImmutableArray<BuildInfo>> _previousState;
-	private ITechnicalUsers _technicalUsers;
+	private Option<ImmutableArray<Contracts.BuildInfo>> _previousState;
+	private readonly ITechnicalUsers _technicalUsers;
 
 	public BuildMonitoringService(BuildDiscussionStoreService discussionStore, ITechnicalUsers technicalUsers) {
 		_discussionStore = discussionStore;
 		_technicalUsers = technicalUsers;
 	}
 
-	public async Task CheckBuildInfo(ImmutableArray<BuildInfo> buildInfos) {
+	public async Task CheckBuildInfo(ImmutableArray<Contracts.BuildInfo> buildInfos) {
 		foreach (var current in buildInfos) {
 			await _previousState.FlatMap(x => x.FirstOrNone(x => x.BuildId == current.BuildId))
 				.Match(async previous => {
@@ -39,7 +36,7 @@ public class BuildMonitoringService : IBuildMonitoringService
 		_previousState = buildInfos.Some();
 	}
 
-	private async Task OpenDiscussion(BuildInfo current) {
+	private async Task OpenDiscussion(Contracts.BuildInfo current) {
 		var discussion = await _discussionStore.OpenDiscussion(current.BuildId);
 		await discussion.MatchSomeAsync(x => x.AddComment(new CommentData {
 			Author = _technicalUsers.MonitoringBot,
@@ -47,9 +44,10 @@ public class BuildMonitoringService : IBuildMonitoringService
 		}));
 	}
 
-	private string BuildCommentMessage(BuildInfo buildInfo) {
-		return
-			$"<p>Build failed by: {string.Join(", ", buildInfo.CommitterUsers.Select(u => GetUserMention(u.Name, u.Name)))}</p>";
+	private string BuildCommentMessage(Contracts.BuildInfo buildInfo) {
+		var users = buildInfo.CommitterUsers;
+		var values = users?.Select(u => GetUserMention(u.Name, u.Name)) ?? new[] { "somebody" };
+		return $"<p>Build failed by: {string.Join(", ", values)}</p>";
 	}
 
 	private string GetUserMention(string userId, string userName) {
