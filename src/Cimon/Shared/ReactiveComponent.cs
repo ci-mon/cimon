@@ -17,6 +17,8 @@ public static class ReactiveComponentUtils
 	}
 }
 
+// todo observer
+
 public class ReactiveComponent : ComponentBase, IDisposable
 {
 
