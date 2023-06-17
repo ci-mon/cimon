@@ -10,7 +10,7 @@ namespace Cimon.Data.BuildInformation;
 public class BuildMonitoringService : IBuildMonitoringService
 {
 	private readonly BuildDiscussionStoreService _discussionStore;
-	private Option<ImmutableArray<Contracts.BuildInfo>> _previousState;
+	private Option<IImmutableList<Contracts.BuildInfo>> _previousState;
 	private readonly ITechnicalUsers _technicalUsers;
 
 	public BuildMonitoringService(BuildDiscussionStoreService discussionStore, ITechnicalUsers technicalUsers) {
@@ -18,12 +18,12 @@ public class BuildMonitoringService : IBuildMonitoringService
 		_technicalUsers = technicalUsers;
 	}
 
-	public async Task CheckBuildInfo(ImmutableArray<Contracts.BuildInfo> buildInfos) {
+	public async Task CheckBuildInfo(IImmutableList<Contracts.BuildInfo> buildInfos) {
 		foreach (var current in buildInfos) {
-			await _previousState.FlatMap(x => x.FirstOrNone(x => x.BuildId == current.BuildId))
+			await _previousState.FlatMap(x => x.FirstOrNone(x => x.BuildConfigId == current.BuildConfigId))
 				.Match(async previous => {
 					if (previous.CanHaveDiscussion() && !current.CanHaveDiscussion()) {
-						await _discussionStore.CloseDiscussion(current.BuildId);
+						await _discussionStore.CloseDiscussion(current.BuildConfigId);
 					} else if (!previous.CanHaveDiscussion() && current.CanHaveDiscussion()) {
 						await OpenDiscussion(current);
 					}
@@ -37,7 +37,7 @@ public class BuildMonitoringService : IBuildMonitoringService
 	}
 
 	private async Task OpenDiscussion(Contracts.BuildInfo current) {
-		var discussion = await _discussionStore.OpenDiscussion(current.BuildId);
+		var discussion = await _discussionStore.OpenDiscussion(current.BuildConfigId);
 		await discussion.MatchSomeAsync(x => x.AddComment(new CommentData {
 			Author = _technicalUsers.MonitoringBot,
 			Comment = BuildCommentMessage(current)

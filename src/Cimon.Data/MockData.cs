@@ -1,6 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-using Monitor = Cimon.Data.BuildInformation.Monitor;
+using Cimon.DB;
+using Cimon.DB.Models;
+using Monitor = Cimon.DB.Models.Monitor;
 
 namespace Cimon.Contracts;
 
@@ -186,7 +188,7 @@ public class MockData
 ]
 """)!
 		.Select(info => {
-			info.BuildId = info.Name!;
+			info.BuildConfigId = info.Name!;
 			if (AllBuildsAreGreen) {
 				info.Status = BuildStatus.Success;
 			}
@@ -195,19 +197,21 @@ public class MockData
 
 		public static ImmutableList<Monitor> Monitors { get; } = new List<Monitor> {
 			new() {
-				Id = "Team 1",
+				Key = "Team 1",
 				Title = "Team 1",
-				Builds = TestBuildInfos.Where(x=>x.Name!.Contains('.')).Select(x=>new BuildLocator {
-					Id = x.Name!,
-					CiSystem = CISystem.TeamCity
+				Builds = TestBuildInfos.Where(x=>x.Name!.Contains('.')).Select(x=>new BuildConfig {
+					Key = x.Name!,
+					CISystem = CISystem.TeamCity,
+					Props = new()
 				}).ToList()
 			},
 			new() {
-				Id = "all",
+				Key = "all",
 				Title = "all",
-				Builds = TestBuildInfos.Select(x=>new BuildLocator {
-					Id = x.Name!,
-					CiSystem = CISystem.TeamCity
+				Builds = TestBuildInfos.Select(x=>new BuildConfig {
+					Key = x.Name!,
+					CISystem = CISystem.TeamCity,
+					Props = new()
 				}).ToList(),
 				AlwaysOnMonitoring = true
 			}

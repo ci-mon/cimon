@@ -10,7 +10,7 @@ public static class CimonDbExtensions
 	public static IServiceCollection AddCimonDb(this IServiceCollection services, IConfiguration configuration,
 			bool isDevelopment) {
 		return services
-			.AddDbContext<CimonDbContext>(options => { 
+			.AddDbContextFactory<CimonDbContext>(options => { 
 				Enum.TryParse(configuration.GetSection("DbProvider").Value, out DbType dbType);
 				var dbTypeName = dbType.ToString();
 				var connectionString = configuration.GetConnectionString(dbTypeName);

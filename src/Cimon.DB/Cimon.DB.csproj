@@ -13,4 +13,8 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.5" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
+    </ItemGroup>
 </Project>

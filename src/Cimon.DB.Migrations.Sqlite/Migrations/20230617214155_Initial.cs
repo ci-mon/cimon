@@ -11,6 +11,38 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "BuildConfigurations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CISystem = table.Column<int>(type: "INTEGER", nullable: false),
+                    DemoState = table.Column<string>(type: "jsonb", nullable: true),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Props = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BuildConfigurations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Monitors",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: true),
+                    Removed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AlwaysOnMonitoring = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Monitors", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Roles",
                 columns: table => new
                 {
@@ -51,6 +83,30 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BuildInMonitor",
+                columns: table => new
+                {
+                    MonitorId = table.Column<int>(type: "INTEGER", nullable: false),
+                    BuildConfigId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BuildInMonitor", x => new { x.BuildConfigId, x.MonitorId });
+                    table.ForeignKey(
+                        name: "FK_BuildInMonitor_BuildConfigurations_BuildConfigId",
+                        column: x => x.BuildConfigId,
+                        principalTable: "BuildConfigurations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BuildInMonitor_Monitors_MonitorId",
+                        column: x => x.MonitorId,
+                        principalTable: "Monitors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -126,6 +182,11 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BuildInMonitor_MonitorId",
+                table: "BuildInMonitor",
+                column: "MonitorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RoleRole_RoleId",
                 table: "RoleRole",
                 column: "RoleId");
@@ -151,6 +212,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BuildInMonitor");
+
+            migrationBuilder.DropTable(
                 name: "RoleRole");
 
             migrationBuilder.DropTable(
@@ -158,6 +222,12 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 
             migrationBuilder.DropTable(
                 name: "TeamUser");
+
+            migrationBuilder.DropTable(
+                name: "BuildConfigurations");
+
+            migrationBuilder.DropTable(
+                name: "Monitors");
 
             migrationBuilder.DropTable(
                 name: "Roles");

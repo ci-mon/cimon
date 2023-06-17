@@ -1,4 +1,4 @@
-﻿namespace Cimon.DB;
+﻿namespace Cimon.DB.Models;
 
 public class Team: IEntityCreator<Team>
 {

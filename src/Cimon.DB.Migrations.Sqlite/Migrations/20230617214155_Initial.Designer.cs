@@ -2,39 +2,96 @@
 using Cimon.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Cimon.DB.Migrations.SqlServer.Migrations
+namespace Cimon.DB.Migrations.Sqlite.Migrations
 {
     [DbContext(typeof(CimonDbContext))]
-    [Migration("20230616105453_Initial")]
+    [Migration("20230617214155_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            modelBuilder.Entity("Cimon.DB.BuildConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CISystem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DemoState")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Props")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BuildConfigurations");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.Property<int>("BuildConfigId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MonitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BuildConfigId", "MonitorId");
+
+                    b.HasIndex("MonitorId");
+
+                    b.ToTable("BuildInMonitor");
+                });
+
+            modelBuilder.Entity("Cimon.DB.Monitor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AlwaysOnMonitoring")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Removed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Monitors");
+                });
 
             modelBuilder.Entity("Cimon.DB.Role", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -45,13 +102,11 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -62,26 +117,24 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("AllowLocalLogin")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeactivated")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -94,10 +147,10 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
             modelBuilder.Entity("RoleRole", b =>
                 {
                     b.Property<int>("OwnedRolesId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("RoleId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("OwnedRolesId", "RoleId");
 
@@ -109,10 +162,10 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
             modelBuilder.Entity("RoleUser", b =>
                 {
                     b.Property<int>("RolesId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("UsersId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("RolesId", "UsersId");
 
@@ -124,16 +177,35 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
             modelBuilder.Entity("TeamUser", b =>
                 {
                     b.Property<int>("TeamsId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("UsersId")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("TeamsId", "UsersId");
 
                     b.HasIndex("UsersId");
 
                     b.ToTable("TeamUser");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.HasOne("Cimon.DB.BuildConfig", "BuildConfig")
+                        .WithMany()
+                        .HasForeignKey("BuildConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Monitor", "Monitor")
+                        .WithMany()
+                        .HasForeignKey("MonitorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BuildConfig");
+
+                    b.Navigation("Monitor");
                 });
 
             modelBuilder.Entity("RoleRole", b =>
@@ -147,7 +219,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.HasOne("Cimon.DB.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

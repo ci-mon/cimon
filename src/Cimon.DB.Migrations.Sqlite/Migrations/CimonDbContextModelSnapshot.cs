@@ -16,6 +16,70 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
 
+            modelBuilder.Entity("Cimon.DB.BuildConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CISystem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DemoState")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Props")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BuildConfigurations");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.Property<int>("BuildConfigId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MonitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BuildConfigId", "MonitorId");
+
+                    b.HasIndex("MonitorId");
+
+                    b.ToTable("BuildInMonitor");
+                });
+
+            modelBuilder.Entity("Cimon.DB.Monitor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AlwaysOnMonitoring")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Removed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Monitors");
+                });
+
             modelBuilder.Entity("Cimon.DB.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -120,6 +184,25 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("TeamUser");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.HasOne("Cimon.DB.BuildConfig", "BuildConfig")
+                        .WithMany()
+                        .HasForeignKey("BuildConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Monitor", "Monitor")
+                        .WithMany()
+                        .HasForeignKey("MonitorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BuildConfig");
+
+                    b.Navigation("Monitor");
                 });
 
             modelBuilder.Entity("RoleRole", b =>

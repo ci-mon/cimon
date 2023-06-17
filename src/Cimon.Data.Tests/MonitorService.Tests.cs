@@ -2,7 +2,7 @@
 using System.Reactive.Subjects;
 using Cimon.Contracts;
 using Cimon.Data.BuildInformation;
-using Monitor = Cimon.Data.BuildInformation.Monitor;
+using Monitor = Cimon.DB.Models.Monitor;
 
 namespace Cimon.Data.Tests;
 
@@ -25,10 +25,10 @@ public class MonitorServiceTests
 		var monitors = await observable.FirstAsync();
 		var monitor = monitors[0];
 		var id = Guid.NewGuid().ToString();
-		monitor.Id = id;
+		monitor.Key = id;
 		await sut.Save(monitor);
 		monitors = await observable.FirstOrDefaultAsync();
-		monitors.Should().Contain(m => m.Id == id);
+		monitors.Should().Contain(m => m.Key == id);
 	}
 
 	[Test]
@@ -37,7 +37,7 @@ public class MonitorServiceTests
 		var monitors = await sut.GetMonitors().FirstAsync();
 		var newMon = await sut.Add();
 		monitors = await sut.GetMonitors().FirstAsync();
-		monitors.Should().Contain(x=>x.Id == newMon.Id);
+		monitors.Should().Contain(x=>x.Key == newMon.Key);
 	}
 
 	[Test]
@@ -56,10 +56,10 @@ public class MonitorServiceTests
 		for (int i = 0; i < 10; i++) {
 			var tcs = new TaskCompletionSource<Monitor>();
 			var disposed = new Subject<bool>();
-			sut.GetMonitorById(expected.Id).TakeUntil(disposed).Subscribe(x => tcs.SetResult(x));
+			sut.GetMonitorById(expected.Key).TakeUntil(disposed).Subscribe(x => tcs.SetResult(x));
 			var result = await tcs.Task;
 			//disposed.OnNext(true);
-			result.Id.Should().BeSameAs(expected.Id);
+			result.Key.Should().BeSameAs(expected.Key);
 		}
 	}
 }

@@ -4,5 +4,5 @@ namespace Cimon.Data.BuildInformation;
 
 public interface IBuildMonitoringService
 {
-	Task CheckBuildInfo(ImmutableArray<Contracts.BuildInfo> buildInfos);
+	Task CheckBuildInfo(IImmutableList<Contracts.BuildInfo> buildInfos);
 }

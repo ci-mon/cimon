@@ -44,7 +44,7 @@ public record BuildInfo
 
 	public string GetStartDateString => StartDate.ToString("HH:mm");
 
-	public required string BuildId { get; set; }
+	public required string BuildConfigId { get; set; }
 	public int CommentsCount { get; set; }
 
 	public bool IsNotOk() => Status == BuildStatus.Failed;

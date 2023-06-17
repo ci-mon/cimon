@@ -1,8 +1,9 @@
 ﻿@page "/SetupTeams"
 @using Cimon.DB
+@using Cimon.DB.Models
 @attribute [Authorize(Roles = "teams-editor")]
 
-@inherits DbContextComponent<Team>;
+@inherits DbContextComponent<Cimon.DB.Models.Team>;
 
 <RadzenLayout Style="padding: 1em">
     <RadzenStack Orientation="Orientation.Vertical">

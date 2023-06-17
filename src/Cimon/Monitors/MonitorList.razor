@@ -1,5 +1,7 @@
 ﻿@page "/MonitorList"
 @using Cimon.Data.BuildInformation
+@using Cimon.DB
+@using Cimon.DB.Models
 @using Microsoft.AspNetCore.Http.Extensions
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager 
@@ -92,12 +94,12 @@
     }
 
     private void ViewMonitor(Monitor monitor) {
-        string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Id}");
+        string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
     }
 
     private void SetupMonitor(Monitor monitor) {
-        string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Id}");
+        string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
     }
 

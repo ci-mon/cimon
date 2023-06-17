@@ -2,6 +2,7 @@
 using System.Net;
 using Cimon.Contracts;
 using Cimon.DB;
+using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

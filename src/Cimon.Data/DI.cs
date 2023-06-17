@@ -1,7 +1,7 @@
 ﻿using Cimon.Contracts.Services;
-using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Discussions;
+using Cimon.Data.Monitors;
 using Cimon.Data.Users;
 
 // ReSharper disable once CheckNamespace
@@ -18,6 +18,7 @@ public static class DI
 			.AddSingleton<MentionsService>()
 			.AddSingleton<ITechnicalUsers, TechnicalUsers>()
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
+			.AddSingleton<BuildConfigService>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
 			.AddSingleton<MonitorService>()
 			.AddMediatR(configuration => {

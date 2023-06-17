@@ -2,12 +2,13 @@
 @attribute [Authorize(Roles = "monitor-editor")]
 
 @inject MonitorService MonitorService
-@inject IEnumerable<IBuildLocatorProvider> BuildLocatorProviders
 @inject NavigationManager NavigationManager
-@using Cimon.Data.Common
-@using Cimon.Contracts
-@using Cimon.Contracts.Services
+@inject BuildConfigService BuildConfigService;
 @using Cimon.Data.BuildInformation
+@using Cimon.Data.Monitors
+@using System.Collections.Immutable
+@using Cimon.DB
+@using Cimon.DB.Models
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -26,12 +27,12 @@
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
-                        Data="@_locators" TItem="BuildConfig" ColumnWidth="200px"
+                        Data="@_buildConfigs.Value" TItem="BuildConfig" ColumnWidth="200px"
                         SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
             <Columns>
                 <RadzenDataGridColumn TItem="BuildConfig" Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
-                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(_locators?.Any(i => _selectedLocators?.Contains(i) ?? false) ?? false)"
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(_buildConfigs.Value?.Any(i => _selectedLocators?.Contains(i) ?? false) ?? false)"
                                         Change="@(OnSelectAllChanged)"/>
                     </HeaderTemplate>
                     <Template Context="data">
@@ -51,7 +52,7 @@
     private ReactiveValue<Monitor> _monitor = null!;
     private Monitor Monitor => _monitor.Value;
     RadzenDataGrid<BuildConfig> grid;
-    IEnumerable<BuildConfig> _locators;
+    private ReactiveValue<IImmutableList<BuildConfig>> _buildConfigs;
     IList<BuildConfig> _selectedLocators = new List<BuildConfig>();
     
     [Parameter]
@@ -61,7 +62,7 @@
         if (!args.FirstRender)
             return;
         args.Grid.Groups.Add(new GroupDescriptor() {
-            Property = nameof(BuildConfig.CiSystem),
+            Property = nameof(BuildConfig.CISystem),
             SortOrder = SortOrder.Ascending
         });
         StateHasChanged();
@@ -73,21 +74,22 @@
 
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        _locators = await BuildLocatorProviders.SelectMany(x => x.GetLocators()).ToListAsync();
+        _buildConfigs = Subscribe(BuildConfigService.BuildConfigs);
+        // todo combine build configs and monitor
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var descriptors = _locators.Where(l => monitor.Builds.Any(b => l.Id == b.Id)).ToList();
+            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Key == b.Key)).ToList();
             SetSelectedLocators(descriptors);
         });
     }
 
     private async Task Save() {
-        Monitor.Builds = _selectedLocators.OfType<BuildLocator>().ToList();
+        Monitor.Builds = _selectedLocators.OfType<BuildConfig>().ToList();
         await MonitorService.Save(Monitor);
         NavigationManager.NavigateTo("/monitorList");
     }
 
     private void OnSelectAllChanged(bool args) {
-        SetSelectedLocators(args ? _locators?.ToList() : null);
+        SetSelectedLocators(args ? _buildConfigs.Value?.ToList() : null);
     }
 
     private void RefreshAvailableBuilds() {

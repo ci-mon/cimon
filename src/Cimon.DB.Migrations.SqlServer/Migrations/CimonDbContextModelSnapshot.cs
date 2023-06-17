@@ -21,6 +21,74 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Cimon.DB.BuildConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CISystem")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DemoState")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Props")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BuildConfigurations");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.Property<int>("BuildConfigId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MonitorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BuildConfigId", "MonitorId");
+
+                    b.HasIndex("MonitorId");
+
+                    b.ToTable("BuildInMonitor");
+                });
+
+            modelBuilder.Entity("Cimon.DB.Monitor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AlwaysOnMonitoring")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Removed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Monitors");
+                });
+
             modelBuilder.Entity("Cimon.DB.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -131,6 +199,25 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("TeamUser");
+                });
+
+            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+                {
+                    b.HasOne("Cimon.DB.BuildConfig", "BuildConfig")
+                        .WithMany()
+                        .HasForeignKey("BuildConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Monitor", "Monitor")
+                        .WithMany()
+                        .HasForeignKey("MonitorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BuildConfig");
+
+                    b.Navigation("Monitor");
                 });
 
             modelBuilder.Entity("RoleRole", b =>
