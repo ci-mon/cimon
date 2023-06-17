@@ -12,7 +12,6 @@ public class InternalApiController : ControllerBase
 	[HttpPost]
 	[Route("emulateAllBuildsAreGreen")]
 	public IActionResult EmulateAllBuildsAreGreen([FromQuery] bool value) {
-		MockData.AllBuildsAreGreen = value;
-		return Ok();
+		return NotFound();
 	}
 }

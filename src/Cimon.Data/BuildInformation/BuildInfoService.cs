@@ -56,8 +56,8 @@ public class BuildInfoService : IDisposable
 		var comments = GetBuildDiscussionStates(trackedLocators);
 		return trackedLocators
 			.CombineLatest(_buildInfos).Select(CombineBuildInfos)
-			.CombineLatest(comments).Select(tuple => CombineBuildDiscussionState(tuple.First, tuple.Second))
-			.DistinctUntilChanged();
+			.CombineLatest(comments).Select(tuple => CombineBuildDiscussionState(tuple.First, tuple.Second));
+			// TODO .DistinctUntilChanged() leads to test Watch_SubscribeAndUnsubscribe fail;
 	}
 
 	private IObservable<IReadOnlyCollection<BuildDiscussionInfo>> GetBuildDiscussionStates(

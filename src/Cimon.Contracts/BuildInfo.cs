@@ -11,7 +11,7 @@ public record BuildInfo
 
 	public required string Number { get; set; }
 
-	public required string StatusText { get; set; }
+	public string? StatusText { get; set; }
 
 	public BuildStatus Status { get; set; }
 
