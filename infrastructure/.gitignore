@@ -4,3 +4,4 @@ buildserver_pgdata/
 teamcity-server-logs/
 jenkins_configuration/
 vault/
+gogs-data/
