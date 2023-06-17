@@ -37,6 +37,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 			.ToList();
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var existingItems = await ctx.BuildConfigurations.Where(x => x.CISystem == ciSystem).ToListAsync();
+		// todo remove unused old and trigger refresh
 		foreach (var newItem in newItems) {
 			var existing = existingItems.Find(x => x.Key == newItem.Key);
 			if (existing == null) {
