@@ -2,5 +2,5 @@
 
 public enum BuildDiscussionStatus
 {
-	Open, Closed
+	Closed, Open
 }

@@ -7,12 +7,12 @@
 @inject NavigationManager NavigationManager
 <PageTitle>Mentions</PageTitle>
 <RadzenCard>
-    @if (_mentions == null) {
+    @if (_mentions.IsEmpty) {
         <RadzenText TextStyle="TextStyle.H2" Text="All good..." />
     } else {
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start">
             <RadzenText Text="@StatusText" />
-            @foreach (var mention in _mentions) {
+            @foreach (var mention in _mentions.Value) {
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenButton Text="@mention.BuildId" Click="() => GoToDiscussion(mention.BuildId)"/>
                 </RadzenStack>
@@ -21,12 +21,12 @@
     }
 </RadzenCard>
 @code {
-    private IReadOnlyCollection<MentionInfo>? _mentions;
-    private string StatusText => $"You was mentioned in {_mentions?.Count ?? 0} builds";
+    private ReactiveValue<IReadOnlyCollection<MentionInfo>?> _mentions = null!;
+    private string StatusText => $"You was mentioned in {_mentions.Value?.Count ?? 0} builds";
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         var user = await UserAccessor.Current;
-        MentionsService.GetMentions(user).Subscribe(this, () => _mentions);
+        _mentions = Subscribe(MentionsService.GetMentions(user));
     }
 
     private void GoToDiscussion(string buildId) {

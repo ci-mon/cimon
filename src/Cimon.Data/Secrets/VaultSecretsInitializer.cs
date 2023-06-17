@@ -14,7 +14,12 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 	private readonly ILogger _log;
 
 	public void Configure(TSecrets options) {
-		ConfigureAsync(options).GetAwaiter().GetResult();
+		if (_vaultSettings.Disabled) return;
+		try {
+			ConfigureAsync(options).ConfigureAwait(false).GetAwaiter().GetResult();
+		} catch (Exception e) {
+			_log.LogError(e, "Failed to init secrets {SecretType}", typeof(TSecrets).Name);
+		}
 	}
 
 	public VaultSecretsInitializer(IOptions<VaultSettings> vaultSettings,

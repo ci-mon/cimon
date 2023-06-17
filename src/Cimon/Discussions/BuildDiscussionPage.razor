@@ -9,15 +9,19 @@
 @inject ICurrentUserAccessor CurrentUserAccessor;
 @inherits ReactiveComponent
 
-@if (_state != null) {
+@if (_state.HasValue) {
     <div class="container">
         <RadzenRow JustifyContent="JustifyContent.Center">
             <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
                 <RadzenCard class="status-item">
-                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Status.ToString()"></RadzenLabel>
+                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Value.Status.ToString()"></RadzenLabel>
                 </RadzenCard>
-                @foreach (var comment in _state.Comments) {
-                    <CommentComponent BuildComment="comment" DiscussionService="_discussionService"></CommentComponent>
+                @foreach (var comment in State.Comments) {
+                    <CommentComponent
+                        BuildComment="comment"
+                        OnSave="() => OnSave(comment)"
+                        OnDelete="() => OnDelete(comment)">
+                    </CommentComponent>
                 }
                 <RadzenCard class="comment-editor-block">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
@@ -96,8 +100,8 @@
     [Parameter]
     public string BuildId { get; set; } = null!;
 
-    private BuildDiscussionService? _discussionService;
-    private BuildDiscussionState? _state;
+    private ReactiveValue<IBuildDiscussionService> _discussionService = null!;
+    private ReactiveValue<BuildDiscussionState> _state = null!;
     private CommentData _newComment = new();
     private User _user = null!;
 
@@ -109,8 +113,9 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;
-        DiscussionStoreService.GetDiscussionService(BuildId).Subscribe(this, () => _discussionService)
-            .SelectMany(x => x.State).Subscribe(this, () => _state);
+        var discussionService = DiscussionStoreService.GetDiscussionService(BuildId);
+        _discussionService = Subscribe(discussionService);
+        _state = Subscribe(_discussionService.Source.SelectMany(x => x.State));
         ClearComment();
     }
 
@@ -121,11 +126,25 @@
     }
 
     private async Task AddComment() {
-        if (_discussionService != null) {
-            await _discussionService.AddComment(_newComment);
+        if (_discussionService.HasValue) {
+            await _discussionService.Value.AddComment(_newComment);
         }
         ClearComment();
         StateHasChanged();
     }
+
+    private async Task OnSave(BuildComment comment) {
+        if (_discussionService.HasValue) {
+            await _discussionService.Value.UpdateComment(comment);
+        }
+    }
+
+    private async Task OnDelete(BuildComment comment) {
+        if (_discussionService.HasValue) {
+            await _discussionService.Value.RemoveComment(comment);
+        }
+    }
+
+    private BuildDiscussionState State => _state.Value;
 
 }

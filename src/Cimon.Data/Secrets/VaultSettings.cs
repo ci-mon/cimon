@@ -2,6 +2,7 @@
 
 public class VaultSettings
 {
+	public bool Disabled { get; set; }
 	public required string Url { get; set; }
 	public required string Token { get; set; }
 	public required string MountPoint { get; set; }

@@ -133,7 +133,7 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Committers": "test,Vadym Artemchuk,",
+        "Committers": "test,admin",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00",
         "BuildId": ""
@@ -148,7 +148,7 @@ public class MockData
         "FinishDate": "0001-01-01T00:00:00",
         "StartDate": "0001-01-01T00:00:00",
         "BranchName": null,
-        "Committers": "test,",
+        "Committers": "test,admin",
         "GetFinishDateString": "01.01.0001 00:00:00",
         "GetStartDateString": "00:00",
         "BuildId": ""

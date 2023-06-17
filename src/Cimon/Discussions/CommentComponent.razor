@@ -42,9 +42,10 @@
 @code {
     [Parameter]
     public BuildComment BuildComment { get; set; } = null!;
-
     [Parameter]
-    public BuildDiscussionService DiscussionService { get; set; } = null!;
+    public EventCallback OnSave { get; set; }
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
 
     private bool CanEdit => BuildComment.GetCanEditBy(_user ?? User.Guest);
     private bool AuthorIsMe => BuildComment.Author.Id == _user?.Id;
@@ -58,9 +59,7 @@
         _user = await CurrentUserAccessor.Current;
     }
 
-    private async Task RemoveComment() {
-        await DiscussionService.RemoveComment(BuildComment);
-    }
+    private async Task RemoveComment() => await OnDelete.InvokeAsync();
 
     private void EditComment() {
         _editing = true;
@@ -68,7 +67,7 @@
     }
 
     private async Task SaveComment() {
-        await DiscussionService.UpdateComment(BuildComment);
+        await OnSave.InvokeAsync();
         _editing = false;
         StateHasChanged();
     }

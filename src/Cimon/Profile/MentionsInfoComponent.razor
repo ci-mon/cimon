@@ -15,17 +15,17 @@
     }
 </style>
 @code {
-    private int _mentionsCount = 0;
-    private BadgeStyle BadgeStyle => _mentionsCount > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
+    private ReactiveValue<int> _mentionsCount = null!;
+    private BadgeStyle BadgeStyle => _mentionsCount.Value > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
 
     protected override async Task OnInitializedAsync() {
         var user = await CurrentUserAccessor.Current;
-        MentionsService.GetMentionsCount(user).Subscribe(this, () => _mentionsCount);
+        _mentionsCount = Subscribe(MentionsService.GetMentionsCount(user));
     }
 
     void ShowTooltip(ElementReference elementReference) {
         var message = $"You were mentioned {_mentionsCount} times";
-        var color = _mentionsCount > 0 ? "--rz-danger" : "--rz-primary";
+        var color = _mentionsCount.Value > 0 ? "--rz-danger" : "--rz-primary";
         TooltipService.Open(elementReference, message, new TooltipOptions {
             Style = $"background-color: var({color}); color: var(--rz-text-contrast-color)",
             Position = TooltipPosition.Bottom,

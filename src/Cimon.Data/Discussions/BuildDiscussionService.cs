@@ -12,7 +12,9 @@ public class BuildDiscussionService : IBuildDiscussionService
 {
 
 	private readonly INotificationService _notificationService;
-	private readonly BehaviorSubject<BuildDiscussionState> _state = new(new BuildDiscussionState());
+	private readonly BehaviorSubject<BuildDiscussionState> _state = new(new BuildDiscussionState {
+		Status = BuildDiscussionStatus.Open
+	});
 	public IObservable<BuildDiscussionState> State => _state;
 
 	public IObservable<IImmutableList<BuildComment>> Comments => _state.Select(x =>

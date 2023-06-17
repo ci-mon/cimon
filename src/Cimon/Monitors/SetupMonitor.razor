@@ -11,11 +11,11 @@
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
-<RadzenCard Visible="_monitor != null">
+<RadzenCard Visible="_monitor.HasValue">
     <RadzenButton Text="Save" Icon="save" Click="Save"/>
     <RadzenCard class="rz-mb-4 rz-mt-4">
         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
-        <RadzenTextBox @bind-Value=@_monitor.Title class="w-100"/>
+        <RadzenTextBox @bind-Value=@Monitor.Title class="w-100"/>
     </RadzenCard>
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
@@ -48,7 +48,8 @@
 
 @code {
 
-    private Monitor _monitor = null!;
+    private ReactiveValue<Monitor> _monitor = null!;
+    private Monitor Monitor => _monitor.Value;
     RadzenDataGrid<BuildConfig> grid;
     IEnumerable<BuildConfig> _locators;
     IList<BuildConfig> _selectedLocators = new List<BuildConfig>();
@@ -73,15 +74,15 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _locators = await BuildLocatorProviders.SelectMany(x => x.GetLocators()).ToListAsync();
-        MonitorService.GetMonitorById(MonitorId).Subscribe(this, () => _monitor, monitor => {
+        _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
             var descriptors = _locators.Where(l => monitor.Builds.Any(b => l.Id == b.Id)).ToList();
             SetSelectedLocators(descriptors);
         });
     }
 
     private async Task Save() {
-        _monitor.Builds = _selectedLocators.OfType<BuildLocator>().ToList();
-        await MonitorService.Save(_monitor);
+        Monitor.Builds = _selectedLocators.OfType<BuildLocator>().ToList();
+        await MonitorService.Save(Monitor);
         NavigationManager.NavigateTo("/monitorList");
     }
 

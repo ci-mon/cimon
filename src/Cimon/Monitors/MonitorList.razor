@@ -1,5 +1,4 @@
 ﻿@page "/MonitorList"
-@using Cimon.Data
 @using Cimon.Data.BuildInformation
 @using Microsoft.AspNetCore.Http.Extensions
 @inject MonitorService MonitorService
@@ -8,7 +7,7 @@
 
 <RadzenCard class="rz-mt-4 main-panel">
     <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="true"
-                    Data="@_monitors.Where(m => !m.Removed)" TItem="Monitor">
+                    Data="@_monitors.Value.Where(m => !m.Removed)" TItem="Monitor">
         <Template Context="monitor">
             <RadzenCard class="monitor-item">
                 <RadzenRow>
@@ -81,10 +80,11 @@
 
 @code {
 
-    private readonly IReadOnlyList<Monitor> _monitors = new List<Monitor>();
+    private ReactiveValue<IReadOnlyList<Monitor>> _monitors = null!;
 
     protected override void OnInitialized() {
-        Subscribe(MonitorService.GetMonitors(), () => _monitors);
+        base.OnInitialized();
+        _monitors = Subscribe(MonitorService.GetMonitors(), ArraySegment<Monitor>.Empty);
     }
 
     private async Task Add() {

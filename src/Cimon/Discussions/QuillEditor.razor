@@ -28,7 +28,8 @@
         set {
             if (_content == value) return;
             _content = value;
-            SetContent(Content).Wait();
+            // Do not await this call, cause it leads to deadlocks 
+            _ = SetContent(Content);
         }
     }
 
