@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Cimon.Data.Users;
+﻿using Cimon.Data.Users;
 
 namespace Cimon.Auth;
 
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 

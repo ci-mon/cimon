@@ -1,6 +1,5 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data.BuildInformation;
-using Microsoft.EntityFrameworkCore;
 using Monitor = Cimon.DB.Models.Monitor;
 
 namespace Cimon.Data.Tests;

@@ -1,5 +1,4 @@
-﻿using Cimon.Data;
-using Cimon.Data.Users;
+﻿using Cimon.Data.Users;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cimon.Users;

@@ -3,7 +3,6 @@
 namespace Cimon;
 
 using Cimon.Auth;
-using Cimon.Data;
 
 public class CimonOptions
 {

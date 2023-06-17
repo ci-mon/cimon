@@ -1,7 +1,6 @@
 ﻿using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Cimon.Contracts;
-using Cimon.Data.Users;
 
 namespace Cimon.Data.Discussions;
 

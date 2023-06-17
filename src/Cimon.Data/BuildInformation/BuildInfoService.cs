@@ -1,11 +1,9 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text.Json;
 using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Cimon.Data.Discussions;
-using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.Extensions.Options;
 

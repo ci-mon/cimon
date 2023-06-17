@@ -1,6 +1,4 @@
-﻿using Cimon.Data.Secrets;
-
-namespace Cimon.Data;
+﻿namespace Cimon.Data;
 
 public class CimonDataSettings
 {

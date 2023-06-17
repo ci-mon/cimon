@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Principal;
-using Cimon.Data;
 using Cimon.Data.Discussions;
 using MediatR;
 

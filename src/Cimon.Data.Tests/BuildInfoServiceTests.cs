@@ -4,7 +4,6 @@ using Cimon.Contracts.Services;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;
-using Cimon.DB;
 using Cimon.DB.Models;
 
 namespace Cimon.Data.Tests;

@@ -1,5 +1,4 @@
 ﻿using Cimon.Contracts;
-using Cimon.Data;
 using Cimon.Data.Users;
 using Cimon.Hubs;
 using Microsoft.AspNetCore.SignalR;
