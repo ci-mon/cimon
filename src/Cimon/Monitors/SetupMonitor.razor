@@ -8,6 +8,7 @@
 @using Cimon.Data.Monitors
 @using System.Collections.Immutable
 @using System.Text.Json
+@using Cimon.Contracts
 @using Cimon.DB.Models
 @inherits ReactiveComponent
 
@@ -21,7 +22,8 @@
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-            <RadzenButton Text="Refresh" Icon="refresh" Click="RefreshAvailableBuilds"></RadzenButton>
+            <RadzenButton Text="Refresh TC" Icon="refresh" Click="() => RefreshAvailableBuilds(CISystem.TeamCity)"></RadzenButton>
+            <RadzenButton Text="Refresh Jenkins" Icon="refresh" Click="() => RefreshAvailableBuilds(CISystem.Jenkins)"></RadzenButton>
         </RadzenStack>
         <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
@@ -98,8 +100,8 @@
         SetSelectedLocators(args ? _buildConfigs.Value?.ToList() : null);
     }
 
-    private void RefreshAvailableBuilds() {
-        throw new NotImplementedException();
+    private async Task RefreshAvailableBuilds(CISystem ciSystem) {
+        await BuildConfigService.RefreshBuildConfigs(ciSystem);
     }
 
 }
