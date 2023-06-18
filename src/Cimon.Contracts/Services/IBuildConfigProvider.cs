@@ -1,7 +1,9 @@
-﻿namespace Cimon.Contracts.Services;
+﻿using System.Collections.Immutable;
+
+namespace Cimon.Contracts.Services;
 
 public interface IBuildConfigProvider
 {
-	IAsyncEnumerable<BuildConfigInfo> GetAll();
+	Task<IReadOnlyCollection<BuildConfigInfo>> GetAll();
 	CISystem CISystem { get; }
 }

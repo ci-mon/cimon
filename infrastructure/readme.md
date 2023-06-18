@@ -14,3 +14,4 @@
 
 # Test repository
 Create repository with name `test1` and import [Project](TeamCity_GogsTest1.zip) into teamcity
+Example commit: `echo test4> 1.txt && git add . && git commit -m "4" && git push`

@@ -33,23 +33,20 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 	public async Task RefreshBuildConfigs(CISystem ciSystem) {
 		var providers = _serviceProvider.GetServices<IBuildConfigProvider>().Where(x => x.CISystem == ciSystem)
 			.ToList();
-		var newItems = (await Task.WhenAll(providers.Select(x => x.GetAll().ToListAsync()))).SelectMany(x => x)
-			.ToList();
+		var results = await Task.WhenAll(providers.Select(x => x.GetAll()));
+		var newItems = results.SelectMany(x => x).ToList();
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var existingItems = await ctx.BuildConfigurations.Where(x => x.CISystem == ciSystem).ToListAsync();
 		// todo remove unused old and trigger refresh
 		foreach (var newItem in newItems) {
 			var existing = existingItems.Find(x => x.Key == newItem.Key);
 			if (existing == null) {
-				existing = new BuildConfig {
-					Key = newItem.Key,
-					CISystem = ciSystem,
-				};
+				existing = new BuildConfig(newItem.Key, ciSystem);
 				await ctx.BuildConfigurations.AddAsync(existing);
-				continue;
 			}
 			existing.Props = newItem.Props;
 		}
 		await ctx.SaveChangesAsync();
+		await _state.Refresh();
 	}
 }

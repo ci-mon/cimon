@@ -30,8 +30,10 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			Title = "Untitled",
 			Builds = new List<BuildConfig>()
 		};
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		await ctx.Monitors.AddAsync(monitor);
+		await ctx.SaveChangesAsync();
 		await _state.Mutate(monitors => Task.FromResult(monitors.Add(monitor)));
-		// TODO save in db
 		return monitor;
 	}
 
@@ -42,6 +44,9 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 	}
 
 	public async Task Save(Monitor monitor) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		ctx.Monitors.Update(monitor);
+		await ctx.SaveChangesAsync();
 		await _state.Mutate(monitors => {
 			var existing = monitors.FirstOrDefault(m => m.Key == monitor.Key);
 			var newItem = existing != null ? monitors.Replace(existing, monitor) : monitors.Add(monitor);

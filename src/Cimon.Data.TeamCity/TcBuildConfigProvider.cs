@@ -11,21 +11,21 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		_client = client;
 	}
 
-#pragma warning disable CS1998
-	public async IAsyncEnumerable<BuildConfigInfo> GetAll() {
-#pragma warning restore CS1998
+	public Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
 		var buildConfigs = _client.GetBuildConfigs().All();
+		var results = new List<BuildConfigInfo>();
 		foreach (var buildConfig in buildConfigs) {
 			if (buildConfig.Personal is true || buildConfig.Cancelled is true) {
 				continue;
 			}
-			yield return new BuildConfigInfo {
-				Key = buildConfig.Id,
+			var item = new BuildConfigInfo(buildConfig.Id) {
 				Props = new Dictionary<string, string> {
-					{"Path", buildConfig.ProjectName}
+					{"ProjectName", buildConfig.ProjectName}
 				}
 			};
+			results.Add(item);
 		}
+		return Task.FromResult((IReadOnlyCollection<BuildConfigInfo>)results);
 	}
 
 	public CISystem CISystem => CISystem.TeamCity;

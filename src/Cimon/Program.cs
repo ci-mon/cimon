@@ -27,8 +27,6 @@ builder.Services.AddCimonData();
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
 
-builder.Services.AddSingleton<IBuildConfigProvider, TcBuildConfigProvider>();
-builder.Services.AddSingleton<IBuildInfoProvider, TcBuildInfoProvider>();
 builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {

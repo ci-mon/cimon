@@ -20,7 +20,7 @@ public class TcClient
 		return client.Builds;
 	}
 
-	private TeamCityClient CreateClient() {
+	public TeamCityClient CreateClient() {
 		var client = new TeamCityClient($"{_secrets.Uri.Host}:{_secrets.Uri.Port}",
 			_secrets.Uri.Scheme.ToLowerInvariant() != "http");
 		if (_secrets.Token?.Length > 0) {
@@ -32,7 +32,6 @@ public class TcClient
 		else {
 			client.ConnectAsGuest();
 		}
-
 		return client;
 	}
 }

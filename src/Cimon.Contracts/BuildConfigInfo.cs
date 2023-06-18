@@ -1,11 +1,8 @@
 ﻿namespace Cimon.Contracts;
 
-public class BuildConfigInfo
+public record BuildConfigInfo(string Key) 
 {
-	public required string Key { get; init; }
 	public Dictionary<string, string> Props { get; set; } = new();
-
-	protected bool Equals(BuildConfigInfo other) => Key == other.Key;
-
+	public virtual bool Equals(BuildConfigInfo? other) => other?.Key.Equals(Key) ?? false;
 	public override int GetHashCode() => Key.GetHashCode();
 }

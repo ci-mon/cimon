@@ -5,3 +5,4 @@ teamcity-server-logs/
 jenkins_configuration/
 vault/
 gogs-data/
+test_repositories/

@@ -47,6 +47,9 @@ public record BuildInfo
 			}
 			return _lastModificationBy;
 		}
+		set {
+			_lastModificationBy = value;
+		}
 	}
 
 	public string GetFinishDateString => FinishDate.ToString("dd.MM.yyyy HH:mm:ss");

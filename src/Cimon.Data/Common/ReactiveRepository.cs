@@ -5,10 +5,11 @@ namespace Cimon.Data.Common;
 
 public class ReactiveRepository<T>
 {
+	private readonly IReactiveRepositoryApi<T> _api;
 	private readonly ReplaySubject<T> _bufferedItems;
-	private readonly IObservable<T> _allItems;
 
 	public ReactiveRepository(IReactiveRepositoryApi<T> api) {
+		_api = api;
 		_bufferedItems = new ReplaySubject<T>(1);
 		var loadDataOnce = Observable
 			.DeferAsync(async ct => {
@@ -19,10 +20,10 @@ public class ReactiveRepository<T>
 			.Take(1)
 			.Publish()
 			.RefCount();
-		_allItems = _bufferedItems.Merge(loadDataOnce);
+		Items = _bufferedItems.Merge(loadDataOnce);
 	}
 
-	public IObservable<T> Items => _allItems;
+	public IObservable<T> Items { get; }
 
 	public async Task Mutate(Func<T, Task<T>> func) {
 		var item = await Items.FirstAsync();
@@ -30,4 +31,8 @@ public class ReactiveRepository<T>
 		_bufferedItems.OnNext(newItem);
 	}
 
+	public async Task Refresh() {
+		var data = await _api.LoadData(default);
+		_bufferedItems.OnNext(data);
+	}
 }
