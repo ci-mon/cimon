@@ -135,7 +135,8 @@ public class UserManager : ITechnicalUsers
 			.Where(u => EF.Functions.Like(u.FullName, $"%{searchTerm}%"))
 			.ToAsyncEnumerable();
 		await foreach (var user in users) {
-			yield return new UserInfo(user.Name, user.FullName, user.Teams.Select(CreateTeamInfo).ToImmutableList());
+			var mainTeam = user.Teams.SingleOrDefault(t => !t.ChildTeams.Any());
+			yield return new UserInfo(user.Name, user.FullName, mainTeam?.Name, user.Teams.Select(CreateTeamInfo).ToImmutableList());
 		}
 	}
 

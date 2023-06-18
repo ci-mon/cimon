@@ -102,7 +102,7 @@ window.quillInterop = {
                         if (mentionChar === '@') {
                             const usersResponse = await fetch(`/api/users/search?searchTerm=${searchTerm}`);
                             const users = await usersResponse.json();
-                            let values = users.map(x => ({id: x.id, value: x.name}));
+                            let values = users.map(x => ({id: x.id, value: x.name, team: x.team}));
                             renderList(values, searchTerm);
                         }
                         if (mentionChar === '#') {
@@ -112,6 +112,7 @@ window.quillInterop = {
                             renderList(values, searchTerm);
                         }
                     },
+                    renderItem: (item, searchTerm) => item.team ? `${item.value} (#${item.team})` : item.value
                 },
                 toolbar: toolbar,
             },
