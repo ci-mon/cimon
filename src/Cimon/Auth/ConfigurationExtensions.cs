@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Cimon.Data.Users;
 
 namespace Cimon.Auth;
@@ -24,7 +25,7 @@ public static class ConfigurationExtensions
 			options.Events = new JwtBearerEvents {
 				OnTokenValidated = async context => {
 					if (context.SecurityToken is JwtSecurityToken jwtSecurityToken &&
-						jwtSecurityToken.Payload.TryGetValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+						jwtSecurityToken.Payload.TryGetValue(ClaimTypes.NameIdentifier,
 							out object? name) && await context.HttpContext.RequestServices.GetRequiredService<UserManager>()
 								.IsDeactivated(name?.ToString())) {
 						context.Fail("Token not active");

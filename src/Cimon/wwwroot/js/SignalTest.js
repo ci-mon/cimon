@@ -52,7 +52,7 @@ createApp({
                 this.state = 'onreconnected';
             });
             ////NotifyWithUrl(string url, string message)
-            connection.on("NotifyWithUrl", (url, header, message)=>{
+            connection.on("NotifyWithUrl", (buildId, url, header, message)=>{
                this.messages.push({url, header, message})
             });
             await connection.start();
