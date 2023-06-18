@@ -7,11 +7,12 @@ using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.DB;
-using Cimon.Hubs;
 using Cimon.Shared;
+using Cimon.Users;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using Radzen;
+using NotificationService = Radzen.NotificationService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuth();

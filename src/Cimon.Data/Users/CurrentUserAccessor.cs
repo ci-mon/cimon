@@ -5,15 +5,16 @@ namespace Cimon.Data.Users;
 public class CurrentUserAccessor : ICurrentUserAccessor
 {
 	private readonly GetCurrentPrincipal _currentPrincipal;
-	public CurrentUserAccessor(GetCurrentPrincipal currentPrincipal) {
+	private readonly UserManager _userManager;
+	public CurrentUserAccessor(GetCurrentPrincipal currentPrincipal, UserManager userManager) {
 		_currentPrincipal = currentPrincipal;
+		_userManager = userManager;
 		Current = GetCurrentUser();
 	}
 
 	private async Task<User> GetCurrentUser() {
 		var principal = await _currentPrincipal();
-		var name = principal?.Identity?.Name;
-		return string.IsNullOrWhiteSpace(name) ? User.Guest : new User(name, $"U:{name}");
+		return await _userManager.GetUser(principal);
 	}
 
 	public Task<User> Current { get; }

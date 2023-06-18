@@ -31,7 +31,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 		var comment = new BuildComment {
 			Author = data.Author,
 			Comment = data.Comment,
-			Mentions = await ExtractMentionedUsers(data.Comment)
+			Mentions = await ExtractMentions(data.Comment)
 		};
 		var currentState = await _state.FirstAsync();
 		var state = currentState with {
@@ -49,12 +49,19 @@ public class BuildDiscussionService : IBuildDiscussionService
 		return document.DocumentElement.TextContent;
 	}
 
-	private async Task<IImmutableList<UserId>> ExtractMentionedUsers(string content) {
+	private async Task<IImmutableList<MentionedEntityId>> ExtractMentions(string content) {
 		var parser = new HtmlParser();
 		var document = await parser.ParseDocumentAsync(content);
 		var mentionElements = document.QuerySelectorAll("span.mention");
-		return mentionElements.Select(mention => mention.GetAttribute("data-id")).Where(x => x != null)
-			.Select(x => new UserId(x!)).ToImmutableList();
+		return mentionElements
+			.Select(mention => new {
+				id = mention.GetAttribute("data-id"),
+				type = mention.GetAttribute("data-denotation-char") == "#" ? MentionedEntityType.Team : MentionedEntityType.User,
+				value = mention.GetAttribute("data-value")
+			})
+			.Where(x => x.id is not null)
+			.Select(x => new MentionedEntityId(x.id!, x.type))
+			.ToImmutableList();
 	}
 
 	public async Task Close() {

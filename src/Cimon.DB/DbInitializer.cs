@@ -49,7 +49,10 @@ public class DbInitializer
 			Name = "users"
 		});
 		var allTeam = await context.Teams.AddAsync(new Team {
-			Name = "all"
+			Name = "all",
+			ChildTeams = {
+				adminTeam.Entity
+			}
 		});
 		var monitorEditorRole = await context.Roles.AddAsync(new Role {
 			Name = "monitor-editor"
@@ -70,12 +73,13 @@ public class DbInitializer
 				allEditorRole.Entity
 			}
 		});
+		// https://vinicius73.github.io/gravatar-url-generator/#/
 		await context.Users.AddAsync(new User
-			{ Name = "test", FullName = "Test User", AllowLocalLogin = true,
+			{ Name = "test", FullName = "Test User", Email = "milton.soto@example.com", AllowLocalLogin = true,
 				Teams = { usersTeam.Entity, allTeam.Entity } });
 		await context.Users.AddAsync(new User {
-			Name = "admin", FullName = "Test Admin", Roles = { adminRole.Entity }, AllowLocalLogin = true,
-			Teams = { adminTeam.Entity, allTeam.Entity }
+			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
+			Teams = { adminTeam.Entity }
 		});
 		await InitDemoMonitors(context);
 	}

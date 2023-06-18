@@ -4,16 +4,16 @@ using MediatR;
 
 namespace Cimon.Data.Discussions;
 
-class AddCommentNotificationHandler : INotificationHandler<AddCommentNotification>
+class AddReplyCommentNotificationHandler : INotificationHandler<AddReplyCommentNotification>
 {
 	private readonly BuildDiscussionStoreService _discussionStoreService;
 	private readonly ICurrentUserAccessor _currentUserAccessor;
-	public AddCommentNotificationHandler(BuildDiscussionStoreService discussionStoreService, ICurrentUserAccessor currentUserAccessor) {
+	public AddReplyCommentNotificationHandler(BuildDiscussionStoreService discussionStoreService, ICurrentUserAccessor currentUserAccessor) {
 		_discussionStoreService = discussionStoreService;
 		_currentUserAccessor = currentUserAccessor;
 	}
 
-	public async Task Handle(AddCommentNotification notification, CancellationToken cancellationToken) {
+	public async Task Handle(AddReplyCommentNotification notification, CancellationToken cancellationToken) {
 		var disc = await _discussionStoreService.GetDiscussionService(notification.BuildId)
 			.Timeout(TimeSpan.FromSeconds(2)).FirstAsync();
 		var comment = notification.QuickReplyType switch {

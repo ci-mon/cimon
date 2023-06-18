@@ -1,11 +1,11 @@
-﻿using Cimon.Auth;
+﻿using Cimon.Data.Discussions;
+using Cimon.Data.Users;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Cimon.Data.Discussions;
-using MediatR;
 
-namespace Cimon.Hubs;
+namespace Cimon.Users;
 
 public interface IUserClientApi
 {
@@ -17,36 +17,35 @@ public class UserHub : Hub<IUserClientApi>
 {
 	private readonly ILogger _logger;
 	private readonly IMediator _mediator;
+	private readonly UserManager _userManager;
 
-	public UserHub(ILogger<UserHub> logger, IMediator mediator) {
+	public UserHub(ILogger<UserHub> logger, IMediator mediator, UserManager userManager) {
 		_logger = logger;
 		_mediator = mediator;
+		_userManager = userManager;
 	}
 
 	public override async Task OnConnectedAsync() {
 		await base.OnConnectedAsync();
 		var identity = Context.User?.Identity;
-		var userName = identity?.Name;
-		if (!string.IsNullOrWhiteSpace(userName)) {
-			await Groups.AddToGroupAsync(Context.ConnectionId, userName!);
-			var team = Context.User?.Claims.FirstOrDefault(c => c.Type == TokenService.TeamClaimName)?.Value;
-			if (team != null) {
-				await Groups.AddToGroupAsync(Context.ConnectionId, team);
-			}
+		var user = await _userManager.GetUser(Context.User);
+		await Groups.AddToGroupAsync(Context.ConnectionId, user.Name);
+		foreach (var team in user.Teams) {
+			await Groups.AddToGroupAsync(Context.ConnectionId, team);
 		}
-		_logger.LogInformation("User {Identifier} ({Name} {IsAuthenticated}) connected", Context.UserIdentifier,
-			identity?.Name, identity?.IsAuthenticated);
+		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} {IsAuthenticated}) connected", Context.Items.GetHashCode(),
+			Context.UserIdentifier, identity?.Name, identity?.IsAuthenticated);
 	}
 
 	public override async Task OnDisconnectedAsync(Exception? exception) {
 		await base.OnDisconnectedAsync(exception);
 		var identity = Context.User?.Identity;
-		_logger.LogInformation("User {Identifier} ({Name} {IsAuthenticated}) disconnected", Context.UserIdentifier,
-			identity?.Name, identity?.IsAuthenticated);
+		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} {IsAuthenticated}) disconnected",  Context.Items.GetHashCode(),
+			Context.UserIdentifier, identity?.Name, identity?.IsAuthenticated);
 	}
 
 	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string comment) {
-		await _mediator.Publish(new AddCommentNotification {
+		await _mediator.Publish(new AddReplyCommentNotification {
 			BuildId = buildId,
 			QuickReplyType = quickReplyType,
 			Comment = comment

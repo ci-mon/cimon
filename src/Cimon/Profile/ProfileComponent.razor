@@ -1,10 +1,13 @@
 ﻿@using Cimon.Auth
 @using System.Security.Claims
+@using Cimon.Contracts
+@using Cimon.Data.Users
+@inject ICurrentUserAccessor CurrentUserAccessor
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenProfileMenu>
         <Template>
-            <RadzenLabel>@_name</RadzenLabel>
-            <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_email"></RadzenGravatar>
+            <RadzenLabel>@_user.FullName</RadzenLabel>
+            <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user.Email"></RadzenGravatar>
         </Template>
         <ChildContent>
             <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
@@ -21,15 +24,10 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; } = null!;
 
-    private string? _email;
-    private string? _name;
+    private User _user = null!;
     
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        var state = await AuthenticationState;
-        if (state.User.Identity != null) {
-            _name = state.User.Identity.Name;
-            _email = state.User.Claims.First(x=>x.Type == ClaimTypes.Email).Value;
-        }
+        _user = await CurrentUserAccessor.Current;
     }
 }

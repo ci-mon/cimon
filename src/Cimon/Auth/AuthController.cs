@@ -27,11 +27,11 @@ public class AuthController : Controller
 	[Route("token")]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Token() {
-		var user = await _userManager.FindOrCreateUser(User.Identity!.Name!);
-		if (user == null) {
-			return NotFound();
+		var user = await _userManager.GetUser(User);
+		if (user == Contracts.User.Guest) {
+			return BadRequest();
 		}
-		string token = _tokenService.CreateToken(user);
+		string token = _tokenService.CreateToken(user, user.Claims);
 		return Ok(new AuthResponse { UserName = User.Identity!.Name!, Token = token });
 	}
 
@@ -82,9 +82,7 @@ public class AuthController : Controller
 		if (user == null) {
 			return BadRequest();
 		}
-		var claims = _tokenService.CreateClaims(user);
-		var claimsIdentity = new ClaimsIdentity(claims,
-			CookieAuthenticationDefaults.AuthenticationScheme);
+		var claimsIdentity = new ClaimsIdentity(user.Claims, CookieAuthenticationDefaults.AuthenticationScheme);
 		var authProperties = new AuthenticationProperties {
 			AllowRefresh = true,
 			ExpiresUtc = DateTimeOffset.UtcNow.Add(_options.Auth.Expiration),

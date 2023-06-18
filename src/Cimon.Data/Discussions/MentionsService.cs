@@ -19,7 +19,7 @@ public class MentionsService
 			.SelectMany(x => x.Comments.Select(c => (x.BuildId, c)));
 		return buffer.CombineLatest(buildCommentsObs).Select(tuple => {
 			var (mentions, (buildId, allComments)) = tuple;
-			var buildComments = allComments.Where(c => c.Mentions.Any(m => m == user.Id)).ToList();
+			var buildComments = allComments.Where(c => c.Mentions.Any(m => m.Name == user.Name.Name)).ToList();
 			var existing = mentions.Find(x => x.BuildId == buildId);
 			if (existing == null) {
 				existing = new MentionInfo(buildId, buildComments.Count);

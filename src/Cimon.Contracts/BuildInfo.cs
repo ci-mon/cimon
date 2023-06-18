@@ -1,3 +1,6 @@
+using System.Collections.Immutable;
+using System.Security.Claims;
+
 namespace Cimon.Contracts;
 
 public record BuildInfo
@@ -24,7 +27,13 @@ public record BuildInfo
 	public required string Committers { get; set; }
 
 	public IReadOnlyCollection<User> CommitterUsers => Committers?.Split(",", StringSplitOptions.RemoveEmptyEntries)
-		.Select(User.FromFullName).ToList() ?? (IReadOnlyCollection<User>)ArraySegment<User>.Empty;
+		.Select(FromFullName).ToList() ?? (IReadOnlyCollection<User>)ArraySegment<User>.Empty;
+
+	private static User FromFullName(string fullName) {
+		// TODO move user info extraction to build monitor service 
+		var id = fullName.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
+		return User.Create(id, fullName, new []{new Claim(ClaimTypes.Email, $"{id}@example.com")});
+	}
 
 	private IReadOnlyCollection<string>? _lastModificationBy;
 

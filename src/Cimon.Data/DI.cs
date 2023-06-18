@@ -12,17 +12,17 @@ public static class DI
 	public static IServiceCollection AddCimonData(this IServiceCollection services) {
 		return services
 			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
+			.AddSingleton<UserManager>()
 			.AddSingleton<BuildInfoService>()
 			.AddSingleton<BuildDiscussionStoreService>()
-			.AddSingleton<UserListService>()
 			.AddSingleton<MentionsService>()
-			.AddSingleton<ITechnicalUsers, TechnicalUsers>()
+			.AddSingleton<ITechnicalUsers>(x => x.GetRequiredService<UserManager>())
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
 			.AddSingleton<BuildConfigService>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
 			.AddSingleton<MonitorService>()
 			.AddMediatR(configuration => {
-				configuration.RegisterServicesFromAssemblyContaining<AddCommentNotificationHandler>();
+				configuration.RegisterServicesFromAssemblyContaining<AddReplyCommentNotificationHandler>();
 			});
 	}
 }

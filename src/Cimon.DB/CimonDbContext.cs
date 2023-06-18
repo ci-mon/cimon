@@ -26,5 +26,6 @@ public class CimonDbContext : DbContext
 			builder => builder.HasOne(x => x.BuildConfig).WithMany().HasForeignKey(x => x.BuildConfigId));
 		modelBuilder.Entity<BuildConfig>().Property(x => x.Props).HasJsonConversion();
 		modelBuilder.Entity<BuildConfig>().Property(x => x.DemoState).HasJsonConversion();
+		modelBuilder.Entity<Team>().HasMany(x => x.ChildTeams).WithMany();
 	}
 }

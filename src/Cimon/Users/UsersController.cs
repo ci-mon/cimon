@@ -1,4 +1,5 @@
-﻿using Cimon.Data.Users;
+﻿using Cimon.Contracts;
+using Cimon.Data.Users;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cimon.Users;
@@ -6,21 +7,16 @@ namespace Cimon.Users;
 [Route("api/users")]
 public class UsersController : Controller
 {
-	private readonly UserListService _userListService;
-
-	public UsersController(UserListService userListService) {
-		_userListService = userListService;
+	private readonly UserManager _userManager;
+	public UsersController(UserManager userManager) {
+		_userManager = userManager;
 	}
 
 	[Route("search")]
 	[HttpGet]
-	public IAsyncEnumerable<UserInfo> Search([FromQuery]string? searchTerm) {
-		return _userListService.GetUsers(searchTerm);
-	}
+	public IAsyncEnumerable<UserInfo> Search([FromQuery]string? searchTerm) => _userManager.GetUsers(searchTerm);
 
 	[Route("searchTeams")]
 	[HttpGet]
-	public IAsyncEnumerable<TeamInfo> SearchTeams([FromQuery]string? searchTerm) {
-		return _userListService.GetTeams(searchTerm);
-	}
+	public IAsyncEnumerable<TeamInfo> SearchTeams([FromQuery]string? searchTerm) => _userManager.GetTeams(searchTerm);
 }

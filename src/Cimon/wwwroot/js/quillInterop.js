@@ -100,13 +100,13 @@ window.quillInterop = {
                     mentionDenotationChars: ["@", "#"],
                     source: async function (searchTerm, renderList, mentionChar) {
                         if (mentionChar === '@') {
-                            const usersResponse = await fetch(`/api/users/search?q=${searchTerm}`);
+                            const usersResponse = await fetch(`/api/users/search?searchTerm=${searchTerm}`);
                             const users = await usersResponse.json();
-                            let values = users.map(x => ({id: x.name, value: x.name}));
+                            let values = users.map(x => ({id: x.id, value: x.name}));
                             renderList(values, searchTerm);
                         }
                         if (mentionChar === '#') {
-                            const usersResponse = await fetch(`/api/users/searchTeams?q=${searchTerm}`);
+                            const usersResponse = await fetch(`/api/users/searchTeams?searchTerm=${searchTerm}`);
                             const users = await usersResponse.json();
                             let values = users.map(x => ({id: x.name, value: x.name}));
                             renderList(values, searchTerm);

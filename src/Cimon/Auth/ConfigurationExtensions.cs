@@ -82,8 +82,7 @@ public static class ConfigurationExtensions
 	}
 
 	public static void AddAuth(this IServiceCollection services) {
-		services.AddSingleton<TokenService, TokenService>();
-		services.AddScoped<UserManager, UserManager>();
+		services.AddSingleton<TokenService>();
 		services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
 			.AddNegotiate()
 			.AddCookie()
