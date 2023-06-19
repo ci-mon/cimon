@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
-using TeamCitySharp;
-using TeamCitySharp.ActionTypes;
+using TeamCityAPI;
+using TeamCityAPI.Locators;
+using TeamCityAPI.Locators.Common;
+using TeamCityAPI.Models;
+using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity;
 
@@ -11,27 +14,23 @@ public class TcClient
 		_secrets = secrets.Value;
 	}
 
-	public IBuildConfigs GetBuildConfigs() {
-		var client = CreateClient();
-		return client.BuildConfigs;
-	}
-	public IBuilds GetBuilds() {
-		var client = CreateClient();
-		return client.Builds;
-	}
-
 	public TeamCityClient CreateClient() {
-		var client = new TeamCityClient($"{_secrets.Uri.Host}:{_secrets.Uri.Port}",
-			_secrets.Uri.Scheme.ToLowerInvariant() != "http");
+		var client = new TeamCityClient(_secrets.Uri.ToString());
 		if (_secrets.Token?.Length > 0) {
-			client.ConnectWithAccessToken(_secrets.Token);
+			client.UseToken(_secrets.Token);
 		}
 		else if (_secrets.Login?.Length > 0) {
-			client.Connect(_secrets.Login, _secrets.Password);
-		}
-		else {
-			client.ConnectAsGuest();
+			client.UseLoginAndPass(_secrets.Login, _secrets.Password);
 		}
 		return client;
 	}
+
+	public IAsyncEnumerable<BuildConfig> GetBuildConfigs() {
+		var client = CreateClient();
+		return client.BuildTypes.Include(x => x.BuildType)
+			.GetAsyncEnumerable<BuildTypes, BuildType>()
+			.Select(buildType => new BuildConfig(buildType.Id, buildType.ProjectName, buildType.WebUrl));
+	}
 }
+
+public record BuildConfig(string Id, string ProjectName, string WebUrl);

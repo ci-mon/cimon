@@ -60,7 +60,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 				value = mention.GetAttribute("data-value")
 			})
 			.Where(x => x.id is not null)
-			.Select(x => new MentionedEntityId(x.id!, x.type))
+			.Select(x => new MentionedEntityId(x.id!, x.value!, x.type))
 			.ToImmutableList();
 	}
 

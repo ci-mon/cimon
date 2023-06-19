@@ -1,6 +1,5 @@
 version: '3.1'
 
-
 # Default ${TEAMCITY_VERSION} is defined in .env file
 
 # ./buildserver_pgdata - Posgres DB data
@@ -12,7 +11,6 @@ version: '3.1'
 services:
   db:
     image: postgres:latest
-    restart: always
     environment:
       - POSTGRES_PASSWORD=teamcity_password
       - POSTGRES_USER=teamcity_user
@@ -77,7 +75,6 @@ services:
 
   gogs:
     image: gogs/gogs:latest
-    restart: always
     ports:
       - "2222:2222"
       - "3001:3001"

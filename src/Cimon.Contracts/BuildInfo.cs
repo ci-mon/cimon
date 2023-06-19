@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Security.Claims;
 
 namespace Cimon.Contracts;
@@ -24,37 +23,14 @@ public record BuildInfo
 
 	public required string BranchName { get; set; }
 
-	public required string Committers { get; set; }
-
-	public IReadOnlyCollection<User> CommitterUsers => Committers?.Split(",", StringSplitOptions.RemoveEmptyEntries)
-		.Select(FromFullName).ToList() ?? (IReadOnlyCollection<User>)ArraySegment<User>.Empty;
+	public IReadOnlyCollection<string> Committers { get; set; } = Array.Empty<string>();
+	public IReadOnlyCollection<User> CommitterUsers => Committers.Select(FromFullName).ToList();
 
 	private static User FromFullName(string fullName) {
 		// TODO move user info extraction to build monitor service 
 		var id = fullName.Split(" ").Aggregate((a, b) => $"{Char.ToLowerInvariant(a[0])}.{b.ToLowerInvariant()}");
 		return User.Create(id, fullName, new []{new Claim(ClaimTypes.Email, $"{id}@example.com")});
 	}
-
-	private IReadOnlyCollection<string>? _lastModificationBy;
-
-	public IReadOnlyCollection<string> LastModificationBy {
-		get {
-			if (_lastModificationBy == null) {
-				_lastModificationBy = new List<string>();
-			} else {
-				_lastModificationBy = _lastModificationBy
-					.Where(x => x.ToLower() != "unknownuser" && x.ToLower() != "bpmonlinebuild").ToList();
-			}
-			return _lastModificationBy;
-		}
-		set {
-			_lastModificationBy = value;
-		}
-	}
-
-	public string GetFinishDateString => FinishDate.ToString("dd.MM.yyyy HH:mm:ss");
-
-	public string GetStartDateString => StartDate.ToString("HH:mm");
 
 	public required string BuildConfigId { get; set; }
 	public int CommentsCount { get; set; }

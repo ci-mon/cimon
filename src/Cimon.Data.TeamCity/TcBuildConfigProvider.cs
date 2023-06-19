@@ -11,13 +11,9 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		_client = client;
 	}
 
-	public Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
-		var buildConfigs = _client.GetBuildConfigs().All();
+	public async Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
 		var results = new List<BuildConfigInfo>();
-		foreach (var buildConfig in buildConfigs) {
-			if (buildConfig.Personal is true || buildConfig.Cancelled is true) {
-				continue;
-			}
+		await foreach (var buildConfig in _client.GetBuildConfigs()) {
 			var item = new BuildConfigInfo(buildConfig.Id) {
 				Props = new Dictionary<string, string> {
 					{"ProjectName", buildConfig.ProjectName}
@@ -25,7 +21,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 			};
 			results.Add(item);
 		}
-		return Task.FromResult((IReadOnlyCollection<BuildConfigInfo>)results);
+		return results;
 	}
 
 	public CISystem CISystem => CISystem.TeamCity;

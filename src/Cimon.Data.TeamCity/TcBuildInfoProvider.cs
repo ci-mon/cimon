@@ -1,10 +1,8 @@
 ﻿using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
-using TeamCitySharp;
-using TeamCitySharp.DomainEntities;
-using TeamCitySharp.Locators;
-using BuildLocator = TeamCitySharp.Locators.BuildLocator;
+using TeamCityAPI.Queries;
+using TeamCityAPI.Queries.Common;
 using BuildStatus = Cimon.Contracts.BuildStatus;
 
 namespace Cimon.Data.TeamCity;
@@ -20,30 +18,46 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	}
 	public CISystem CiSystem => CISystem.TeamCity;
 
-	public Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildConfigInfo> buildConfigs) {
-		var builds = _client.GetBuilds();
-		var allRunningBuilds = builds.AllRunningBuild();
+	public async Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildConfigInfo> buildConfigs) {
+		var client = _client.CreateClient();
 		List<BuildInfo?> list = new List<BuildInfo?>();
 		foreach (var l in buildConfigs) {
-			var locator = BuildLocator.WithDimensions(BuildTypeLocator.WithId(l.Key), maxResults: 1);
-			var build = builds.ByBuildLocator(locator).FirstOrDefault();
-			if (build is null) return null;
+			var detailedBuilds = await client.Builds
+				.Include(x => x.Build, IncludeType.Long).ThenInclude(x => x.Changes, IncludeType.Long).ThenInclude(x=>x.Change, IncludeType.Long).ThenInclude(x=>x.Attributes)
+				.WithLocator(new TeamCityAPI.Locators.BuildLocator {
+					Count = 10,
+					BuildType = new TeamCityAPI.Locators.BuildTypeLocator {
+						Id = l.Key
+					},
+					Personal = false,
+				}).GetAsync();
+			var detailedBuilds2 = await client.Builds
+				.Include(x => x.Build, IncludeType.Long)
+				.WithLocator(new TeamCityAPI.Locators.BuildLocator {
+					Count = 10,
+					BuildType = new TeamCityAPI.Locators.BuildTypeLocator {
+						Id = l.Key
+					},
+					Personal = false,
+				}).GetAsync();
+			var build = detailedBuilds.Build.FirstOrDefault();
+			if (build is null) continue;
 			var info = new BuildInfo {
-				Name = build.BuildConfig?.Name,
+				Name = build.BuildType.Name,
 				BuildConfigId = l.Key,
 				BuildHomeUrl = build.WebUrl,
-				ProjectName = build.BuildConfig?.Id,
+				ProjectName = build.BuildType.ProjectName,
 				Number = build.Number,
 				StatusText = build.StatusText,
 				BranchName = build.BranchName,
-				Committers = null,
-				Status = GetStatus(build)
+				Committers = build.Changes.Change.Select(x=>x.Username).ToList(),
+				Status = GetStatus(build.Status)
 			};
 			list.Add(info);
 		}
-		return Task.FromResult((IReadOnlyCollection<BuildInfo>)list);
+		return (IReadOnlyCollection<BuildInfo>)list;
 	}
-
+#if x
 	private BuildInfo Old(string buildConfigId, string branch, string[] tags = null) {
 		TeamCityClient client = _client.CreateClient();
 		BuildTypeLocator idLocator = BuildTypeLocator.WithId(buildConfigId);
@@ -54,7 +68,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		
 		Build build = client.Builds.ByBuildLocator(locator).FirstOrDefault();
 		if (buildConfig == null || build == null) {
-			throw new BuildLoadException(string.Format("Build \"{0}\" can't be loaded", buildConfigId));
+			throw new Exception($"Build \"{buildConfigId}\" can't be loaded");
 		}
 		locator = BuildLocator.WithId(build.Id);
 		build = client.Builds.DetailByBuildLocator(locator);
@@ -142,10 +156,11 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			BuildLocator.WithDimensions(buildType, canceled: false, sinceBuild: sinceBuild, branch: branch);
 		return client.Builds.ByBuildLocator(locator);
 	}
-
-	private BuildStatus GetStatus(Build build) {
-		return build.Status.Equals("success", StringComparison.InvariantCultureIgnoreCase)
+#endif
+	private BuildStatus GetStatus(string status) {
+		return status.Equals("success", StringComparison.InvariantCultureIgnoreCase)
 			? BuildStatus.Success
 			: BuildStatus.Failed;
 	}
+
 }

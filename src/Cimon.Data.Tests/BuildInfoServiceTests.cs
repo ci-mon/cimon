@@ -32,7 +32,6 @@ public class BuildInfoServiceTests
 			Number = "",
 			StatusText = "",
 			BranchName = "",
-			Committers = ""
 		};
 	}
 

@@ -14,7 +14,7 @@
         <RadzenRow JustifyContent="JustifyContent.Center">
             <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
                 <RadzenCard class="status-item">
-                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@_state.Value.Status.ToString()"></RadzenLabel>
+                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@State.Status.ToString()"></RadzenLabel>
                 </RadzenCard>
                 @foreach (var comment in State.Comments) {
                     <CommentComponent
@@ -23,16 +23,18 @@
                         OnDelete="() => OnDelete(comment)">
                     </CommentComponent>
                 }
-                <RadzenCard class="comment-editor-block">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
-                        <div style="width: 100%">
-                            <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
-                        </div>
-                        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
-                            <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+                @if (State.Status != BuildDiscussionStatus.Closed) {
+                    <RadzenCard class="comment-editor-block">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                            <div style="width: 100%">
+                                <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
+                            </div>
+                            <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
+                                <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+                            </RadzenStack>
                         </RadzenStack>
-                    </RadzenStack>
-                </RadzenCard>
+                    </RadzenCard>
+                }
             </RadzenColumn>
         </RadzenRow>
     </div>

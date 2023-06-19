@@ -2,4 +2,4 @@
 
 public enum MentionedEntityType { User, Team}
 
-public readonly record struct MentionedEntityId(string Name, MentionedEntityType Type);
+public readonly record struct MentionedEntityId(string Name, string DisplayName, MentionedEntityType Type);

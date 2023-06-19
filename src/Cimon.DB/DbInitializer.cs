@@ -96,7 +96,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "BpmsPlatformWorkDiagnostic"
 			}
 		});
@@ -111,7 +110,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "Unit"
 			}
 		});
@@ -126,7 +124,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "Unit (.Net 6)",
 			}
 		});
@@ -141,7 +138,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "Integration (MSSQL)",
 			}
 		});
@@ -156,7 +152,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "Integration (PostgreSQL)",
 			}
 		});
@@ -171,7 +166,6 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "",
 				BuildConfigId = "Integration (Oracle)",
 			}
 		});
@@ -185,7 +179,7 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = "test,admin",
+				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.shell",
 			}
 		});
@@ -199,7 +193,7 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
-				Committers = "test,admin",
+				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.schema-view",
 			}
 		});
@@ -213,7 +207,7 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
-				Committers = "test,admin",
+				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.process-designer",
 			}
 		});
@@ -227,7 +221,7 @@ public class DbInitializer
 				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
-				Committers = "test,admin",
+				Committers = new []{"test","admin"},
 				BuildConfigId = "lib.studio-enterprise.process",
 			}
 		});
