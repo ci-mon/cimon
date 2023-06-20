@@ -27,6 +27,17 @@ class DiscussionHandler: INotificationHandler<DiscussionOpenNotification>, INoti
 			Author = _technicalUsers.MonitoringBot,
 			Comment = BuildCommentMessage(notification.BuildInfo)
 		});
+		if (notification.BuildInfo is IBuildInfoActionsProvider actionProvider) {
+			var actions = actionProvider.GetAvailableActions();
+			notification.Discussion.RegisterActions(actions);
+			foreach (var group in actions.GroupBy(x=>x.GroupDescription)) {
+				var innerActions = string.Join(",", group.Select(x => $"{x.Description}[{x.Id}]"));
+				await notification.Discussion.AddComment(new CommentData {
+					Author = _technicalUsers.MonitoringBot,
+					Comment = $"{group.Key} {innerActions}"
+				});
+			}
+		}
 	}
 
 	public async Task Handle(DiscussionClosedNotification notification, CancellationToken cancellationToken) {

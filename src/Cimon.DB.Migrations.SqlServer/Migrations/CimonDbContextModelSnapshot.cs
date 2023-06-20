@@ -21,7 +21,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Cimon.DB.BuildConfig", b =>
+            modelBuilder.Entity("Cimon.DB.Models.BuildConfig", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -37,18 +37,24 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.Property<string>("Key")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Props")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
 
                     b.ToTable("BuildConfigurations");
                 });
 
-            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+            modelBuilder.Entity("Cimon.DB.Models.BuildInMonitor", b =>
                 {
                     b.Property<int>("BuildConfigId")
                         .HasColumnType("int");
@@ -63,7 +69,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("BuildInMonitor");
                 });
 
-            modelBuilder.Entity("Cimon.DB.Monitor", b =>
+            modelBuilder.Entity("Cimon.DB.Models.Monitor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -89,7 +95,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("Monitors");
                 });
 
-            modelBuilder.Entity("Cimon.DB.Role", b =>
+            modelBuilder.Entity("Cimon.DB.Models.Role", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -106,7 +112,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("Roles");
                 });
 
-            modelBuilder.Entity("Cimon.DB.Team", b =>
+            modelBuilder.Entity("Cimon.DB.Models.Team", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -123,7 +129,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("Teams");
                 });
 
-            modelBuilder.Entity("Cimon.DB.User", b =>
+            modelBuilder.Entity("Cimon.DB.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -186,6 +192,21 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("RoleUser");
                 });
 
+            modelBuilder.Entity("TeamTeam", b =>
+                {
+                    b.Property<int>("ChildTeamsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ChildTeamsId", "TeamId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("TeamTeam");
+                });
+
             modelBuilder.Entity("TeamUser", b =>
                 {
                     b.Property<int>("TeamsId")
@@ -201,15 +222,15 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.ToTable("TeamUser");
                 });
 
-            modelBuilder.Entity("Cimon.DB.BuildInMonitor", b =>
+            modelBuilder.Entity("Cimon.DB.Models.BuildInMonitor", b =>
                 {
-                    b.HasOne("Cimon.DB.BuildConfig", "BuildConfig")
+                    b.HasOne("Cimon.DB.Models.BuildConfig", "BuildConfig")
                         .WithMany()
                         .HasForeignKey("BuildConfigId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cimon.DB.Monitor", "Monitor")
+                    b.HasOne("Cimon.DB.Models.Monitor", "Monitor")
                         .WithMany()
                         .HasForeignKey("MonitorId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -222,13 +243,13 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
             modelBuilder.Entity("RoleRole", b =>
                 {
-                    b.HasOne("Cimon.DB.Role", null)
+                    b.HasOne("Cimon.DB.Models.Role", null)
                         .WithMany()
                         .HasForeignKey("OwnedRolesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cimon.DB.Role", null)
+                    b.HasOne("Cimon.DB.Models.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.ClientCascade)
@@ -237,28 +258,43 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
             modelBuilder.Entity("RoleUser", b =>
                 {
-                    b.HasOne("Cimon.DB.Role", null)
+                    b.HasOne("Cimon.DB.Models.Role", null)
                         .WithMany()
                         .HasForeignKey("RolesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cimon.DB.User", null)
+                    b.HasOne("Cimon.DB.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TeamTeam", b =>
+                {
+                    b.HasOne("Cimon.DB.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("ChildTeamsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TeamUser", b =>
                 {
-                    b.HasOne("Cimon.DB.Team", null)
+                    b.HasOne("Cimon.DB.Models.Team", null)
                         .WithMany()
                         .HasForeignKey("TeamsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cimon.DB.User", null)
+                    b.HasOne("Cimon.DB.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)

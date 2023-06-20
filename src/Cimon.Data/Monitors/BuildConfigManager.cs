@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
+using AngleSharp.Css;
 using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Cimon.Data.Common;
@@ -36,15 +37,25 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		var results = await Task.WhenAll(providers.Select(x => x.GetAll()));
 		var newItems = results.SelectMany(x => x).ToList();
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		var existingItems = await ctx.BuildConfigurations.Where(x => x.CISystem == ciSystem).ToListAsync();
-		// todo remove unused old and trigger refresh
+		var existingItems = await ctx.BuildConfigurations.Include(x=>x.Monitors).Where(x => x.CISystem == ciSystem).ToListAsync();
+		var toRemove = existingItems.ToHashSet();
 		foreach (var newItem in newItems) {
 			var existing = existingItems.Find(x => x.Key == newItem.Key);
 			if (existing == null) {
 				existing = new BuildConfig(newItem.Key, ciSystem);
 				await ctx.BuildConfigurations.AddAsync(existing);
+			} else {
+				toRemove.Remove(existing);
+				existing.Status = BuildConfigStatus.Ok;
 			}
 			existing.Props = newItem.Props;
+		}
+		foreach (var config in toRemove) {
+			if (config.DemoState is not null) continue;
+			if (config.Monitors.Any()) {
+				config.Status = BuildConfigStatus.NotFoundInCISystem;
+			}
+			ctx.BuildConfigurations.Remove(config);
 		}
 		await ctx.SaveChangesAsync();
 		await _state.Refresh();

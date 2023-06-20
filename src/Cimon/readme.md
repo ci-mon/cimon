@@ -4,17 +4,19 @@
 ### back-end
 1. Login by password (+)
 2. Logout (+)
-3. Monitor setup (wip)
+3. Monitor setup (wip) // error on save after removed build config
 4. Build status page (+)
-5. TC client (vault)
+5. TC client (vault) (+)
 6. Jenkins client (vault)
-7. Blame (+)
-8. Save last viewed monitor
-9. Teams (+)
-10. Users in DB (+)
-11. Available plans in DB (TC)
-12. Available plans in DB (Jenkins)
-13. Store discussions in DB
+7. Handle client errors
+8. Blame (+)
+9. Save last viewed monitor
+10. Teams (+)
+11. Users in DB (+)
+12. Available plans in DB (TC) (+)
+13. Available plans in DB (Jenkins)
+14. Store discussions in DB
+15. Quick responses to TC Failed build (Investigate, MuteTests, Restart)
 
 ### Electron app
 1. Login (negotiate/basic) (+)

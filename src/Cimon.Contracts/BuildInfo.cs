@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 namespace Cimon.Contracts;
 
+
 public record BuildInfo
 {
 
@@ -17,9 +18,9 @@ public record BuildInfo
 
 	public BuildStatus Status { get; set; }
 
-	public DateTime FinishDate { get; set; }
+	public DateTimeOffset FinishDate { get; set; }
 
-	public DateTime StartDate { get; set; }
+	public DateTimeOffset StartDate { get; set; }
 
 	public required string BranchName { get; set; }
 

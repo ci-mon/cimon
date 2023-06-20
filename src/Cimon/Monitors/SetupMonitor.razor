@@ -22,8 +22,9 @@
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-            <RadzenButton Text="Refresh TC" Icon="refresh" Click="() => RefreshAvailableBuilds(CISystem.TeamCity)"></RadzenButton>
-            <RadzenButton Text="Refresh Jenkins" Icon="refresh" Click="() => RefreshAvailableBuilds(CISystem.Jenkins)"></RadzenButton>
+            @foreach (var system in Enum.GetNames<CISystem>()) {
+                <RadzenButton Text="@($"Refresh {system}")" Icon="refresh" Click="() => RefreshAvailableBuilds(Enum.Parse<CISystem>(system))"></RadzenButton>
+            }
         </RadzenStack>
         <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
@@ -45,6 +46,7 @@
                 <RadzenDataGridColumn TItem="BuildConfig" Property="Id" Title="Id"/>
                 <RadzenDataGridColumn TItem="BuildConfig" Property="CISystem" Title="CISystem"/>
                 <RadzenDataGridColumn TItem="BuildConfig" Property="Key" Title="Key"/>
+                <RadzenDataGridColumn TItem="BuildConfig" Property="Status" Title="Status"/>
                 <RadzenDataGridColumn TItem="BuildConfig" Title="Props">
                     <Template Context="item">
                         <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>

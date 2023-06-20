@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using AngleSharp;
@@ -87,5 +88,18 @@ public class BuildDiscussionService : IBuildDiscussionService
 			Comments = currentState.Comments.Replace(comment, comment)
 		};
 		_state.OnNext(state);
+	}
+
+	private readonly ConcurrentDictionary<Guid, BuildInfoActionDescriptor> _actions = new();
+	public void RegisterActions(IReadOnlyCollection<BuildInfoActionDescriptor> actions) {
+		foreach (var item in actions) {
+			_actions[item.Id] = item;
+		}
+	}
+
+	public async Task ExecuteAction(Guid id) {
+		if (_actions.TryRemove(id, out var action)) {
+			await action.Execute();
+		}
 	}
 }
