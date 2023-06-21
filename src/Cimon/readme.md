@@ -14,7 +14,7 @@
 10. Teams (+)
 11. Users in DB (+)
 12. Available plans in DB (TC) (+)
-13. Available plans in DB (Jenkins)
+13. Available plans in DB (Jenkins) (+)
 14. Store discussions in DB
 15. Quick responses to TC Failed build (Investigate, MuteTests, Restart)
 
