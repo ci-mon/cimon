@@ -1,5 +1,5 @@
-﻿using JenkinsNetClient;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
+using Narochno.Jenkins;
 
 namespace Cimon.Data.Jenkins;
 
@@ -10,8 +10,13 @@ public class ClientFactory
 		_options = options.Value;
 	}
 
-	public JenkinsServer Create() {
-		JenkinsConnection myConn = new JenkinsConnection(_options.Uri.ToString(), _options.Login, _options.Token);
-		return new JenkinsServer(myConn);
+	public JenkinsClient Create() {
+		var config = new JenkinsConfig
+		{
+			JenkinsUrl = _options.Uri.ToString(),
+			Username = _options.Login,
+			ApiKey = _options.Token
+		};
+		return new JenkinsClient(config);
 	}
 }

@@ -27,7 +27,9 @@ public class JenkinsBuildConfigProviderTests
 	}
 
 	[Test]
-	public void x() {
-		var x = _factory.Create().Views().FirstOrDefault();
+	public async Task GetBuildInfo() {
+		using var client = _factory.Create();
+		var job = await client.GetJob("app.my.test", default);
+		var buildInfo = await client.GetBuild(job.Name, job.LastBuild.Number.ToString(), default);
 	}
 }

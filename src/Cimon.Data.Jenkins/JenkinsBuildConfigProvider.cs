@@ -10,17 +10,18 @@ public class JenkinsBuildConfigProvider : IBuildConfigProvider
 		_clientFactory = clientFactory;
 	}
 
-	public Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
-		var client = _clientFactory.Create();
+	public async Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
+		using var client = _clientFactory.Create();
 		var result = new List<BuildConfigInfo>();
-		foreach (var job in client.Jobs()) {
+		var master = await client.GetMaster(default);
+		foreach (var job in master.Jobs) {
 			result.Add(new BuildConfigInfo(job.Name) {
 				Props = {
-					{nameof(job.Class), job.Class}
+					{nameof(job.Url), job.Url.ToString()}
 				}
 			});
 		}
-		return Task.FromResult((IReadOnlyCollection<BuildConfigInfo>)result);
+		return result;
 	}
 
 	public CISystem CISystem => CISystem.Jenkins;
