@@ -87,14 +87,13 @@
         _buildConfigs = Subscribe(BuildConfigService.BuildConfigs);
         // todo combine build configs and monitor
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Key == b.Key)).ToList();
+            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Key == b.BuildConfig.Key)).ToList();
             SetSelectedLocators(descriptors);
         });
     }
 
     private async Task Save() {
-        Monitor.Builds = _selectedLocators.OfType<BuildConfig>().ToList();
-        await MonitorService.Save(Monitor);
+        await MonitorService.Save(Monitor, _selectedLocators);
         NavigationManager.NavigateTo("/monitorList");
     }
 

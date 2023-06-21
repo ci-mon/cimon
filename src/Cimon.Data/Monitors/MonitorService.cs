@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
+using System.Runtime.Intrinsics.X86;
 using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Cimon.Data.Common;
@@ -28,12 +29,11 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		var monitor = new Monitor {
 			Key = Guid.NewGuid().ToString(),
 			Title = "Untitled",
-			Builds = new List<BuildConfig>()
 		};
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		await ctx.Monitors.AddAsync(monitor);
 		await ctx.SaveChangesAsync();
-		await _state.Mutate(monitors => Task.FromResult(monitors.Add(monitor)));
+		await _state.Refresh();
 		return monitor;
 	}
 
@@ -43,20 +43,24 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			: GetMonitors().SelectMany(x => x).Where(x => x.Key == monitorId);
 	}
 
-	public async Task Save(Monitor monitor) {
+	public async Task Save(Monitor monitor, IList<BuildConfig> builds) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		ctx.Monitors.Update(monitor);
+		var existing = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id).ToListAsync();
+		ctx.MonitorBuilds.RemoveRange(existing);
+		foreach (var buildConfig in builds) {
+			await ctx.MonitorBuilds.AddAsync(new BuildInMonitor() {
+				MonitorId = monitor.Id,
+				BuildConfigId = buildConfig.Id
+			});
+		}
 		await ctx.SaveChangesAsync();
-		await _state.Mutate(monitors => {
-			var existing = monitors.FirstOrDefault(m => m.Key == monitor.Key);
-			var newItem = existing != null ? monitors.Replace(existing, monitor) : monitors.Add(monitor);
-			return Task.FromResult(newItem);
-		});
+		await _state.Refresh();
 	}
 
 	public async Task<IImmutableList<Monitor>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
-		var result = await ctx.Monitors.Include(x => x.Builds)
+		var result = await ctx.Monitors.Include(x => x.Builds).ThenInclude(x=>x.BuildConfig)
 			.ToListAsync(cancellationToken: token);
 		return result.ToImmutableList();
 	}
@@ -67,6 +71,10 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			existing.Removed = true;
 			return Task.FromResult(monitors.Replace(existing, monitor));
 		});
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		ctx.Monitors.Remove(monitor);
+		await ctx.SaveChangesAsync();
+		await _state.Refresh();
 	}
 
 }

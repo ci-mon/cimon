@@ -1,6 +1,6 @@
 ﻿namespace Cimon.DB.Models;
 
-class BuildInMonitor
+public class BuildInMonitor
 {
 	public Monitor Monitor { get; set; }
 	public int MonitorId { get; set; }

@@ -225,33 +225,45 @@ public class DbInitializer
 				BuildConfigId = "lib.studio-enterprise.process",
 			}
 		});
-		await context.Monitors.AddAsync(new Monitor() {
+
+		async Task AddBuildsToMonitor(Monitor monitor, params BuildConfig[] buildConfigs) {
+			foreach (var config in buildConfigs) {
+				await context.MonitorBuilds.AddAsync(new BuildInMonitor() {
+					Monitor = monitor,
+					MonitorId = monitor.Id,
+					BuildConfig = config,
+					BuildConfigId = config.Id
+				});
+			}
+		}
+		var mon1 = await context.Monitors.AddAsync(new Monitor() {
 			Key = "Test 1",
 			Title = "Test mon 1",
-			Builds = {
-				buildConfig1.Entity, 
-				buildConfig2.Entity, 
-				buildConfig3.Entity, 
-				buildConfig4.Entity, 
-				buildConfig5.Entity, 
-				buildConfig6.Entity, 
-			}
 		});
-		await context.Monitors.AddAsync(new Monitor() {
+		await AddBuildsToMonitor(mon1.Entity, 
+			buildConfig1.Entity,
+			buildConfig2.Entity,
+			buildConfig3.Entity,
+			buildConfig4.Entity,
+			buildConfig5.Entity,
+			buildConfig6.Entity);
+		var mon2 = await context.Monitors.AddAsync(new Monitor() {
 			Key = "All",
 			Title = "All",
 			Builds = {
-				buildConfig1.Entity, 
-				buildConfig2.Entity, 
-				buildConfig3.Entity, 
-				buildConfig4.Entity, 
-				buildConfig5.Entity, 
-				buildConfig6.Entity, 
-				buildConfig7.Entity, 
-				buildConfig8.Entity, 
-				buildConfig9.Entity, 
-				buildConfig10.Entity, 
+				
 			}
 		});
+		await AddBuildsToMonitor(mon2.Entity, 
+			buildConfig1.Entity, 
+			buildConfig2.Entity, 
+			buildConfig3.Entity, 
+			buildConfig4.Entity, 
+			buildConfig5.Entity, 
+			buildConfig6.Entity, 
+			buildConfig7.Entity, 
+			buildConfig8.Entity, 
+			buildConfig9.Entity, 
+			buildConfig10.Entity);
 	}
 }

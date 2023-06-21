@@ -54,6 +54,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 			if (config.DemoState is not null) continue;
 			if (config.Monitors.Any()) {
 				config.Status = BuildConfigStatus.NotFoundInCISystem;
+				continue;
 			}
 			ctx.BuildConfigurations.Remove(config);
 		}

@@ -92,7 +92,7 @@
                 _errorMessage = null;
             }
         });
-        _buildInfos = Subscribe(BuildInfoService.Watch(_monitor.Source.Select(m => m.Builds)));
+        _buildInfos = Subscribe(BuildInfoService.Watch(_monitor.Source.Select(m => m.Builds.Select(x => x.BuildConfig).ToList())));
     }
 
 }

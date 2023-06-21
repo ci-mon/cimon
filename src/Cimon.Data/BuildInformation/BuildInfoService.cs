@@ -49,8 +49,8 @@ public class BuildInfoService : IDisposable
 	}
 
 	record BuildDiscussionInfo(BuildConfig Locator, BuildDiscussionState State);
-	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildConfig>> locators) {
-		var trackedLocators = locators.Do(TrackLocators);
+	public IObservable<IList<BuildInfo>> Watch(IObservable<IReadOnlyList<BuildConfig>> buildConfigIds) {
+		var trackedLocators = buildConfigIds.Do(TrackLocators);
 		var comments = GetBuildDiscussionStates(trackedLocators);
 		return trackedLocators
 			.CombineLatest(_buildInfos).Select(CombineBuildInfos)

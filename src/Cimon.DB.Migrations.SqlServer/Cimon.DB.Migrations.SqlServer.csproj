@@ -10,4 +10,8 @@
       <ProjectReference Include="..\Cimon.DB\Cimon.DB.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Migrations\CimonDbContextModelSnapshot.cs" />
+    </ItemGroup>
+
 </Project>

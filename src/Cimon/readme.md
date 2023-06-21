@@ -4,7 +4,7 @@
 ### back-end
 1. Login by password (+)
 2. Logout (+)
-3. Monitor setup (wip) // error on save after removed build config
+3. Monitor setup (+)
 4. Build status page (+)
 5. TC client (vault) (+)
 6. Jenkins client (vault)

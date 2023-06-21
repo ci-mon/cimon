@@ -7,5 +7,5 @@ public class Monitor
 	public string? Title { get; set; }
 	public bool Removed { get; set; }
 	public bool AlwaysOnMonitoring { get; set; }
-	public List<BuildConfig> Builds { get; set; } = new();
+	public List<BuildInMonitor> Builds { get; set; } = new();
 }

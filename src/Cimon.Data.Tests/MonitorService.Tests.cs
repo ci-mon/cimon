@@ -1,5 +1,6 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data.BuildInformation;
+using Cimon.DB.Models;
 using Monitor = Cimon.DB.Models.Monitor;
 
 namespace Cimon.Data.Tests;
@@ -29,7 +30,7 @@ public class MonitorServiceTests
 		var monitor = monitors[0];
 		var id = Guid.NewGuid().ToString();
 		monitor.Key = id;
-		await sut.Save(monitor);
+		await sut.Save(monitor, new List<BuildConfig>());
 		monitors = await observable.FirstOrDefaultAsync();
 		monitors.Should().Contain(m => m.Key == id);
 	}
