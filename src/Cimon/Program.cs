@@ -3,6 +3,7 @@ using Cimon.Auth;
 using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
+using Cimon.Data.Jenkins;
 using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
@@ -26,6 +27,7 @@ var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddCimonData();
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
+builder.Services.AddCimonDataJenkins();
 
 builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
 builder.Services.AddHttpContextAccessor();
@@ -44,6 +46,7 @@ builder.Services.AddOptions()
 		settings.IsDevelopment = isDevelopment;
 	})
 	.ConfigureVaultSecrets<TeamCitySecrets>()
+	.ConfigureVaultSecrets<JenkinsSecrets>()
 	.Configure<VaultSettings>(builder.Configuration.GetSection("Vault"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
 	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)

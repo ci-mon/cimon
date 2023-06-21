@@ -18,6 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Contracts", "Cimon.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.TeamCity.Tests", "Cimon.Data.TeamCity.Tests\Cimon.Data.TeamCity.Tests.csproj", "{9A87ACFD-6F20-4D76-9B50-A473A0AC5A7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Jenkins", "Cimon.Data.Jenkins\Cimon.Data.Jenkins.csproj", "{09457F8B-8A29-4D6A-9442-4555566C6D0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Jenkins.Tests", "Cimon.Data.Jenkins.Tests\Cimon.Data.Jenkins.Tests.csproj", "{1C3660DF-ED3E-4765-821D-80D046AF39BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +64,13 @@ Global
 		{9A87ACFD-6F20-4D76-9B50-A473A0AC5A7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A87ACFD-6F20-4D76-9B50-A473A0AC5A7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A87ACFD-6F20-4D76-9B50-A473A0AC5A7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09457F8B-8A29-4D6A-9442-4555566C6D0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09457F8B-8A29-4D6A-9442-4555566C6D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09457F8B-8A29-4D6A-9442-4555566C6D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09457F8B-8A29-4D6A-9442-4555566C6D0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
