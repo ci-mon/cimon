@@ -85,140 +85,129 @@ public class DbInitializer
 	}
 
 	private static async Task InitDemoMonitors(CimonDbContext context) {
-		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfig("BpmsPlatformWorkDiagnostic", CISystem.TeamCity) {
+		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "BpmsPlatformWorkDiagnostic") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=BpmsPlatformWorkDiagnostic&tab=buildTypeStatusDiv",
-				ProjectName = "Team Diagnostics",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=BpmsPlatformWorkDiagnostic&tab=buildTypeStatusDiv",
+				Group = "Team Diagnostics",
 				Name = "BpmsPlatformWorkDiagnostic",
 				Number = "8.1.0.0",
 				StatusText = "Tests passed: 339, ignored: 10, muted: 2",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "BpmsPlatformWorkDiagnostic"
 			}
 		});
-		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfig("Unit", CISystem.TeamCity) {
+		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				ProjectName = "Core",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Group = "Core",
 				Name = "Unit",
 				Number = "8.1.0.0 ",
 				StatusText = "Tests passed: 23760, ignored: 31, muted: 3",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "Unit"
 			}
 		});
-		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfig("Unit (.Net 6)", CISystem.TeamCity) {
+		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit (.Net 6)") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				ProjectName = "Core",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Group = "Core",
 				Name = "Unit (.Net 6)",
 				Number = "8.1.0.0 ",
 				StatusText = "Tests passed: 21343, ignored: 384, muted: 4",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "Unit (.Net 6)",
 			}
 		});
-		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfig("Integration (MSSQL)", CISystem.TeamCity) {
+		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (MSSQL)") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				ProjectName = "Core",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Group = "Core",
 				Name = "Integration (MSSQL)",
 				Number = "8.1.0.610 ProductBase Softkey ENU",
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "Integration (MSSQL)",
 			}
 		});
-		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfig("Integration (PostgreSQL)", CISystem.TeamCity) {
+		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (PostgreSQL)") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				ProjectName = "Core",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Group = "Core",
 				Name = "Integration (PostgreSQL)",
 				Number = "8.1.0.610 ProductBase Softkey ENU",
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "Integration (PostgreSQL)",
 			}
 		});
-		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfig("Integration (Oracle)", CISystem.TeamCity) {
+		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (Oracle)") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				ProjectName = "Core",
+				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Group = "Core",
 				Name ="Integration (Oracle)",
 				Number = "8.1.0.601 ProductBase Softkey ENU",
 				StatusText = "Tests passed: 1710, ignored: 55, muted: 7",
 				Status = 0,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				BuildConfigId = "Integration (Oracle)",
 			}
 		});
-		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfig("app.studio-enterprise.shell", CISystem.Jenkins) {
+		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.shell") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.shell/job/master/4850/",
-				ProjectName = "Core",
+				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.shell/job/master/4850/",
+				Group = "Core",
 				Name = "app.studio-enterprise.shell",
 				Number = "",
 				Status = BuildStatus.Failed,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.shell",
 			}
 		});
-		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfig("app.studio-enterprise.schema-view", CISystem.Jenkins) {
+		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.schema-view") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
-				ProjectName = "Core",
+				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Group = "Core",
 				Name = "app.studio-enterprise.schema-view",
 				Number = "",
 				Status = BuildStatus.Failed,
-				FinishDate = DateTime.Now,
-				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
 				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.schema-view",
 			}
 		});
-		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfig("app.studio-enterprise.process-designer", CISystem.Jenkins) {
+		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.process-designer") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
-				ProjectName = "Core",
+				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Group = "Core",
 				Name = "app.studio-enterprise.process-designer",
 				Number = "",
 				Status = BuildStatus.Success,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
 				Committers = new []{"test","admin"},
 				BuildConfigId = "app.studio-enterprise.process-designer",
 			}
 		});
-		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfig("lib.studio-enterprise.process", CISystem.Jenkins) {
+		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "lib.studio-enterprise.process") {
 			DemoState = new BuildInfo {
-				BuildHomeUrl = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
-				ProjectName = "Core",
+				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Group = "Core",
 				Name = "lib.studio-enterprise.process",
 				Number = "",
 				Status = BuildStatus.Success,
-				FinishDate = DateTime.Now,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
 				Committers = new []{"test","admin"},

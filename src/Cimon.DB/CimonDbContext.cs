@@ -18,7 +18,7 @@ public class CimonDbContext : DbContext
 	protected override void OnModelCreating(ModelBuilder modelBuilder) {
 		base.OnModelCreating(modelBuilder);
 		modelBuilder.Entity<User>().HasIndex(x => x.Name).IsUnique();
-		modelBuilder.Entity<BuildConfig>().HasIndex(x => x.Key).IsUnique();
+		modelBuilder.Entity<BuildConfig>().HasIndex(x => new {x.CISystem, x.Key, x.Branch }).IsUnique();
 		modelBuilder.Entity<Role>().HasMany(x => x.OwnedRoles).WithMany();
 		modelBuilder.Entity<BuildConfig>().Property(x => x.Props).HasJsonConversion();
 		modelBuilder.Entity<BuildConfig>().Property(x => x.DemoState).HasJsonConversion();

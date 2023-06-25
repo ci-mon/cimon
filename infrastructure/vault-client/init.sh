@@ -24,4 +24,7 @@ echo "Adding entries..."
 vault kv put infrastructure.cimon/dev teamcity.uri=http://localhost:8112
 vault kv patch infrastructure.cimon/dev teamcity.login=admin
 vault kv patch infrastructure.cimon/dev teamcity.password=admin
+vault kv patch infrastructure.cimon/dev jenkins.uri=http://localhost:8080
+vault kv patch infrastructure.cimon/dev jenkins.login=admin
+vault kv patch infrastructure.cimon/dev jenkins.token=11338fd16b8c7c51052d933d9f265ce528
 echo "Complete..."

@@ -27,8 +27,8 @@ public class BuildInfoServiceTests
 		return new BuildInfo() {
 			Name = "name",
 			BuildConfigId = id,
-			BuildHomeUrl = "",
-			ProjectName = "",
+			Url = "",
+			Group = "",
 			Number = "",
 			StatusText = "",
 			BranchName = "",
@@ -48,8 +48,8 @@ public class BuildInfoServiceTests
 		_buildDiscussionStoreService = new BuildDiscussionStoreService(notificationService);
 		_service = new BuildInfoService(options, _buildInfoProviders, _buildDiscussionStoreService, 
 			Substitute.For<IBuildMonitoringService>(), span => _timer);
-		_sampleBuildLocator1 = new BuildConfig("testId1", CISystem.TeamCity);
-		_sampleBuildLocator2 = new BuildConfig("testId2", CISystem.TeamCity);
+		_sampleBuildLocator1 = new BuildConfig(CISystem.TeamCity, "testId1");
+		_sampleBuildLocator2 = new BuildConfig(CISystem.TeamCity, "testId2");
 		_buildInfoProvider.CiSystem.Returns(CISystem.TeamCity);
 	}
 

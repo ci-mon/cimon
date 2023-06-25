@@ -14,4 +14,9 @@
 
 # Test repository
 Create repository with name `test1` and import [Project](TeamCity_GogsTest1.zip) into teamcity
-Example commit: `echo test4> 1.txt && git add . && git commit -m "4" && git push`
+Example commit: `Get-Date > 1.txt && git add . && git commit -m "Changes from $(Get-Date)" && git push`
+Set user:
+```
+git config user.name "Test User"
+git config user.email "test@example.com"
+```

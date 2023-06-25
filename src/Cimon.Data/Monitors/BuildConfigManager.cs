@@ -40,9 +40,9 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		var existingItems = await ctx.BuildConfigurations.Include(x=>x.Monitors).Where(x => x.CISystem == ciSystem).ToListAsync();
 		var toRemove = existingItems.ToHashSet();
 		foreach (var newItem in newItems) {
-			var existing = existingItems.Find(x => x.Key == newItem.Key);
+			var existing = existingItems.Find(x => x.Equals(newItem));
 			if (existing == null) {
-				existing = new BuildConfig(newItem.Key, ciSystem);
+				existing = new BuildConfig(ciSystem, newItem.Key, newItem.Branch, newItem.IsDefaultBranch);
 				await ctx.BuildConfigurations.AddAsync(existing);
 			} else {
 				toRemove.Remove(existing);
@@ -51,7 +51,6 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 			existing.Props = newItem.Props;
 		}
 		foreach (var config in toRemove) {
-			if (config.DemoState is not null) continue;
 			if (config.Monitors.Any()) {
 				config.Status = BuildConfigStatus.NotFoundInCISystem;
 				continue;

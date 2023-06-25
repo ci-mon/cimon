@@ -14,7 +14,7 @@
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
     } else if (_buildInfos.HasValue) {
-        @foreach (var buildInfo in _buildInfos.Value) {
+        @foreach (var buildInfo in _buildInfos.Value.OrderBy(x => x.Group)) {
             <BuildInfoComponent Info="@buildInfo"></BuildInfoComponent>
         }
     }

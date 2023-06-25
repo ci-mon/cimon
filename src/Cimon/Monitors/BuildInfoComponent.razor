@@ -1,29 +1,43 @@
 @using Cimon.Data
 @using Microsoft.AspNetCore.Components
 @using System.Text.Encodings.Web
+@using AngleSharp.Text
 @using Cimon.Contracts
 @inject NavigationManager NavigationManager
 
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-         <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
-             <RadzenLink Path="@Info.BuildHomeUrl">
-                 <RadzenText TextStyle="TextStyle.H4" Style="color: white" Text="@Info.Name"></RadzenText>
-             </RadzenLink>
-             <RadzenStack Orientation="Orientation.Horizontal">
-                 <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetStatus()"></RadzenText>
-                 <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                     <RadzenIcon Icon="chat" Style="color: var(--rz-white)" />
-                     <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
-                 </RadzenButton>
-             </RadzenStack>
-         </RadzenStack>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal" >
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
+            <RadzenLink Path="@Info.Url">
+                <RadzenStack Orientation="Orientation.Horizontal">
+                    <RadzenText TextStyle="TextStyle.H4" Style="color: white">
+                        @Info.Name # @Info.Number
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenLink>
+            <RadzenStack Orientation="Orientation.Horizontal">
+                @if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
+                    <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StatusText"></RadzenText>
+                }
+            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                                    <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
+                                </RadzenButton>
+            </RadzenStack>
+            
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StartDate.ToString("HH:mm")"></RadzenText>
+            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="-"></RadzenText>
+            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.EndDate.ToString("HH:mm")"></RadzenText>
+            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetDuration()"></RadzenText>
+        </RadzenStack>
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
             @if (Info.Status == BuildStatus.Failed) {
                 foreach (var user in Info.CommitterUsers) {
                     <RadzenStack class="committer"
-                        Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                        AlignItems="AlignItems.Center" Gap="0">
+                                 Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                                 AlignItems="AlignItems.Center" Gap="0">
                         <RadzenGravatar Email="@user.Email">@user.Name</RadzenGravatar>
                         <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
                     </RadzenStack>
@@ -32,17 +46,17 @@
         </RadzenStack>
     </RadzenStack>
 </div>
+
 @code {
 
     [Parameter]
     public BuildInfo Info { get; set; } = null!;
-
-    private string GetStatus() => string.IsNullOrWhiteSpace(Info.StatusText) ? Info.Status.ToString() : Info.StatusText;
-
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
 
     private void Discuss() {
         NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}");
     }
+
+    private string GetDuration() => $"({TimeSpan.FromSeconds(Math.Round(Info.Duration.TotalSeconds)).ToString("g").ReplaceFirst("0:", string.Empty)})";
 
 }

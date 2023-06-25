@@ -1,35 +1,23 @@
 using Cimon.Contracts;
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 
 namespace Cimon.Data.Jenkins.Tests;
 
-public class JenkinsBuildConfigProviderTests
+public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 {
-	private ClientFactory _factory;
-	private JenkinsBuildConfigProvider _provider;
+	private JenkinsBuildConfigProvider _provider = null!;
 
-	[SetUp]
-	public void Setup() {
-		var secrets = new JenkinsSecrets {
-			Uri = new Uri("http://localhost:8080"),
-			Login = "admin",
-			Token = "11338fd16b8c7c51052d933d9f265ce528"
-		};
-		_factory = new ClientFactory(Options.Create(secrets));
-		_provider = new JenkinsBuildConfigProvider(_factory);
+	protected override void Setup() {
+		base.Setup();
+		_provider = new JenkinsBuildConfigProvider(Factory);
 	}
 
 	[Test]
 	public async Task GetAll() {
 		var result = await _provider.GetAll();
-		result.Should().HaveCount(1).And.Contain(new BuildConfigInfo("app.my.test"));
+		result.Should().Contain(new BuildConfigInfo("app.my.test", null));
+		result.Should().Contain(new BuildConfigInfo("app.my.multibranch", "master"));
+		result.Should().Contain(new BuildConfigInfo("app.my.multibranch", "test2"));
 	}
 
-	[Test]
-	public async Task GetBuildInfo() {
-		using var client = _factory.Create();
-		var job = await client.GetJob("app.my.test", default);
-		var buildInfo = await client.GetBuild(job.Name, job.LastBuild.Number.ToString(), default);
-	}
 }

@@ -29,11 +29,17 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Branch")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("CISystem")
                         .HasColumnType("int");
 
                     b.Property<string>("DemoState")
                         .HasColumnType("jsonb");
+
+                    b.Property<bool>("IsDefaultBranch")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -48,8 +54,9 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Key")
-                        .IsUnique();
+                    b.HasIndex("CISystem", "Key", "Branch")
+                        .IsUnique()
+                        .HasFilter("[Branch] IS NOT NULL");
 
                     b.ToTable("BuildConfigurations");
                 });

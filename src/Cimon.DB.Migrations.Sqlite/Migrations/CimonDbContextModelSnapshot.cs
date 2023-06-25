@@ -22,11 +22,17 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Branch")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CISystem")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DemoState")
                         .HasColumnType("jsonb");
+
+                    b.Property<bool>("IsDefaultBranch")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -41,7 +47,7 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Key")
+                    b.HasIndex("CISystem", "Key", "Branch")
                         .IsUnique();
 
                     b.ToTable("BuildConfigurations");

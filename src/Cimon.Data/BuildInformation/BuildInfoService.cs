@@ -27,9 +27,12 @@ public class BuildInfoService : IDisposable
 		async Task<IImmutableList<BuildInfo>> GetBuildInfos((HashSet<BuildConfig> First, long Second) tuple) {
 			var (allBuildConfigs, _) = tuple;
 			var results = await Task.WhenAll(buildInfoProviders.Select(provider => {
-					var buildConfigs = allBuildConfigs.Where(l => l.DemoState is null && l.CISystem == provider.CiSystem).ToList();
-					return buildConfigs.Any()
-						? provider.GetInfo(buildConfigs)
+					var buildInfoQueries = allBuildConfigs
+						.Where(l => l.DemoState is null && l.CISystem == provider.CiSystem)
+						.Select(x=> new BuildInfoQuery(x))
+						.ToList();
+					return buildInfoQueries.Any()
+						? provider.GetInfo(buildInfoQueries)
 						: Task.FromResult((IReadOnlyCollection<BuildInfo>)Array.Empty<BuildInfo>());
 				})
 				.ToArray());

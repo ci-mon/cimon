@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.ObjectPool;
+﻿using System.Reflection;
+using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using TeamCityAPI;
 using TeamCityAPI.Models;
@@ -6,17 +7,17 @@ using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity;
 
-public record struct TeamCityClientTicket(TeamCityClient Client, TcClient Source) : IDisposable
+public record struct TeamCityClientTicket(TeamCityClient Client, TcClientFactory Source) : IDisposable
 {
 	void IDisposable.Dispose() => Source.Return(Client);
-	private TcClient Source { get; } = Source;
+	private TcClientFactory Source { get; } = Source;
 }
 
-public class TcClient : IPooledObjectPolicy<TeamCityClient>
+public class TcClientFactory : IPooledObjectPolicy<TeamCityClient>
 {
 	private readonly TeamCitySecrets _secrets;
 	private readonly ObjectPool<TeamCityClient> _clients;
-	public TcClient(IOptions<TeamCitySecrets> secrets) {
+	public TcClientFactory(IOptions<TeamCitySecrets> secrets) {
 		_secrets = secrets.Value;
 		_clients = new DefaultObjectPool<TeamCityClient>(this, 10);
 	}
@@ -24,16 +25,6 @@ public class TcClient : IPooledObjectPolicy<TeamCityClient>
 	public TeamCityClientTicket GetClient() => new(_clients.Get(), this);
 	
 	public void Return(TeamCityClient client) => _clients.Return(client);
-
-	public async IAsyncEnumerable<BuildConfig> GetBuildConfigs() {
-		using var client = GetClient();
-		var configs = client.Client.BuildTypes.Include(x => x.BuildType)
-			.GetAsyncEnumerable<BuildTypes, BuildType>()
-			.Select(buildType => new BuildConfig(buildType.Id, buildType.ProjectName, buildType.WebUrl));
-		await foreach (var config in configs) {
-			yield return config;
-		}
-	}
 
 	public TeamCityClient Create() {
 		var client = new TeamCityClient(_secrets.Uri.ToString());
@@ -47,6 +38,15 @@ public class TcClient : IPooledObjectPolicy<TeamCityClient>
 	}
 
 	bool IPooledObjectPolicy<TeamCityClient>.Return(TeamCityClient obj) => true;
+
+	public async Task<string> GetLogsAsync(long buildId) {
+		using var clientTicket = GetClient();
+		var client = clientTicket.Client;
+		var type = typeof(TeamCityClient);
+		var httpClient = (HttpClient)type.GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(client)!;
+		var address = _secrets.Uri + $"/httpAuth/downloadBuildLog.html?buildId={buildId}";
+		return await httpClient.GetStringAsync(address);
+	}
 }
 
 public record BuildConfig(string Id, string ProjectName, string WebUrl);

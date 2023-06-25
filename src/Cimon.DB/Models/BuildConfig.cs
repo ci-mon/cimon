@@ -8,7 +8,8 @@ public enum BuildConfigStatus
 	NotFoundInCISystem
 }
 
-public record BuildConfig(string Key, CISystem CISystem) : BuildConfigInfo(Key)
+public record BuildConfig(CISystem CISystem, string Key, string? Branch = null, bool IsDefaultBranch = false) 
+	: BuildConfigInfo(Key, Branch, IsDefaultBranch)
 {
 	public int Id { get; set; }
 	public BuildConfigStatus Status { get; set; }

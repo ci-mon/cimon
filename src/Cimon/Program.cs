@@ -1,6 +1,5 @@
 using Cimon;
 using Cimon.Auth;
-using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Jenkins;

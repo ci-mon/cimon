@@ -11,7 +11,8 @@ public record User(UserName Name, string FullName, IReadOnlyCollection<string> T
 	public string? Email => Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
 	public IImmutableList<Claim> Claims { get; init; } = ImmutableList<Claim>.Empty;
 
-	protected override Type EqualityContract => base.EqualityContract;
+	public virtual bool Equals(User? other) => base.Equals(other);
+	public override int GetHashCode() => base.GetHashCode();
 
 	public static User Create(UserName name, string fullName, IEnumerable<Claim>? claims = null) =>
 		new(name, fullName, ImmutableList<string>.Empty, ImmutableList<string>.Empty) {

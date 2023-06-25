@@ -7,16 +7,18 @@
 3. Monitor setup (+)
 4. Build status page (+)
 5. TC client (vault) (+)
-6. Jenkins client (vault)
+6. Jenkins client (vault) (+)
 7. Handle client errors
-8. Blame (+)
-9. Save last viewed monitor
-10. Teams (+)
-11. Users in DB (+)
-12. Available plans in DB (TC) (+)
-13. Available plans in DB (Jenkins) (+)
-14. Store discussions in DB
-15. Quick responses to TC Failed build (Investigate, MuteTests, Restart)
+8. Auto assign basing on logs and failed tests
+9. Blame (+)
+10. Save last viewed monitor
+11. Teams (+)
+12. Users in DB (+)
+13. Available plans in DB (TC) (+)
+14. Available plans in DB (Jenkins) (+)
+15. Store discussions in DB
+16. Quick responses to TC Failed build (Investigate, MuteTests, Restart)
+17. Show build start time in local time zone
 
 ### Electron app
 1. Login (negotiate/basic) (+)

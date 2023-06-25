@@ -47,6 +47,8 @@
                 <RadzenDataGridColumn TItem="BuildConfig" Property="CISystem" Title="CISystem"/>
                 <RadzenDataGridColumn TItem="BuildConfig" Property="Key" Title="Key"/>
                 <RadzenDataGridColumn TItem="BuildConfig" Property="Status" Title="Status"/>
+                <RadzenDataGridColumn TItem="BuildConfig" Property="Branch" Title="Branch"/>
+                <RadzenDataGridColumn TItem="BuildConfig" Property="IsDefaultBranch" Title="IsDefaultBranch" />
                 <RadzenDataGridColumn TItem="BuildConfig" Title="Props">
                     <Template Context="item">
                         <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
@@ -87,7 +89,7 @@
         _buildConfigs = Subscribe(BuildConfigService.BuildConfigs);
         // todo combine build configs and monitor
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Key == b.BuildConfig.Key)).ToList();
+            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Equals(b.BuildConfig))).ToList();
             SetSelectedLocators(descriptors);
         });
     }

@@ -6,7 +6,7 @@ namespace Cimon.Data.TeamCity;
 public static class DI
 {
 	public static IServiceCollection AddCimonDataTeamCity(this IServiceCollection collection) {
-		return collection.AddTransient<TcClient, TcClient>()
+		return collection.AddTransient<TcClientFactory, TcClientFactory>()
 			.AddTransient<IBuildInfoProvider, TcBuildInfoProvider>()
 			.AddTransient<IBuildConfigProvider, TcBuildConfigProvider>();
 	}
