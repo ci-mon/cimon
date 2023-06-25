@@ -51,13 +51,20 @@ services:
       - "VAULT_DEV_ROOT_TOKEN_ID=root"
     cap_add:
       - IPC_LOCK
+    healthcheck:
+      test: [ "CMD", "vault", "status" ]
+      interval: 5s
+      timeout: 3s
+      retries: 100
+      start_period: 5s
 
   vault-client:
     build: ./vault-client
     environment:
       VAULT_ADDR: "http://vault-server:8200"
     depends_on:
-      - vault-server
+      vault-server:
+        condition: service_healthy
     volumes:
       - ./vault-client/init.sh:/init.sh
 
