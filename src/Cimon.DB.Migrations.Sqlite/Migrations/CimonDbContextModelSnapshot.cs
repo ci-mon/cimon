@@ -131,6 +131,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.Property<bool>("AllowLocalLogin")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DefaultMonitorId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
 

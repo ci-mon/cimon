@@ -81,7 +81,8 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeactivated = table.Column<bool>(type: "bit", nullable: false),
-                    AllowLocalLogin = table.Column<bool>(type: "bit", nullable: false)
+                    AllowLocalLogin = table.Column<bool>(type: "bit", nullable: false),
+                    DefaultMonitorId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

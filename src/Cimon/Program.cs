@@ -7,8 +7,10 @@ using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.DB;
+using Cimon.Monitors;
 using Cimon.Shared;
 using Cimon.Users;
+using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using Radzen;
@@ -23,7 +25,13 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<UnprotectedLocalStorage>();
 
 var isDevelopment = builder.Environment.IsDevelopment();
-builder.Services.AddCimonData();
+builder.Services.AddCimonData()
+	.AddMediatR(configuration => {
+		configuration
+			.AddCimonData()
+			.RegisterServicesFromAssemblyContaining<SavedMonitorInLocalStoragesBehaviour>()
+			.AddBehavior<IPipelineBehavior<GetDefaultMonitorRequest, string>, SavedMonitorInLocalStoragesBehaviour>();
+	});
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();

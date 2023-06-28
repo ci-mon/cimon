@@ -28,6 +28,9 @@ const options = {
   get entrypoint() {
     return `${options.baseUrl}`;
   },
+  get lastMonitor() {
+    return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
+  },
   get isDev() {
     return true;
   },
@@ -269,7 +272,8 @@ export class CimonApp {
         reject: reject,
         resolve: resolve,
       };
-      this._tryToConnect();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      this._tryToConnect().then(_ => {/*empty*/});
     });
   }
 
@@ -339,6 +343,7 @@ export class CimonApp {
   }
 
   public async showMonitors(): Promise<void> {
+    await this._window.loadURL(options.lastMonitor);
     this._window.show();
   }
 }

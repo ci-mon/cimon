@@ -2,10 +2,14 @@
 @using System.Reactive.Linq
 @using Cimon.Contracts
 @using Cimon.Data.BuildInformation
+@using Cimon.Data.Users
 @using Cimon.DB.Models
+@using MediatR
 @inject MonitorService MonitorService
 @inject BuildInfoService BuildInfoService
+@inject NavigationManager NavigationManager
 @inherits ReactiveComponent
+@inject IMediator Mediator
 
 <PageTitle>CI @GetTitle()</PageTitle>
 <div class="monitor">
@@ -13,7 +17,7 @@
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
-    } else if (_buildInfos.HasValue) {
+    } else if (_buildInfos?.HasValue is true) {
         @foreach (var buildInfo in _buildInfos.Value.OrderBy(x => x.Group)) {
             <BuildInfoComponent Info="@buildInfo"></BuildInfoComponent>
         }
@@ -76,13 +80,27 @@
     public string? MonitorId { get; set; }
 
     private ReactiveValue<IList<BuildInfo>> _buildInfos = null!;
-    private ReactiveValue<Monitor> _monitor = null!;
+    private ReactiveValue<Monitor>? _monitor;
 
-    private string GetTitle() => _monitor.Value?.Title ?? MonitorId ?? string.Empty;
-    private string? _errorMessage = "Monitor not fount";
+    private string GetTitle() => _monitor?.Value?.Title ?? MonitorId ?? string.Empty;
+    private string? _errorMessage = "Monitor not found";
 
-    protected override void OnInitialized() {
-        MonitorId ??= "default";
+    protected override async Task OnParametersSetAsync() {
+        await base.OnParametersSetAsync();
+        if (!string.IsNullOrWhiteSpace(MonitorId)) {
+            await Mediator.Publish(new MonitorOpenedNotification(MonitorId));
+        } else {
+            MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest());
+            if (!string.IsNullOrWhiteSpace(MonitorId)) {
+                NavigationManager.NavigateTo($"monitor/{MonitorId}", new NavigationOptions() {
+                    ReplaceHistoryEntry = true
+                });
+            }
+        }
+    }
+
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
             if (!monitor.Builds.Any()) {
                 _errorMessage = "No build set up";
@@ -93,6 +111,7 @@
             }
         });
         _buildInfos = Subscribe(BuildInfoService.Watch(_monitor.Source.Select(m => m.Builds.Select(x => x.BuildConfig).ToList())));
+        await _buildInfos.WaitForValueAsync();
     }
 
 }

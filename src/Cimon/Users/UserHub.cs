@@ -33,14 +33,16 @@ public class UserHub : Hub<IUserClientApi>
 		foreach (var team in user.Teams) {
 			await Groups.AddToGroupAsync(Context.ConnectionId, team);
 		}
-		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} {IsAuthenticated}) connected", Context.Items.GetHashCode(),
+		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} IsAuthenticated = {IsAuthenticated}) connected",
+			Context.Items.GetHashCode(),
 			Context.UserIdentifier, identity?.Name, identity?.IsAuthenticated);
 	}
 
 	public override async Task OnDisconnectedAsync(Exception? exception) {
 		await base.OnDisconnectedAsync(exception);
 		var identity = Context.User?.Identity;
-		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} {IsAuthenticated}) disconnected",  Context.Items.GetHashCode(),
+		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} IsAuthenticated = {IsAuthenticated}) disconnected",
+			Context.Items.GetHashCode(),
 			Context.UserIdentifier, identity?.Name, identity?.IsAuthenticated);
 	}
 

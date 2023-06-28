@@ -11,7 +11,7 @@
 7. Handle client errors
 8. Auto assign basing on logs and failed tests
 9. Blame (+)
-10. Save last viewed monitor
+10. Save last viewed monitor (+)
 11. Teams (+)
 12. Users in DB (+)
 13. Available plans in DB (TC) (+)

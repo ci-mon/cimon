@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 
 namespace Cimon.Contracts;
@@ -10,6 +11,7 @@ public record User(UserName Name, string FullName, IReadOnlyCollection<string> T
 
 	public string? Email => Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
 	public IImmutableList<Claim> Claims { get; init; } = ImmutableList<Claim>.Empty;
+	public string? DefaultMonitorId { get; set; }
 
 	public virtual bool Equals(User? other) => base.Equals(other);
 	public override int GetHashCode() => base.GetHashCode();
@@ -18,4 +20,9 @@ public record User(UserName Name, string FullName, IReadOnlyCollection<string> T
 		new(name, fullName, ImmutableList<string>.Empty, ImmutableList<string>.Empty) {
 			Claims = claims?.ToImmutableList() ?? ImmutableList<Claim>.Empty
 		};
+}
+
+public static class Utils
+{
+	public static bool IsGuest(this User user) => user == User.Guest;
 }

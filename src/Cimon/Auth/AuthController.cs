@@ -1,4 +1,5 @@
-﻿using Cimon.Data.Users;
+﻿using Cimon.Contracts;
+using Cimon.Data.Users;
 
 namespace Cimon.Auth;
 
@@ -28,7 +29,7 @@ public class AuthController : Controller
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Token() {
 		var user = await _userManager.GetUser(User);
-		if (user == Contracts.User.Guest) {
+		if (user.IsGuest()) {
 			return BadRequest();
 		}
 		string token = _tokenService.CreateToken(user, user.Claims);
@@ -74,7 +75,7 @@ public class AuthController : Controller
 		if (!loginResult) {
 			return Unauthorized();
 		}
-		return await SignInUsingCookie("/", userName);
+		return await SignInUsingCookie("/api/users/openLastMonitor", userName);
 	}
 
 	private async Task<IActionResult> SignInUsingCookie(string returnUrl, string userName) {

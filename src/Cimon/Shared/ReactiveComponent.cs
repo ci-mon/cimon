@@ -8,11 +8,13 @@ using Microsoft.AspNetCore.Components;
 
 public record ReactiveValue<T>
 {
+	private readonly TaskCompletionSource _initialized = new();
 	public required IObservable<T> Source { get; init; }
 
 	public required T? Value {
 		get => _value;
 		set {
+			_initialized.TrySetResult();
 			if (Equals(value, _value)) {
 				return;
 			}
@@ -42,12 +44,16 @@ public record ReactiveValue<T>
 	}
 
 	public static implicit operator T?(ReactiveValue<T> value) => value.Value;
+
+	public Task WaitForValueAsync() => _initialized.Task;
 }
 
 public class ReactiveComponent : ComponentBase, IDisposable
 {
 
 	private readonly List<IDisposable> _disposables = new();
+	private volatile bool _initializingReactiveValues; 
+	private volatile bool _triggerStateHasChangedAfterInitializeReactiveValues; 
 	protected ReactiveValue<T> Subscribe<T>(IObservable<T> observable, T initial) {
 		var result = new ReactiveValue<T> {
 			Value = initial,
@@ -56,11 +62,17 @@ public class ReactiveComponent : ComponentBase, IDisposable
 		_disposables.Add(observable.TakeUntil(_disposed).Subscribe(value => {
 			_ = InvokeAsync(() => {
 				result.Value = value;
-				StateHasChanged();
+				if (_initializingReactiveValues) {
+					_triggerStateHasChangedAfterInitializeReactiveValues = true;
+				} else {
+					StateHasChanged();
+				}
 			});
 		}));
 		return result;
 	}
+
+	protected override bool ShouldRender() => !_initializingReactiveValues && base.ShouldRender();
 
 	protected ReactiveValue<T> Subscribe<T>(IObservable<T> observable) => Subscribe(observable, default)!;
 
@@ -73,4 +85,24 @@ public class ReactiveComponent : ComponentBase, IDisposable
 	}
 
 	public void Dispose() => Dispose(true);
+
+	protected virtual Task InitializeReactiveValues() {
+		return Task.CompletedTask;
+	}
+
+	
+	protected override async Task OnInitializedAsync() {
+		await base.OnInitializedAsync();
+		try {
+			_initializingReactiveValues = true;
+			await InitializeReactiveValues();
+		}
+		finally {
+			_initializingReactiveValues = false;
+		}
+		if (_triggerStateHasChangedAfterInitializeReactiveValues) {
+			_triggerStateHasChangedAfterInitializeReactiveValues = false;
+			StateHasChanged();
+		}
+	}
 }

@@ -20,9 +20,10 @@ public static class DI
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
 			.AddSingleton<BuildConfigService>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
-			.AddSingleton<MonitorService>()
-			.AddMediatR(configuration => {
-				configuration.RegisterServicesFromAssemblyContaining<AddReplyCommentNotificationHandler>();
-			});
+			.AddSingleton<MonitorService>();
+	}
+
+	public static MediatRServiceConfiguration AddCimonData(this MediatRServiceConfiguration configuration) {
+		return configuration.RegisterServicesFromAssemblyContaining<AddReplyCommentNotificationHandler>();
 	}
 }

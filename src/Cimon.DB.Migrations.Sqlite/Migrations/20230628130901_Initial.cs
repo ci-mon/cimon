@@ -81,7 +81,8 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     FullName = table.Column<string>(type: "TEXT", nullable: false),
                     Email = table.Column<string>(type: "TEXT", nullable: true),
                     IsDeactivated = table.Column<bool>(type: "INTEGER", nullable: false),
-                    AllowLocalLogin = table.Column<bool>(type: "INTEGER", nullable: false)
+                    AllowLocalLogin = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DefaultMonitorId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -147,6 +147,9 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.Property<bool>("AllowLocalLogin")
                         .HasColumnType("bit");
 
+                    b.Property<string>("DefaultMonitorId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 

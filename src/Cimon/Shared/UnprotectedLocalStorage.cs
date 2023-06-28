@@ -5,7 +5,7 @@ using Optional.Linq;
 
 namespace Cimon.Shared;
 
-class UnprotectedLocalStorage
+public class UnprotectedLocalStorage
 {
 	private readonly IJSRuntime _jsRuntime;
 	private readonly string _storeName = "localStorage";

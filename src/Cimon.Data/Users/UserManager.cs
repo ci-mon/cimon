@@ -17,7 +17,7 @@ namespace Cimon.Data.Users;
 public class UserManager : ITechnicalUsers
 {
 	private record UserCache(UserModel Model, User User);
-	
+
 	private const string TeamClaimName = "team";
 	
 	private readonly ILogger _logger;
@@ -32,21 +32,27 @@ public class UserManager : ITechnicalUsers
 		_cimonDataSettings = cimonDataSettings.Value;
 	}
 
-	public async Task Deactivate(UserName name) {
+	private async Task EditUser(UserName name, Action<UserModel> action) => await EditUser(name, user => {
+		action(user);
+		return true;
+	});
+
+	private async Task EditUser(UserName name, Func<UserModel, bool> action) {
 		await using var dbContext = await _dbContextFactory.CreateDbContextAsync(); 
 		var user = await dbContext.Users.SingleAsync(x => x.Name == name.Name);
+		if (action(user)) {
+			await dbContext.SaveChangesAsync();
+			_cachedUsers.Remove(name, out _);
+		}
+	}
+
+	public async Task Deactivate(UserName name) => await EditUser(name, user => {
 		user.IsDeactivated = true;
-		await dbContext.SaveChangesAsync();
-		_cachedUsers.Remove(name, out _);
-	}
-	
-	public async Task Activate(UserName name) {
-		await using var dbContext = await _dbContextFactory.CreateDbContextAsync(); 
-		var user = await dbContext.Users.SingleAsync(x => x.Name == name.Name);
+	});
+
+	public async Task Activate(UserName name) => await EditUser(name, user => {
 		user.IsDeactivated = false;
-		await dbContext.SaveChangesAsync();
-		_cachedUsers.Remove(name, out _);
-	}
+	});
 
 	public async Task<bool> IsDeactivated(UserName name) {
 		var userCache = await GetUserCache(name);
@@ -79,7 +85,8 @@ public class UserManager : ITechnicalUsers
 			var roles = GetRoles(userModel.Roles, allRoles);
 			var claims = CreateClaims(userModel, roles, teams);
 			var user = new User(userModel.Name, userModel.FullName, teams, roles) {
-				Claims = claims
+				Claims = claims,
+				DefaultMonitorId = userModel.DefaultMonitorId
 			};
 			return new UserCache(userModel, user);
 		}
@@ -182,4 +189,14 @@ public class UserManager : ITechnicalUsers
 	}
 	
 	public User MonitoringBot { get; } = User.Create("monitoring.bot", "Monitoring bot");
+
+	public async Task SaveLastViewedMonitorId(UserName name, string monitorId) {
+		await EditUser(name, user => {
+			if (monitorId.Equals(user.DefaultMonitorId, StringComparison.OrdinalIgnoreCase)) {
+				return false;
+			}
+			user.DefaultMonitorId = monitorId;
+			return true;
+		});
+	}
 }
