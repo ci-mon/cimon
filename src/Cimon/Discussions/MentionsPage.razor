@@ -23,10 +23,10 @@
 @code {
     private ReactiveValue<IReadOnlyCollection<MentionInfo>?> _mentions = null!;
     private string StatusText => $"You was mentioned in {_mentions.Value?.Count ?? 0} builds";
-    protected override async Task OnInitializedAsync() {
-        await base.OnInitializedAsync();
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        _mentions = Subscribe(MentionsService.GetMentions(user));
+        _mentions = Subscribe(MentionsService.GetMentions(user))!;
     }
 
     private void GoToDiscussion(string buildId) {

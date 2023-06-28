@@ -17,9 +17,14 @@
     {{ state }}
     <p>{{ UserName }}</p>
     <button @@click="notify">+</button>
+    <div>Messages</div>
     <li v-for="item in messages">
         <a v-bind:href="item.url">{{ item.header }}</a>
         <p>{{ item.message }}</p>
+    </li>
+    <div>Mentions</div>
+    <li v-for="item in mentions">
+        <a v-bind:href="getDiscussionUrl(item)" target="_blank">You were mentioned {{ item.commentsCount }} in build {{ item.buildId }}</a>
     </li>
 </div>
 <script type="module" src="/js/SignalTest.js"></script>

@@ -5,9 +5,15 @@ import { app, BrowserWindow, ipcMain, Menu, session, Tray } from "electron";
 import { ConnectionState, SignalRClient } from "./SignalRClient";
 import notifier from "node-notifier";
 import IpcMainEvent = Electron.IpcMainEvent;
+import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+
+interface MentionInfo {
+  buildId: string;
+  commentsCount: number;
+}
 
 class IconLocator {
   constructor(private _basename: string) {}
@@ -61,6 +67,7 @@ export class CimonApp {
   private _discussionWindow: Electron.CrossProcessExports.BrowserWindow;
 
   private tokenDataReceiver: TokenDataReceiver;
+  private _mentions: MentionInfo[] = [];
 
   private _initToken(): Promise<{
     userName: string;
@@ -211,7 +218,39 @@ export class CimonApp {
   public async init() {
     this._subscribeForEvents();
     this._tray = new Tray(options.icons.red.tray);
-    this._trayContextMenu = Menu.buildFromTemplate([
+    this._buildMenu();
+    this._trayContextMenuVisibilityConfigs.push({
+      id: "reconnect",
+      fn: () =>
+        this._currentState !== ConnectionState.Connected &&
+        !this._waitForConnectionTimeout,
+    });
+    this._trayContextMenuVisibilityConfigs.push({
+      id: "showMonitor",
+      fn: () => this._currentState === ConnectionState.Connected,
+    });
+    this._tray.setToolTip("cimon - connecting...");
+    this._tray.on("click", async () => this.showMonitors());
+    await this._initMainWindow();
+    this._signalR = new SignalRClient(options.baseUrl, (error) =>
+      this._getToken(error)
+    );
+    this._signalR.onConnectionStateChanged =
+      this._onConnectionStateChanged.bind(this);
+    this._signalR.onOpenDiscussionWindow =
+      this._onOpenDiscussionWindow.bind(this);
+    this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
+    await this._startSignalR();
+  }
+
+  private _buildMenu() {
+    const template: MenuItemConstructorOptions[] = [
+      {
+        id: "reload",
+        label: "Reload",
+        type: "normal",
+        role: 'reload'
+      },
       {
         id: "showMonitor",
         label: "Show",
@@ -226,30 +265,28 @@ export class CimonApp {
         click: async () => await this.reconnect(),
         visible: false,
       },
-      { id: "exit", label: "Exit", type: "normal", click: () => app.exit() },
-    ]);
-    this._trayContextMenuVisibilityConfigs.push({
-      id: "reconnect",
-      fn: () =>
-        this._currentState !== ConnectionState.Connected &&
-        !this._waitForConnectionTimeout,
-    });
-    this._trayContextMenuVisibilityConfigs.push({
-      id: "showMonitor",
-      fn: () => this._currentState === ConnectionState.Connected,
-    });
-    this._tray.setToolTip("cimon - connecting...");
+      {id: "exit", label: "Exit", type: "normal", click: () => app.exit()},
+    ];
+    if (this._mentions.length > 0){
+      const submenu: MenuItemConstructorOptions[] = this._mentions.map(mi => ({
+        id: `mention_${mi.buildId}`,
+        label: `${mi.buildId} (${mi.commentsCount})`,
+        click: () => this._onOpenDiscussionWindow(`/buildDiscussion/${mi.buildId}`)
+      }));
+      template.splice(1, 0, {
+        id: "mentions",
+        label: `Mentions (${this._mentions.length})`,
+        submenu: submenu
+      });
+    }
+    this._trayContextMenu = Menu.buildFromTemplate(template);
     this._tray.setContextMenu(this._trayContextMenu);
-    this._tray.on("click", async () => this.showMonitors());
-    await this._initMainWindow();
-    this._signalR = new SignalRClient(options.baseUrl, (error) =>
-      this._getToken(error)
-    );
-    this._signalR.onConnectionStateChanged =
-      this._onConnectionStateChanged.bind(this);
-    this._signalR.onOpenDiscussionWindow =
-      this._onOpenDiscussionWindow.bind(this);
-    await this._startSignalR();
+  }
+
+  private async _onMentionsChanged(mentions: MentionInfo[]){
+    if (JSON.stringify(this._mentions) === JSON.stringify(mentions)) return;
+    this._mentions = mentions ?? [];
+    this._buildMenu();
   }
 
   private async _startSignalR() {

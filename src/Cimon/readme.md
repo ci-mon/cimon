@@ -26,7 +26,7 @@
 3. Blame reaction (+)
 4. Auto update
 5. Reconnection (+)
-6. Mentions (show/subscribe)
+6. Mentions list in menu (+) (have bug)
 7. Monitor list
 
 ## V1.5

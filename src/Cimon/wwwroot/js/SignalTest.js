@@ -10,13 +10,17 @@ createApp({
         return {
             state: 'none',
             UserName: '',
-            messages: []
+            messages: [],
+            mentions: []
         }
     },
     mounted() {
         this.connect();
     },
     methods: {
+        getDiscussionUrl(item){
+            return `/buildDiscussion/${item.buildId}`;
+        },
         async connect() {
             const response = await fetch('/auth/token', {
                 redirect: "manual"
@@ -48,18 +52,23 @@ createApp({
             connection.onclose(() => {
                 this.state = 'onclose';
             });
-            connection.onreconnected(() => {
+            connection.onreconnected(async () => {
                 this.state = 'onreconnected';
+                await connection.invoke('SubscribeForMentions');
             });
             ////NotifyWithUrl(string url, string message)
             connection.on("NotifyWithUrl", (buildId, url, header, message)=>{
                this.messages.push({url, header, message})
+            });
+            connection.on("UpdateMentions", (mentions)=>{
+               this.mentions = mentions;
             });
             await connection.start();
             this.state = 'connected';
 
             //connection.invoke('ReplyToNotification', "buildId", 1, null);
             window.connection = connection;
+            await connection.invoke('SubscribeForMentions');
         }
     }
 }).mount('#app')

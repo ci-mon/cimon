@@ -31,6 +31,6 @@ public class MentionsService
 				existing.CommentsCount = buildComments.Count;
 			}
 			return mentions;
-		});
+		}).Select(x=>x.Where(i=>i.CommentsCount > 0).ToList());
 	}
 }
