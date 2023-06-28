@@ -1,6 +1,6 @@
 ﻿namespace Cimon.Data.TeamCity;
 
-public class TeamCitySecrets
+public class TeamcitySecrets
 {
 	public required Uri Uri { get; set; }
 	public string? Login { get; set; }

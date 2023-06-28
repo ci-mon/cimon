@@ -2,12 +2,17 @@
 @layout EmptyLayout
 
 <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px; margin: 2em !important;">
-    
-    <RadzenTemplateForm Data=@("SimpleLogin") Action="/auth/login" Method="POST">
-        <RadzenLogin AllowRegister="false" AllowResetPassword="false" />
+    <RadzenProgressBar Visible="@_showProgressBar" ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
+        <RadzenLogin AllowRegister="false" AllowResetPassword="false"/>
     </RadzenTemplateForm>
-    
 </RadzenCard>
 @code {
-    
+
+
+    private bool _showProgressBar;
+    private void OnSubmit() {
+        _showProgressBar = true;
+    }
+
 }

@@ -15,9 +15,9 @@ public record struct TeamCityClientTicket(TeamCityClient Client, TcClientFactory
 
 public class TcClientFactory : IPooledObjectPolicy<TeamCityClient>
 {
-	private readonly TeamCitySecrets _secrets;
+	private readonly TeamcitySecrets _secrets;
 	private readonly ObjectPool<TeamCityClient> _clients;
-	public TcClientFactory(IOptions<TeamCitySecrets> secrets) {
+	public TcClientFactory(IOptions<TeamcitySecrets> secrets) {
 		_secrets = secrets.Value;
 		_clients = new DefaultObjectPool<TeamCityClient>(this, 10);
 	}

@@ -9,7 +9,7 @@ namespace Cimon.Data.Secrets;
 
 public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> where TSecrets : class
 {
-	private readonly string _prefix = typeof(TSecrets).Name.Replace("Secrets", string.Empty).ToLowerInvariant();
+	private readonly string _prefix = ToVaultName(typeof(TSecrets).Name.Replace("Secrets", string.Empty));
 	private readonly VaultSettings _vaultSettings;
 	private readonly ILogger _log;
 
@@ -37,7 +37,7 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
 			.ReadSecretAsync(path: _vaultSettings.Path, mountPoint: _vaultSettings.MountPoint).ConfigureAwait(false);
 		foreach (var property in typeof(TSecrets).GetProperties()) {
-			var key = $"{_prefix}.{property.Name.ToLowerInvariant()}";
+			var key = $"{_prefix}.{ToVaultName(property.Name)}";
 			if (!secrets.Data.Data.TryGetValue(key, out var value)) continue;
 			if (value is not JsonElement jsonElement) continue;
 			var propertyValue = jsonElement.Deserialize(property.PropertyType);
@@ -47,5 +47,19 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 			}
 			property.SetValue(options, propertyValue);
 		}
+	}
+
+	private static string ToVaultName(string propertyName) {
+		IEnumerable<char> ToChars(string str) {
+			bool first = true;
+			foreach (var c in str) {
+				if (!first && char.IsUpper(c)) {
+					yield return '_';
+				}
+				yield return char.ToLowerInvariant(c);
+				first = false;
+			}
+		}
+		return string.Concat(ToChars(propertyName));
 	}
 }

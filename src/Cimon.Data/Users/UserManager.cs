@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.DirectoryServices.Protocols;
-using System.Net;
 using System.Security.Claims;
 using Cimon.Contracts;
 using Cimon.DB;
@@ -23,12 +21,14 @@ public class UserManager : ITechnicalUsers
 	private readonly ILogger _logger;
 	private readonly IDbContextFactory<CimonDbContext> _dbContextFactory;
 	private readonly CimonDataSettings _cimonDataSettings;
+	private readonly LdapClient _ldapClient;
 	private readonly ConcurrentDictionary<UserName, Task<UserCache?>> _cachedUsers = new();
 
 	public UserManager(ILogger<UserManager> logger, IDbContextFactory<CimonDbContext> dbContextFactory, 
-			IOptions<CimonDataSettings> cimonDataSettings) {
+			IOptions<CimonDataSettings> cimonDataSettings, LdapClient ldapClient) {
 		_logger = logger;
 		_dbContextFactory = dbContextFactory;
+		_ldapClient = ldapClient;
 		_cimonDataSettings = cimonDataSettings.Value;
 	}
 
@@ -122,18 +122,7 @@ public class UserManager : ITechnicalUsers
 				return true;
 			}
 		}
-		string domain = userName.Domain.ToLowerInvariant(); // TODO get from where?
-		var server = $"{domain}.com";
-		LdapConnection connection = new(server);
-		NetworkCredential credential = new(name, password, userName.Domain);
-		try {
-			connection.Bind(credential);
-			connection.Dispose();
-			return true;
-		} catch (Exception e) {
-			_logger.LogWarning(e, "Error during user [{User}] auth", userName);
-		}
-		return false;
+		return await _ldapClient.FindUserAsync(name, password);
 	}
 
 	public async IAsyncEnumerable<UserInfo> GetUsers(string? searchTerm) {

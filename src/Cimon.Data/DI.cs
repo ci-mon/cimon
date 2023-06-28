@@ -13,6 +13,7 @@ public static class DI
 		return services
 			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<UserManager>()
+			.AddSingleton<LdapClient>()
 			.AddSingleton<BuildInfoService>()
 			.AddSingleton<BuildDiscussionStoreService>()
 			.AddSingleton<MentionsService>()

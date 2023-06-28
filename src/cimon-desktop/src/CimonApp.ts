@@ -97,7 +97,8 @@ export class CimonApp {
   }
 
   private async _initMainWindow() {
-    this._session = session.fromPartition("persist:cimon", { cache: true }); //session.defaultSession;
+    //this._session = session.fromPartition("persist:cimon", { cache: true }); //session.defaultSession;
+    this._session = session.defaultSession;
     //this._session.allowNTLMCredentialsForDomains('*');
     this._window = new BrowserWindow({
       webPreferences: {
@@ -306,6 +307,10 @@ export class CimonApp {
         this._window.setSize(500, 260);
         this._window.show();
         this._window.center();
+        this._window.webContents.session.webRequest.onBeforeRedirect(() => {
+          this._window.hide();
+          this._window.webContents.session.webRequest.onBeforeRedirect(null);
+        });
       }
     });
     ipcMain.handle("cimon-load", async (event, relativeUrl) => {

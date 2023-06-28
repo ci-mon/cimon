@@ -52,9 +52,11 @@ builder.Services.AddOptions()
 	.Configure<CimonDataSettings>(settings => {
 		settings.IsDevelopment = isDevelopment;
 	})
-	.ConfigureVaultSecrets<TeamCitySecrets>()
+	.ConfigureVaultSecrets<TeamcitySecrets>()
 	.ConfigureVaultSecrets<JenkinsSecrets>()
+	.ConfigureVaultSecrets<LdapClientSecrets>()
 	.Configure<VaultSettings>(builder.Configuration.GetSection("Vault"))
+	.Configure<LdapClientSecrets>(builder.Configuration.GetSection("LdapClient"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
 	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)
 	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Jwt);
