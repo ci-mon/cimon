@@ -1,5 +1,6 @@
 import Path from "path";
 import request from "electron-request";
+import isDev from "electron-is-dev";
 
 import { app, BrowserWindow, ipcMain, Menu, session, Tray } from "electron";
 import { ConnectionState, SignalRClient } from "./SignalRClient";
@@ -37,11 +38,8 @@ const options = {
   get lastMonitor() {
     return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
   },
-  get isDev() {
-    return true;
-  },
   get resourcesPath() {
-    if (this.isDev) {
+    if (isDev) {
       return Path.join(__dirname, "..", "..");
     }
     return process.resourcesPath;
@@ -245,18 +243,18 @@ export class CimonApp {
 
   private _buildMenu() {
     const template: MenuItemConstructorOptions[] = [
-      {
-        id: "reload",
-        label: "Reload",
-        type: "normal",
-        role: 'reload'
-      },
-      {
+        {
         id: "showMonitor",
         label: "Show",
         type: "normal",
         visible: false,
         click: async () => await this.showMonitors(),
+      },
+      {
+        id: "reload",
+        label: "Reload",
+        type: "normal",
+        role: 'reload'
       },
       {
         id: "reconnect",
@@ -281,6 +279,7 @@ export class CimonApp {
     }
     this._trayContextMenu = Menu.buildFromTemplate(template);
     this._tray.setContextMenu(this._trayContextMenu);
+    this._updateContextMenuVisibility();
   }
 
   private async _onMentionsChanged(mentions: MentionInfo[]){

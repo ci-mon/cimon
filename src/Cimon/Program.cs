@@ -8,6 +8,7 @@ using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
 using Cimon.DB;
 using Cimon.Monitors;
+using Cimon.NativeApp;
 using Cimon.Shared;
 using Cimon.Users;
 using MediatR;
@@ -36,6 +37,7 @@ builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
 
+builder.Services.AddSingleton<NativeAppService>();
 builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {

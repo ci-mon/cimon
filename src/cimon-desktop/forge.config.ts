@@ -10,9 +10,9 @@ import { rendererConfig } from './webpack.renderer.config';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    icon: './src/icons/green',
+    icon: './icons/green',
     extraResource: [
-        "./src/icons"
+        "./icons"
     ]
   },
   rebuildConfig: {},

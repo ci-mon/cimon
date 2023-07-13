@@ -1,0 +1,38 @@
+﻿@page "/native"
+@using MarkdownSharp
+@inject NativeAppService NativeAppService 
+<RadzenAccordion Multiple="true">
+    <Items>
+        @for (var index = 0; index < _releases.Count; index++) {
+            var release = _releases[index];
+            <RadzenAccordionItem Text="@release.Version.ToString()" Selected="@(index == 0)">
+                <RadzenHtml>
+                    @Render(release.ReleaseNotes)
+                </RadzenHtml>
+                @foreach (var artifact in release.Artifacts) {
+                    <RadzenLink Path="@GetArtifactLink(release, artifact)">
+                        <RadzenButton Icon="file_download" Text="@artifact.Platform.ToString()" />
+                    </RadzenLink>
+                    
+                }
+            </RadzenAccordionItem>
+        }
+    </Items>
+    </RadzenAccordion>
+@code {
+    private List<NativeAppRelease> _releases = null!;
+    private readonly Markdown _markdown = new();
+
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        _releases = NativeAppService.GetReleases().OrderByDescending(x=>x.Version).ToList();
+    }
+
+    private MarkupString Render(string releaseNotes) => (MarkupString)_markdown.Transform(releaseNotes);
+
+    private string GetArtifactLink(NativeAppRelease release, NativeAppReleaseArtifact artifact) {
+        var version = release.Version.ToShortString();
+        return $"/api/native/download/{version}/{artifact.Platform.ToString()}/{artifact.FileName}";
+    }
+
+}
