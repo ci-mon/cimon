@@ -12,6 +12,7 @@ public interface IUserClientApi
 {
 	Task NotifyWithUrl(string buildId, string url, string header, string message);
 	Task UpdateMentions(IEnumerable<MentionInfo> mentions);
+	Task CheckForUpdates();
 }
 
 [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme}")]

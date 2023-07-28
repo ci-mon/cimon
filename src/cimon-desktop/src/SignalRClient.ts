@@ -6,11 +6,13 @@ import {
   IRetryPolicy,
   RetryContext,
 } from "@microsoft/signalr";
+import {autoUpdater} from "electron";
+import log from "electron-log";
 
 export enum ConnectionState {
-  Connected,
-  Disconnected,
-  FailedToConnect,
+  Connected = 'Connected',
+  Disconnected = 'Disconnected',
+  FailedToConnect = 'FailedToConnect',
 }
 
 class ReconnectionPolicy implements IRetryPolicy {
@@ -62,6 +64,10 @@ export class SignalRClient {
     });
     this._connection.on("NotifyWithUrl", this._onNotifyWithUrl.bind(this));
     this._connection.on("UpdateMentions", mentions => this.onMentionsChanged?.(mentions));
+    this._connection.on("CheckForUpdates", () => {
+      log.info(`CheckForUpdates message received`);
+      autoUpdater.checkForUpdates();
+    });
   }
 
   async start() {

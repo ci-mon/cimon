@@ -2,11 +2,13 @@ import Path from "path";
 import request from "electron-request";
 import isDev from "electron-is-dev";
 
-import { app, BrowserWindow, ipcMain, Menu, session, Tray } from "electron";
+import {app, autoUpdater, BrowserWindow, ipcMain, Menu, session, Tray} from "electron";
 import { ConnectionState, SignalRClient } from "./SignalRClient";
 import notifier from "node-notifier";
 import IpcMainEvent = Electron.IpcMainEvent;
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
+import {CimonConfig} from "../cimon-config";
+import log from "electron-log";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -29,7 +31,7 @@ class IconLocator {
 }
 
 const options = {
-  baseUrl: "http://localhost:5001",
+  baseUrl: CimonConfig.url,
   waitForConnectionRetryDelay: 10000,
 
   get entrypoint() {
@@ -66,7 +68,7 @@ export class CimonApp {
 
   private tokenDataReceiver: TokenDataReceiver;
   private _mentions: MentionInfo[] = [];
-
+  public updateReady = false;
   private _initToken(): Promise<{
     userName: string;
     token: string;
@@ -120,6 +122,12 @@ export class CimonApp {
     this._window.on("close", (evt) => {
       evt.preventDefault();
       this._window.hide();
+    });
+    this._window.on("show", () => {
+      this._updateContextMenuVisibility();
+    });
+    this._window.on("hide", () => {
+      this._updateContextMenuVisibility();
     });
   }
 
@@ -185,6 +193,7 @@ export class CimonApp {
     if (this._currentState == state) {
       return;
     }
+    log.info(`SignalR state ${state}`);
     const previousState = this._currentState;
     this._currentState = state;
     this._updateContextMenuVisibility();
@@ -225,7 +234,11 @@ export class CimonApp {
     });
     this._trayContextMenuVisibilityConfigs.push({
       id: "showMonitor",
-      fn: () => this._currentState === ConnectionState.Connected,
+      fn: () => this._currentState === ConnectionState.Connected && !this._window.isVisible(),
+    });
+    this._trayContextMenuVisibilityConfigs.push({
+      id: "reload",
+      fn: () => this._currentState === ConnectionState.Connected && this._window.isVisible(),
     });
     this._tray.setToolTip("cimon - connecting...");
     this._tray.on("click", async () => this.showMonitors());
@@ -242,6 +255,7 @@ export class CimonApp {
   }
 
   private _buildMenu() {
+    const versionMenuLabel = this.updateReady ? `Restart to update` : `Version: ${app.getVersion()}`;
     const template: MenuItemConstructorOptions[] = [
         {
         id: "showMonitor",
@@ -263,6 +277,7 @@ export class CimonApp {
         click: async () => await this.reconnect(),
         visible: false,
       },
+      {id: "version", label: versionMenuLabel, enabled: this.updateReady, click: () => autoUpdater.quitAndInstall()},
       {id: "exit", label: "Exit", type: "normal", click: () => app.exit()},
     ];
     if (this._mentions.length > 0){

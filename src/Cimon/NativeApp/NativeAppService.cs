@@ -1,53 +1,122 @@
 ﻿using System.Collections.Immutable;
+using System.Security.Cryptography;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Cimon.NativeApp;
 
-public class NativeAppRepositorySettings
-{
-	public string ArtifactsPath { get; set; } = "./nativeApps";
-}
-
-public static class IOUtils
-{
-	public static string ReadAllText(this FileInfo file) {
-		using var reader = file.OpenText();
-		return reader.ReadToEnd();
-	}
-}
-
 public class NativeAppService
 {
 	private readonly NativeAppRepositorySettings _settings;
-	public NativeAppService(IOptions<NativeAppRepositorySettings> options) {
+	private readonly ILogger _logger;
+	private readonly IMemoryCache _cache;
+	private readonly string _changelogFileName = "CHANGELOG.md";
+
+	public NativeAppService(IOptions<NativeAppRepositorySettings> options, ILogger<NativeAppService> logger, 
+			IMemoryCache cache) {
+		_logger = logger;
+		_cache = cache;
 		_settings = options.Value;
 	}
 
 	public IReadOnlyCollection<NativeAppRelease> GetReleases() {
+		return _cache.GetOrCreate("NativeApps:Releases", entry => {
+			entry.SlidingExpiration = TimeSpan.FromDays(100);
+			return GetReleasesInternal();
+		}) ?? GetReleasesInternal();
+	}
+
+	public void ClearCache() {
+		_cache.Remove("NativeApps:Releases");
+	}
+
+	private IReadOnlyCollection<NativeAppRelease> GetReleasesInternal() {
 		var results = new List<NativeAppRelease>();
-		foreach (var directory in Directory.EnumerateDirectories(_settings.ArtifactsPath).Select(x=>new DirectoryInfo(x))) {
+		using var cryptoProvider = SHA1.Create();
+		foreach (var directory in Directory.EnumerateDirectories(_settings.ArtifactsPath)
+				.Select(x => new DirectoryInfo(x))) {
 			if (!Version.TryParse(directory.Name, out var version)) {
 				continue;
 			}
+			var changeLog = directory.GetFiles(_changelogFileName).FirstOrDefault()?.ReadAllText() ?? string.Empty;
 			var artifacts = new List<NativeAppReleaseArtifact>();
-			foreach (var fileInfo in directory.EnumerateFiles()) {
-				if (fileInfo.Extension == ".exe") {
-					artifacts.Add(new NativeAppReleaseArtifact(NativeAppPlatform.Windows, fileInfo.Name));
+			foreach (var platformDir in directory.EnumerateDirectories()) {
+				if (!Enum.TryParse<NativeAppPlatform>(platformDir.Name, out var platform)) {
+					continue;
+				}
+
+				foreach (var archDir in platformDir.EnumerateDirectories()) {
+					if (!Enum.TryParse<NativeAppArchitecture>(archDir.Name, out var architecture)) {
+						continue;
+					}
+					foreach (var file in archDir.EnumerateFiles()) {
+						var artifact = new NativeAppReleaseArtifact(platform, architecture, file.Name, file.CreationTimeUtc);
+						if (platform == NativeAppPlatform.Win32) {
+							artifact.FileLength = file.Length;
+							var fileStream = file.OpenRead();
+							artifact.Sha1 = BitConverter.ToString(cryptoProvider.ComputeHash(fileStream))
+								.Replace("-", "");
+						}
+						artifacts.Add(artifact);
+					}
 				}
 			}
-			var notes = directory.GetFiles("readme.md").FirstOrDefault()?.ReadAllText() ?? string.Empty;
-			var appRelease = new NativeAppRelease(version, notes, artifacts.ToImmutableList());
+			var appRelease = new NativeAppRelease(version, changeLog, artifacts.ToImmutableList());
 			results.Add(appRelease);
 		}
 		return results;
 	}
 
-	public Stream ReadArtifact(Version version, NativeAppPlatform platform, string fileName) {
-		var path = Path.Combine(_settings.ArtifactsPath, version.ToShortString(), fileName);
-		return File.OpenRead(path);
+	public async Task WriteArtifact(Version version, NativeAppPlatform platform, 
+			NativeAppArchitecture architecture, string? changes, string fileName, Stream stream) {
+		var versionRoot = new DirectoryInfo(Path.Combine(_settings.ArtifactsPath, version.ToString()));
+		if (!versionRoot.Exists) {
+			versionRoot.Create();
+			var changeLogFile = new FileInfo(Path.Combine(versionRoot.FullName, _changelogFileName));
+			if (!changeLogFile.Exists && !string.IsNullOrWhiteSpace(changes)) {
+				await File.WriteAllTextAsync(changeLogFile.FullName, changes);
+			}
+		}
+		var root = Path.Combine(versionRoot.FullName, platform.ToString(), architecture.ToString());
+		if (!Directory.Exists(root)) {
+			Directory.CreateDirectory(root);
+		}
+		var fileInfo = new FileInfo(Path.Combine(root, Path.GetFileName(fileName)));
+		if (fileInfo.Exists) {
+			_logger.LogWarning("File {FileName} already exists, removing", fileInfo.Name);
+			fileInfo.Delete();
+		}
+		await using var file = fileInfo.OpenWrite();
+		await stream.CopyToAsync(file);
 	}
 
-	public void Refresh() {
-		
+	public string? GetWinReleases() {
+		var releases = GetReleases().SelectMany(x =>
+			x.Artifacts.Where(a => a.Platform == NativeAppPlatform.Win32 &&
+					".nupkg".Equals(Path.GetExtension(a.FileName), StringComparison.OrdinalIgnoreCase))
+				.Select(a => new { Release = x, Artifact = a })).ToList();
+		return releases.Any() ? string.Join(Environment.NewLine,
+			releases.Select(r => $"{r.Artifact.Sha1} {r.Artifact.FileName} {r.Artifact.FileLength}")) : null;
+	}
+
+	public Stream ReadFile(NativeAppPlatform platform, NativeAppArchitecture architecture, Version version, 
+			string fileName) {
+		fileName = Path.GetFileName(fileName);
+		var versionRoot = new DirectoryInfo(Path.Combine(_settings.ArtifactsPath, version.ToString()));
+		var root = Path.Combine(versionRoot.FullName, platform.ToString(), architecture.ToString());
+		var fileInfo = new FileInfo(Path.Combine(root, Path.GetFileName(fileName)));
+		return fileInfo.OpenRead();
+	}
+
+	public (NativeAppRelease, NativeAppReleaseArtifact)? GetNewMacRelease(Version version,
+			NativeAppArchitecture architecture) {
+		var releases = GetReleases();
+		var release = releases.Where(x => x.Version > version).MaxBy(x => x.Version);
+		var macArtifact = release?.Artifacts.FirstOrDefault(a =>
+			a.Platform == NativeAppPlatform.Darwin && a.Architecture == architecture);
+		if (release == null || macArtifact == null) {
+			return null;
+		}
+		return (release, macArtifact);
 	}
 }

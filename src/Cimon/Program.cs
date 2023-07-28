@@ -38,7 +38,7 @@ builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
 
 builder.Services.AddSingleton<NativeAppService>();
-builder.Services.AddSingleton<INotificationService, Cimon.Users.NotificationService>();
+builder.Services.AddSingleton<INotificationService, Cimon.Users.SignalRNotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 	return async () => {
@@ -57,6 +57,7 @@ builder.Services.AddOptions()
 	.ConfigureVaultSecrets<TeamcitySecrets>()
 	.ConfigureVaultSecrets<JenkinsSecrets>()
 	.ConfigureVaultSecrets<LdapClientSecrets>()
+	.ConfigureVaultSecrets<NativeAppSecrets>()
 	.Configure<VaultSettings>(builder.Configuration.GetSection("Vault"))
 	.Configure<LdapClientSecrets>(builder.Configuration.GetSection("LdapClient"))
 	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
