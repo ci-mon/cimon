@@ -1,31 +1,74 @@
 ﻿@page "/native"
 @using MarkdownSharp
-@inject NativeAppService NativeAppService 
-<RadzenAccordion Multiple="true">
-    <Items>
-        @for (var index = 0; index < _releases.Count; index++) {
-            var release = _releases[index];
-            <RadzenAccordionItem Text="@release.Version.ToString()" Selected="@(index == 0)">
-                <RadzenHtml>
-                    @Render(release.ReleaseNotes)
-                </RadzenHtml>
-                @foreach (var artifact in release.Artifacts) {
-                    <RadzenLink Path="@GetArtifactLink(release, artifact)">
-                        <RadzenButton Icon="file_download" Text="@artifact.Platform.ToString()" />
-                    </RadzenLink>
-                    
-                }
-            </RadzenAccordionItem>
-        }
-    </Items>
-    </RadzenAccordion>
+@inject NativeAppService NativeAppService
+@inject MediatR.IMediator Mediator; 
+<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+    <RadzenCard Style="max-width: 1000px">
+        <RadzenDataGrid Data="_releases" TItem="NativeAppRelease" ExpandMode="DataGridExpandMode.Single" AllowSorting="@true">
+            <Template Context="release">
+                <RadzenDataGrid Data="@release.Artifacts.Where(x=>!x.IsForUpdateOnly)" TItem="NativeAppReleaseArtifact" AllowSorting="@true">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="NativeAppReleaseArtifact" Property="CreatedOn" Title="Date" Width="150px"/>
+                        <RadzenDataGridColumn TItem="NativeAppReleaseArtifact" Title="Platform" Width="80px">
+                            <Template Context="artifact">
+                                <RadzenBadge IsPill="@true" Text="@artifact.Platform.ToString()"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="NativeAppReleaseArtifact" Title="Architecture" Width="90px">
+                            <Template Context="artifact">
+                                <RadzenBadge IsPill="@true" BadgeStyle="BadgeStyle.Secondary" Text="@artifact.Architecture.ToString()"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="NativeAppReleaseArtifact" Title="Sha1" Property="Sha1" />
+                        <RadzenDataGridColumn TItem="NativeAppReleaseArtifact" Title="File">
+                            <Template Context="artifact">
+                                <RadzenLink Icon="download" Text="@artifact.FileName" Path="@($"/native/download/{artifact.Platform}/{artifact.Architecture}/{release.Version}/{artifact.FileName}")" />
+                                <AuthorizeView Roles="admin">
+                                    <RadzenButton Size="ButtonSize.Small" class="rz-ml-2" 
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Icon="delete" Text="Remove" Click="() => RemoveArtifact(artifact)" />
+                                </AuthorizeView>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </Template>
+            <Columns>
+                <RadzenDataGridColumn TItem="NativeAppRelease" Title="Version" SortProperty="Version">
+                    <Template Context="data">
+                        <RadzenText Text="@data.Version.ToString()"></RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NativeAppRelease" Title="ReleaseNotes" Sortable="false">
+                    <Template Context="data">
+                        <RadzenHtml>
+                            @Render(data.ReleaseNotes)
+                        </RadzenHtml>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <AuthorizeView Roles="admin">
+            <RadzenButton class="rz-mt-2" Text="Trigger update check" Click="SignalCheckForUpdates"/>
+        </AuthorizeView>
+    </RadzenCard>
+</RadzenStack>
+
 @code {
+
+    record ArtifactItem(NativeAppRelease Release, NativeAppReleaseArtifact Artifact);
+
     private List<NativeAppRelease> _releases = null!;
+    private IEnumerable<ArtifactItem>? Artifacts => _releases?.SelectMany(r => r.Artifacts.Select(a => new ArtifactItem(r, a)));
     private readonly Markdown _markdown = new();
 
     protected override void OnInitialized() {
         base.OnInitialized();
-        _releases = NativeAppService.GetReleases().OrderByDescending(x=>x.Version).ToList();
+        InitReleases();
+    }
+
+    private void InitReleases() {
+        _releases = NativeAppService.GetReleases().Where(r=>r.Artifacts.Any()).OrderByDescending(x => x.Version).ToList();
     }
 
     private MarkupString Render(string releaseNotes) => (MarkupString)_markdown.Transform(releaseNotes);
@@ -33,6 +76,16 @@
     private string GetArtifactLink(NativeAppRelease release, NativeAppReleaseArtifact artifact) {
         var version = release.Version.ToShortString();
         return $"/api/native/download/{version}/{artifact.Platform.ToString()}/{artifact.FileName}";
+    }
+
+    private async Task SignalCheckForUpdates() {
+        await Mediator.Publish(new NativeAppPublished());
+    }
+
+    private async Task RemoveArtifact(NativeAppReleaseArtifact artifact) {
+        await NativeAppService.Remove(artifact);
+        InitReleases();
+        StateHasChanged();
     }
 
 }

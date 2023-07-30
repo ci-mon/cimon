@@ -56,11 +56,21 @@ public class NativeAppController : Controller
 				});
 			}
 		}
+		ArgumentException.ThrowIfNullOrEmpty(fileName);
 		if (platform == NativeAppPlatform.Win32) {
 			var requiredVersion = Regex.Match(fileName, @"-(?'version'\d{1,}.\d{1,}.\d{1,}(.\d){0,})-")
 				.Groups["version"].Value;
-			Version.TryParse(requiredVersion, out version);
+			if (Version.TryParse(requiredVersion, out var parsedVersion)) {
+				version = parsedVersion;
+			}
 		}
+		return Download(platform, arch, version, fileName);
+	}
+
+	[HttpGet]
+	[Route("download/{platform}/{arch}/{version}/{fileName}")]
+	public IActionResult Download(NativeAppPlatform platform, NativeAppArchitecture arch, Version version,
+			string fileName) {
 		var fileStream = _nativeAppService.ReadFile(platform, arch, version, fileName);
 		var contentType = Path.GetExtension(fileName) switch {
 			".zip" or ".nupkg" => "application/zip",

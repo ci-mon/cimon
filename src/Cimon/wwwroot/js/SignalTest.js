@@ -63,6 +63,9 @@ createApp({
             connection.on("UpdateMentions", (mentions)=>{
                this.mentions = mentions;
             });
+            connection.on('CheckForUpdates', (mentions)=>{
+                this.messages.push({header: 'CheckForUpdates signal received'})
+            });
             await connection.start();
             this.state = 'connected';
 

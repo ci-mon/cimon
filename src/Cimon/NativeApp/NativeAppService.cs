@@ -40,20 +40,20 @@ public class NativeAppService
 			}
 			var changeLog = directory.GetFiles(_changelogFileName).FirstOrDefault()?.ReadAllText() ?? string.Empty;
 			var artifacts = new List<NativeAppReleaseArtifact>();
+			var appRelease = new NativeAppRelease(version, changeLog);
 			foreach (var platformDir in directory.EnumerateDirectories()) {
 				if (!Enum.TryParse<NativeAppPlatform>(platformDir.Name, out var platform)) {
 					continue;
 				}
-
 				foreach (var archDir in platformDir.EnumerateDirectories()) {
 					if (!Enum.TryParse<NativeAppArchitecture>(archDir.Name, out var architecture)) {
 						continue;
 					}
 					foreach (var file in archDir.EnumerateFiles()) {
-						var artifact = new NativeAppReleaseArtifact(platform, architecture, file.Name, file.CreationTimeUtc);
+						var artifact = new NativeAppReleaseArtifact(appRelease, platform, architecture, file.Name, file.CreationTimeUtc);
 						if (platform == NativeAppPlatform.Win32) {
 							artifact.FileLength = file.Length;
-							var fileStream = file.OpenRead();
+							using var fileStream = file.OpenRead();
 							artifact.Sha1 = BitConverter.ToString(cryptoProvider.ComputeHash(fileStream))
 								.Replace("-", "");
 						}
@@ -61,7 +61,7 @@ public class NativeAppService
 					}
 				}
 			}
-			var appRelease = new NativeAppRelease(version, changeLog, artifacts.ToImmutableList());
+			appRelease.Artifacts = artifacts.ToImmutableList();
 			results.Add(appRelease);
 		}
 		return results;
@@ -101,11 +101,17 @@ public class NativeAppService
 
 	public Stream ReadFile(NativeAppPlatform platform, NativeAppArchitecture architecture, Version version, 
 			string fileName) {
+		var fileInfo = GetFileInfo(platform, architecture, version, fileName);
+		return fileInfo.OpenRead();
+	}
+
+	private FileInfo GetFileInfo(NativeAppPlatform platform, NativeAppArchitecture architecture, Version version,
+		string fileName) {
 		fileName = Path.GetFileName(fileName);
 		var versionRoot = new DirectoryInfo(Path.Combine(_settings.ArtifactsPath, version.ToString()));
 		var root = Path.Combine(versionRoot.FullName, platform.ToString(), architecture.ToString());
 		var fileInfo = new FileInfo(Path.Combine(root, Path.GetFileName(fileName)));
-		return fileInfo.OpenRead();
+		return fileInfo;
 	}
 
 	public (NativeAppRelease, NativeAppReleaseArtifact)? GetNewMacRelease(Version version,
@@ -118,5 +124,13 @@ public class NativeAppService
 			return null;
 		}
 		return (release, macArtifact);
+	}
+
+	public Task Remove(NativeAppReleaseArtifact artifact) {
+		var fileInfo = GetFileInfo(artifact.Platform, artifact.Architecture, artifact.Release.Version, artifact.FileName);
+		var newName = Path.Combine(fileInfo.Directory.Parent.FullName, $"{fileInfo.Directory.Name}_removed");
+		Directory.Move(fileInfo.Directory.FullName, newName);
+		ClearCache();
+		return Task.CompletedTask;
 	}
 }
