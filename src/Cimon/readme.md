@@ -19,6 +19,7 @@
 15. Store discussions in DB
 16. Quick responses to TC Failed build (Investigate, MuteTests, Restart)
 17. Show build start time in local time zone
+18. Send message by `Command + Enter` on mac
 
 ### Electron app
 1. Login (negotiate/basic) (+)

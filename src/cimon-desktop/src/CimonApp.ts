@@ -9,6 +9,8 @@ import IpcMainEvent = Electron.IpcMainEvent;
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 import {CimonConfig} from "../cimon-config";
 import log from "electron-log";
+import * as process from "process";
+import * as electron from "electron";
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -26,7 +28,9 @@ class IconLocator {
   }
 
   public get tray() {
-    return `${options.resourcesPath}/icons/${this._basename}/icon.ico`;
+    const iconExt = process.platform === 'win32' ? 'ico' : 'png';
+    //mac resize to 16-24px
+    return `${options.resourcesPath}/icons/${this._basename}/icon.${iconExt}`;
   }
 }
 
@@ -179,6 +183,11 @@ export class CimonApp {
         modal: true,
         parent: this._window,
       });
+      electron.globalShortcut.register('Escape', () => {
+        if (this._discussionWindow.isVisible()) {
+          this._discussionWindow.hide();
+        }
+      });
     }
     this._discussionWindow.on("closed", () => {
       this._discussionWindow = null;
@@ -294,6 +303,9 @@ export class CimonApp {
     }
     this._trayContextMenu = Menu.buildFromTemplate(template);
     this._tray.setContextMenu(this._trayContextMenu);
+    if (process.platform === 'darwin'){
+      app.dock.setMenu(this._trayContextMenu);
+    }
     this._updateContextMenuVisibility();
   }
 
@@ -351,7 +363,7 @@ export class CimonApp {
     ipcMain.handle("cimon-get-base-url", () => options.baseUrl);
     ipcMain.handle("cimon-show-window", (event, code: "login" | string) => {
       if (code == "login") {
-        this._window.webContents.once("did-redirect-navigation", (event) => {
+        this._window.webContents.once("did-redirect-navigation", () => {
           this._window.setSize(800, 600);
           this._window.center();
         });

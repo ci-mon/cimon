@@ -6,7 +6,7 @@ import {
   IRetryPolicy,
   RetryContext,
 } from "@microsoft/signalr";
-import {autoUpdater} from "electron";
+import {autoUpdater,Notification} from "electron";
 import log from "electron-log";
 
 export enum ConnectionState {
@@ -84,6 +84,40 @@ export class SignalRClient {
     title: string,
     comment: string
   ) {
+    if (process.platform === 'darwin') {
+      const notification = new Notification({
+        title: title,
+        body: comment,
+        hasReply: true,
+        actions: [
+          {
+            text: "Open",
+            type: 'button'
+          },
+          {
+            text: "Wip",
+            type: 'button'
+          }
+        ],
+      });
+      notification.show();
+      notification.on('reply', async (e, reply) => {
+        await this._replyToNotification(
+            buildId,
+            NotificationQuickReply.None,
+            reply
+        );
+      });
+      notification.on('action', async (e, action) => {
+        if (action === 0) {
+          this.onOpenDiscussionWindow?.(url);
+          return;
+        } else {
+          await this._replyToNotification(buildId, NotificationQuickReply.Wip);
+        }
+      });
+      return;
+    }
     notifier.notify(
       {
         title: title,
@@ -116,9 +150,10 @@ export class SignalRClient {
 
   private async _replyToNotification(
     buildId: string,
-    type: NotificationQuickReply
+    type: NotificationQuickReply,
+    customReply: string = null
   ) {
-    await this._connection.invoke("ReplyToNotification", buildId, type, null);
+    await this._connection.invoke("ReplyToNotification", buildId, type, customReply);
   }
 }
 
