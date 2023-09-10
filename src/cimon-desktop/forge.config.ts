@@ -22,12 +22,16 @@ const config: ForgeConfig = {
     })],
     makers: [
         new MakerSquirrel({
+            name: 'cimon',
             setupIcon: './icons/green/icon.ico',
+            authors: 'Cimon'
+            //remoteReleases: CimonConfig.getReleasesUrl('1.0.0')
         }),
         new MakerZIP({}, ['darwin','linux'])
     ],
     plugins: [
         new WebpackPlugin({
+            packageSourceMaps: true,
             mainConfig,
             renderer: {
                 config: rendererConfig,

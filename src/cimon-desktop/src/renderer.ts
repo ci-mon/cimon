@@ -1,12 +1,12 @@
 import {createApp} from 'vue';
 
-import { createVuetify } from 'vuetify'
+import {createVuetify} from 'vuetify'
 import 'vuetify/dist/vuetify.css'
 import '@mdi/font/css/materialdesignicons.css'
 import {components, directives} from "vuetify/dist/vuetify";
 import App from './Renderer/App.vue'
 
-import { createRouter, createWebHashHistory } from 'vue-router'
+import {createRouter, createWebHashHistory} from 'vue-router'
 import WarnComponent from "./Renderer/WarnComponent.vue";
 
 const vuetify = createVuetify({

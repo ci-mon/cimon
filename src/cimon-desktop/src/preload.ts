@@ -4,6 +4,7 @@ import {contextBridge, ipcRenderer} from "electron";
 
 class Cimon {
     private _disabled: boolean;
+
     async init() {
         if (this._disabled) return;
         const baseUrl = await ipcRenderer.invoke('cimon-get-base-url');
@@ -16,15 +17,18 @@ class Cimon {
         }
         window.location.href = `${baseUrl}${this._loginPathName}`;
     }
-    skipInit(){
+
+    skipInit() {
         this._disabled = true;
     }
 
     private _loginPathName = '/Login';
+
     isLogin() {
-         return window.location.pathname === this._loginPathName;
+        return window.location.pathname === this._loginPathName;
     }
 }
+
 const cimon = new Cimon();
 contextBridge.exposeInMainWorld('CimonDesktop', {
     init: () => cimon.init(),
