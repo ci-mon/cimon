@@ -8,6 +8,7 @@ import {
 import {autoUpdater, Notification, NotificationAction} from "electron";
 import log from "electron-log";
 import {Notifier} from "./notifier";
+import {StatusMessageType} from "node-win-toast-notifier";
 
 export enum ConnectionState {
     Connected = 'Connected',
@@ -38,6 +39,7 @@ export class SignalRClient {
     onOpenDiscussionWindow: (url: string) => void;
     private _userName: string;
     private _connection: HubConnection;
+    private _notifier = new Notifier();
 
     constructor(
         private _baseUrl: string,
@@ -78,7 +80,7 @@ export class SignalRClient {
         }
     }
 
-    private _onNotifyWithUrl(
+    private async _onNotifyWithUrl(
         buildId: string,
         url: string,
         title: string,
@@ -118,31 +120,29 @@ export class SignalRClient {
             });
             return;
         }
-        const actions: NotificationAction[] = [
-            {text: 'Open', type: 'button'},
-            {text: 'WIP', type: 'button'},
-            {text: 'Rollback', type: 'button'},
-            {text: 'Mute', type: 'button'}];
-        Notifier.showWithActions(title, comment, actions, async (selectedAction?: NotificationAction) => {
-            const result = selectedAction?.text?.toLowerCase();
-            if (result === "open") {
-                this.onOpenDiscussionWindow?.(url);
-                return;
-            }
-            if (result === "wip") {
-                await this._replyToNotification(buildId, NotificationQuickReply.Wip);
-            } else if (result === "Rollback".toLowerCase()) {
-                await this._replyToNotification(
-                    buildId,
-                    NotificationQuickReply.RequestingRollback
-                );
-            } else if (result === "Mute".toLowerCase()) {
-                await this._replyToNotification(
-                    buildId,
-                    NotificationQuickReply.RequestingMute
-                );
-            }
-        });
+        //todo get author email
+         let result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment, 'v.artemchuk@creatio.com');
+         switch (result.type){
+             case StatusMessageType.Activated:{
+                switch (result.info.arguments) {
+                    case 'open':
+                        this.onOpenDiscussionWindow?.(url);
+                        break;
+                    case 'sendQuickReply':
+                        const type = result.info.inputs['quickReply'];
+                        const map: Record<string, NotificationQuickReply> = {
+                            'wip': NotificationQuickReply.Wip,
+                            'rollback': NotificationQuickReply.RequestingRollback,
+                            'mute': NotificationQuickReply.RequestingMute,
+                        };
+                        await this._replyToNotification(buildId, map[type]);
+                        break;
+                    case 'sendReply':
+                        await this._replyToNotification(buildId, NotificationQuickReply.None, result.info.inputs['replyText']);
+                        break;
+                }
+             }
+         }
     }
 
     private async _replyToNotification(
