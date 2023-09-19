@@ -32,7 +32,6 @@ const alert = ref<Alert>({
 </script>
 
 <template>
-
   <v-alert :type="alert.type" icon="mdi-alert" :text="alert.message"></v-alert>
 </template>
 

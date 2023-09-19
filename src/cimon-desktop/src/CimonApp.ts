@@ -1,19 +1,30 @@
 import Path from "path";
-import request from "electron-request";
 import isDev from "electron-is-dev";
 
-import {app, autoUpdater, BrowserWindow, ipcMain, Menu, session, Tray} from "electron";
+import {
+    app,
+    autoUpdater,
+    BrowserWindow,
+    ipcMain,
+    Menu,
+    session,
+    Tray,
+    IpcMainEvent,
+    MenuItemConstructorOptions,
+    net,
+    WebContents
+} from "electron";
 import {ConnectionState, SignalRClient} from "./SignalRClient";
-import IpcMainEvent = Electron.IpcMainEvent;
-import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 import {CimonConfig} from "../cimon-config";
 import log from "electron-log";
-import * as process from "process";
+
+const process = require('process');
 import * as electron from "electron";
 import {Notifier} from "./notifier";
+import path from "path";
 
-declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
-declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
 
 interface MentionInfo {
     buildId: string;
@@ -98,9 +109,7 @@ export class CimonApp {
                         this._onDisconnected();
                     } else {
                         this._tray.setImage(options.icons.red.tray);
-                        await this._window.loadURL(
-                            `${MAIN_WINDOW_WEBPACK_ENTRY}#warn/${e.code ?? "unavailable"}`
-                        );
+                        await this._loadHash(this._window, `warn/${e.code ?? "unavailable"}`)
                         this._window.show();
                     }
                     reject(e);
@@ -109,13 +118,23 @@ export class CimonApp {
         });
     }
 
+    private async _loadHash(window: BrowserWindow | WebContents, hash: string) {
+        if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+            await window.loadURL(
+                `${MAIN_WINDOW_VITE_DEV_SERVER_URL}#${hash}`
+            );
+        } else {
+            await window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html#${hash}`));
+        }
+    }
+
     private async _initMainWindow() {
         //this._session = session.fromPartition("persist:cimon", { cache: true }); //session.defaultSession;
         this._session = session.defaultSession;
         //this._session.allowNTLMCredentialsForDomains('*');
         this._window = new BrowserWindow({
             webPreferences: {
-                preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+                preload: path.join(__dirname, 'preload.js'),
                 session: this._session,
                 allowRunningInsecureContent: true,
             },
@@ -351,26 +370,38 @@ export class CimonApp {
 
     private async _tryToConnect() {
         try {
-            const response = await request(options.baseUrl);
-            if (response.ok) {
-                this._connectionWaiter.resolve();
-                this._connectionWaiter = null;
-                return;
-            }
+            const request = net.request(options.baseUrl);
+            await new Promise<void>((res, rej) => {
+                request.on('response', response => {
+                    if (response.statusCode === 200) {
+                        clearTimeout(this._waitForConnectionTimeout);
+                        this._connectionWaiter.resolve();
+                        this._connectionWaiter = null;
+                        res();
+                    } else {
+                        rej(response.statusMessage);
+                    }
+                });
+                request.on('error', (error) => rej(error));
+                request.end();
+            });
         } catch (e) {
-            /* empty */
+            console.warn('Failed to connect to baseUrl', e);
+            this._waitForConnectionTimeout = setTimeout(
+                () => this._tryToConnect(),
+                options.waitForConnectionRetryDelay
+            );
+            this._onConnectionStateChanged(ConnectionState.FailedToConnect);
         }
-        this._waitForConnectionTimeout = setTimeout(
-            () => this._tryToConnect(),
-            options.waitForConnectionRetryDelay
-        );
-        this._onConnectionStateChanged(ConnectionState.FailedToConnect);
     }
 
     private _subscribeForEvents() {
         ipcMain.handle("cimon-get-base-url", () => options.baseUrl);
         ipcMain.handle("cimon-show-window", (event, code: "login" | string) => {
             if (code == "login") {
+                if (this._window.isVisible()) {
+                    return;
+                }
                 this._window.webContents.once("did-redirect-navigation", () => {
                     this._window.setSize(800, 600);
                     this._window.center();
@@ -385,7 +416,7 @@ export class CimonApp {
             }
         });
         ipcMain.handle("cimon-load", async (event, relativeUrl) => {
-            await event.sender.loadURL(`${MAIN_WINDOW_WEBPACK_ENTRY}#${relativeUrl}`);
+            await this._loadHash(event.sender, relativeUrl);
         });
         ipcMain.on(
             "cimon-token-ready",

@@ -1,5 +1,7 @@
 import {Notification, NotificationConstructorOptions} from "electron";
 import log from "electron-log";
+import {createNotifier} from "node-win-toast-notifier";
+
 
 export class Notifier {
     private static _saved: Record<string, Notification> = {};
@@ -17,9 +19,17 @@ export class Notifier {
     }
 
 
-    static showWithActions(title: string, comment: string, actions: Electron.CrossProcessExports.NotificationAction[],
+    static async showWithActions(title: string, comment: string, actions: Electron.CrossProcessExports.NotificationAction[],
                            onAction: (selectedAction?: Electron.CrossProcessExports.NotificationAction) => Promise<void>) {
-        const toast = `\
+        const notifier = await createNotifier({
+            application_id: 'notifier-test', // use process.execPath after start menu fix
+            connectToExistingService: false,
+            port: 7070,
+        });
+        const notification = await notifier.notify({
+            body: 'Hello'
+        });
+        /*const toast = `\
 <toast>
     <visual>
         <binding template="ToastGeneric">
@@ -69,7 +79,7 @@ export class Notifier {
         notification.on('click', event => {
             log.info('click');
         });
-        notification.show();
+        notification.show();*/
 
     }
 }
