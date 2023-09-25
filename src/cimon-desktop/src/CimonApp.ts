@@ -1,5 +1,3 @@
-import Path from "path";
-import isDev from "electron-is-dev";
 
 import {
     app,
@@ -15,13 +13,14 @@ import {
     WebContents
 } from "electron";
 import {ConnectionState, SignalRClient} from "./SignalRClient";
-import {CimonConfig} from "../cimon-config";
 import log from "electron-log";
+import isDev from "electron-is-dev";
 
 const process = require('process');
 import * as electron from "electron";
 import {Notifier} from "./notifier";
 import path from "path";
+import { options } from "./options";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -31,42 +30,6 @@ interface MentionInfo {
     commentsCount: number;
 }
 
-class IconLocator {
-    constructor(private _basename: string) {
-    }
-
-    public get normal() {
-        return `${options.resourcesPath}/icons/${this._basename}/icon.png`;
-    }
-
-    public get tray() {
-        const iconExt = process.platform === 'win32' ? 'ico' : 'png';
-        //mac resize to 16-24px
-        return `${options.resourcesPath}/icons/${this._basename}/icon.${iconExt}`;
-    }
-}
-
-const options = {
-    baseUrl: CimonConfig.url,
-    waitForConnectionRetryDelay: 10000,
-
-    get entrypoint() {
-        return `${options.baseUrl}`;
-    },
-    get lastMonitor() {
-        return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
-    },
-    get resourcesPath() {
-        if (isDev) {
-            return Path.join(__dirname, "..", "..");
-        }
-        return process.resourcesPath;
-    },
-    icons: {
-        green: new IconLocator("green"),
-        red: new IconLocator("red"),
-    },
-};
 type TokenInfo = {
     userName: string;
     token: string;
@@ -129,9 +92,10 @@ export class CimonApp {
     }
 
     private async _initMainWindow() {
-        //this._session = session.fromPartition("persist:cimon", { cache: true }); //session.defaultSession;
-        this._session = session.defaultSession;
-        //this._session.allowNTLMCredentialsForDomains('*');
+        this._session = isDev ? session.fromPartition("persist:cimon", { cache: true }) : session.defaultSession;
+        if (isDev){
+            this._session.allowNTLMCredentialsForDomains('*');
+        }
         this._window = new BrowserWindow({
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
@@ -140,8 +104,7 @@ export class CimonApp {
             },
             show: false,
             paintWhenInitiallyHidden: false,
-            //autoHideMenuBar: true
-            //fullscreen: true
+            autoHideMenuBar: !isDev
         });
         //await this._window.webContents.openDevTools();
         this._window.on("close", (evt) => {
@@ -284,6 +247,7 @@ export class CimonApp {
         await this._startSignalR();
     }
 
+    private _restartMenuClicked =  false;
     private _rebuildMenu() {
         const versionMenuLabel = this._updateReady ? `Restart to update` : `Version: ${app.getVersion()}`;
         const template: MenuItemConstructorOptions[] = [
@@ -311,7 +275,15 @@ export class CimonApp {
                 id: "version",
                 label: versionMenuLabel,
                 enabled: this._updateReady,
-                click: () => autoUpdater.quitAndInstall()
+                click: async () => {
+                    if (this._restartMenuClicked){
+                        app.quit();
+                        return;
+                    }
+                    this._restartMenuClicked = true;
+                    await this._signalR.disconnect();
+                    return autoUpdater.quitAndInstall();
+                }
             },
             {id: "exit", label: "Exit", type: "normal", click: () => app.exit()},
         ];

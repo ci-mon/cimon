@@ -1,7 +1,7 @@
 {
   "name": "cimon-desktop",
   "productName": "cimon-desktop",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "module": "main.js",
@@ -48,6 +48,7 @@
     "vue-eslint-parser": "^9.3.1"
   },
   "dependencies": {
+    "@electron-forge/shared-types": "^6.4.2",
     "@mdi/font": "^7.2.96",
     "@microsoft/signalr": "^8.0.0-preview.7.23375.9",
     "@vitejs/plugin-vue": "^4.3.4",

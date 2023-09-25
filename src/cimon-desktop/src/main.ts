@@ -5,16 +5,24 @@ import {AutoUpdater} from "./auto-updater";
 import log from "electron-log";
 import isDev from "electron-is-dev";
 import process from "process";
+import {registerOnSquirrelStartup} from "node-win-toast-notifier";
 Object.assign(console, log.functions);
+import {build} from "./../package.json"
+import {options} from "./options";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
-    app.quit();
+    (async () => {
+        await registerOnSquirrelStartup(build.appId, 'cimon desktop', options.icons.green.big_png_win);
+        app.quit();
+    })();
 }
 
 if (isDev) {
     // https://www.electronjs.org/docs/latest/tutorial/notifications#windows
     app.setAppUserModelId(process.execPath);
+} else {
+    app.setAppUserModelId(build.appId);
 }
 const cimonApp = new CimonApp();
 

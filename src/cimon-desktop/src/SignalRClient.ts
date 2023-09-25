@@ -29,6 +29,9 @@ class ReconnectionPolicy implements IRetryPolicy {
 }
 
 export class SignalRClient {
+    disconnect() {
+        return this._connection.stop()
+    }
     onConnectionStateChanged: (
         state: ConnectionState,
         errorMessage?: string

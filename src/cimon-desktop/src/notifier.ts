@@ -1,6 +1,7 @@
 import {Notification, NotificationAction, NotificationConstructorOptions} from "electron";
 import {createNotifier, NotificationBody, NotificationSounds, StatusMessage} from "node-win-toast-notifier";
 import {Notifier as ToastNotifier} from "node-win-toast-notifier/lib/notifier";
+import {build} from './../package.json';
 
 export class Notifier {
     private static _saved: Record<string, Notification> = {};
@@ -23,10 +24,12 @@ export class Notifier {
     private async _getNotifier() {
         if (!Notifier._notifier) {
             Notifier._notifier = await createNotifier({
-                application_id: 'cimon-desktop', // use process.execPath after start menu fix
-                connectToExistingService: false
+                application_id: build.appId, // use process.execPath after start menu fix
+                connectToExistingService: false,
+                port: 0
             });
         }
+        // TODO Notifier._notifier.onClosed += recreate;
         return Notifier._notifier;
     }
 
@@ -40,7 +43,7 @@ export class Notifier {
                 type: 'image',
                 'hint-crop': 'circle',
                 src: imageUrl,
-                placement: "appLogoOverride"
+                placement: "hero"
             });
         }
         body.push({

@@ -33,8 +33,11 @@ public class NativeAppService
 	private IReadOnlyCollection<NativeAppRelease> GetReleasesInternal() {
 		var results = new List<NativeAppRelease>();
 		using var cryptoProvider = SHA1.Create();
-		foreach (var directory in Directory.EnumerateDirectories(_settings.ArtifactsPath)
-				.Select(x => new DirectoryInfo(x))) {
+		var artifactsDir = new DirectoryInfo(_settings.ArtifactsPath);
+		if (!artifactsDir.Exists) {
+			artifactsDir.Create();
+		}
+		foreach (var directory in artifactsDir.EnumerateDirectories()) {
 			if (!Version.TryParse(directory.Name, out var version)) {
 				continue;
 			}
