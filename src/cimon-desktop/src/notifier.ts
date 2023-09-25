@@ -43,7 +43,7 @@ export class Notifier {
                 type: 'image',
                 'hint-crop': 'circle',
                 src: imageUrl,
-                placement: "hero"
+                placement: "appLogoOverride"
             });
         }
         body.push({
