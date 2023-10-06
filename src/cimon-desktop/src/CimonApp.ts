@@ -18,7 +18,7 @@ import isDev from "electron-is-dev";
 
 const process = require('process');
 import * as electron from "electron";
-import {Notifier} from "./notifier";
+import {NotifierWrapper} from "./notifierWrapper";
 import path from "path";
 import { options } from "./options";
 
@@ -196,7 +196,7 @@ export class CimonApp {
         }
         if (ConnectionState.Disconnected === state) {
             this._onDisconnected();
-            Notifier.notify('main', {
+            NotifierWrapper.notify('main', {
                 title: "Something went wrong",
                 subtitle: `Connection lost`
             });
@@ -207,7 +207,7 @@ export class CimonApp {
             previousState !== ConnectionState.Disconnected
         ) {
             this._onDisconnected();
-            Notifier.notify('main', {
+            NotifierWrapper.notify('main', {
                 title: "Oops",
                 subtitle: "Can't connect",
             });

@@ -1,11 +1,14 @@
-import {defineConfig, Plugin} from 'vite';
+import {build} from "./package.json"
+
+import {defineConfig, Plugin, ResolvedConfig} from 'vite';
 import path from "path";
 import fs from "fs";
 
-// https://vitejs.dev/config
-export default defineConfig(async ({command, mode}) => {
 
-    let viteConfig = null, notifierCopied;
+// https://vitejs.dev/config
+export default defineConfig(async () => {
+
+    let viteConfig: ResolvedConfig = null, notifierCopied: boolean;
     return {
         build: {
             sourcemap: true
@@ -22,8 +25,8 @@ export default defineConfig(async ({command, mode}) => {
                         let source = path.resolve(__dirname, `./node_modules/node-win-toast-notifier/bin/win-toast-notifier.exe`);
                         let dest = path.resolve(viteConfig.build.outDir, '../bin');
                         fs.mkdirSync(dest);
-                        fs.copyFileSync(source, path.resolve(dest, 'win-toast-notifier.exe'));
-                        console.info('win-toast-notifier.exe copied!')
+                        fs.copyFileSync(source, path.resolve(dest, build.notifier_exe_name));
+                        console.info('cimon-desktop-notifier.exe copied!')
                     }
                     return Promise.resolve(null);
                 }

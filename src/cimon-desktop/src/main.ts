@@ -5,10 +5,14 @@ import {AutoUpdater} from "./auto-updater";
 import log from "electron-log";
 import isDev from "electron-is-dev";
 import process from "process";
-import {registerOnSquirrelStartup} from "node-win-toast-notifier";
+import {registerOnSquirrelStartup, Notifier, registerAppId} from "node-win-toast-notifier";
+
 Object.assign(console, log.functions);
 import {build} from "./../package.json"
 import {options} from "./options";
+import {NotifierWrapper} from "./notifierWrapper";
+
+Notifier.ExecutableName = build.notifier_exe_name;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -19,8 +23,11 @@ if (require("electron-squirrel-startup")) {
 }
 
 if (isDev) {
-    // https://www.electronjs.org/docs/latest/tutorial/notifications#windows
-    app.setAppUserModelId(process.execPath);
+    NotifierWrapper.AppId = process.execPath;
+    app.setAppUserModelId(NotifierWrapper.AppId);
+    (async () => {
+        await registerAppId(NotifierWrapper.AppId)
+    })();
 } else {
     app.setAppUserModelId(build.appId);
 }

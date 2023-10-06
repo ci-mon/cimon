@@ -5,9 +5,9 @@ import {
     IRetryPolicy,
     RetryContext,
 } from "@microsoft/signalr";
-import {autoUpdater, Notification, NotificationAction} from "electron";
+import {autoUpdater, Notification} from "electron";
 import log from "electron-log";
-import {Notifier} from "./notifier";
+import {NotifierWrapper} from "./notifierWrapper";
 import {StatusMessageType} from "node-win-toast-notifier";
 
 export enum ConnectionState {
@@ -40,9 +40,8 @@ export class SignalRClient {
         mentions: []
     ) => void;
     onOpenDiscussionWindow: (url: string) => void;
-    private _userName: string;
     private _connection: HubConnection;
-    private _notifier = new Notifier();
+    private _notifier = new NotifierWrapper();
 
     constructor(
         private _baseUrl: string,
