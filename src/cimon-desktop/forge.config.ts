@@ -4,6 +4,7 @@ import { MakerZIP } from '@electron-forge/maker-zip';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import {PublisherCimon} from "./publisher-cimon";
 import {CimonConfig} from "./cimon-config";
+import RemoveNodeModulesFoldersPlugin from "./remove-unneded-modules.forge.plugin";
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -48,6 +49,9 @@ const config: ForgeConfig = {
         },
       ],
     }),
+    new RemoveNodeModulesFoldersPlugin({
+      foldersToRemove: ['prettier', 'node-win-toast-notifier']
+    })
   ],
 };
 
