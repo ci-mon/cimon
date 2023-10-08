@@ -30,7 +30,7 @@ export default class RemoveNodeModulesFoldersPlugin extends PluginBase<RemoveNod
                             const folderPath = path.join(outputPath, 'resources', 'app', 'node_modules', folderName);
                             try {
                                 if (fs.existsSync(folderPath)){
-                                    fs.rmdirSync(folderPath, { recursive: true });
+                                    fs.rmSync(folderPath, { recursive: true });
                                     d(`Removed folder: ${folderPath}`);
                                 }
                             } catch (err) {
