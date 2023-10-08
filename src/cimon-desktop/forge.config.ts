@@ -50,7 +50,7 @@ const config: ForgeConfig = {
       ],
     }),
     new RemoveNodeModulesFoldersPlugin({
-      foldersToRemove: ['prettier', 'node-win-toast-notifier', '@microsoft', 'web-streams-polyfill']
+      foldersToRemove: ['prettier', 'node-win-toast-notifier', '@microsoft', 'web-streams-polyfill', '.vite']
     })
   ],
 };
