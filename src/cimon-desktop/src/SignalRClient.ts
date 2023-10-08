@@ -32,6 +32,7 @@ export class SignalRClient {
     disconnect() {
         return this._connection.stop()
     }
+
     onConnectionStateChanged: (
         state: ConnectionState,
         errorMessage?: string
@@ -86,8 +87,10 @@ export class SignalRClient {
         buildId: string,
         url: string,
         title: string,
-        comment: string
+        comment: string,
+        authorEmail: string
     ) {
+        // TODO refactor this check to notification wrapper
         if (process.platform === 'darwin') {
             const notification = new Notification({
                 title: title,
@@ -122,10 +125,10 @@ export class SignalRClient {
             });
             return;
         }
-        //todo get author email
-         let result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment, 'v.artemchuk@creatio.com');
-         switch (result.type){
-             case StatusMessageType.Activated:{
+        let result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment,
+            authorEmail);
+        switch (result.type) {
+            case StatusMessageType.Activated: {
                 switch (result.info.arguments) {
                     case 'open':
                         this.onOpenDiscussionWindow?.(url);
@@ -143,8 +146,8 @@ export class SignalRClient {
                         await this._replyToNotification(buildId, NotificationQuickReply.None, result.info.inputs['replyText']);
                         break;
                 }
-             }
-         }
+            }
+        }
     }
 
     private async _replyToNotification(

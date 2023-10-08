@@ -11,7 +11,7 @@ interface RemoveNodeModulesFoldersPluginOptions {
 const d = debug('electron-forge:plugin:removeNodeModulesFoldersPlugin');
 
 export default class RemoveNodeModulesFoldersPlugin extends PluginBase<RemoveNodeModulesFoldersPluginOptions> {
-    name: 'remove-node-modules-folders-plugin';
+    name = 'remove-node-modules-folders-plugin';
     init(_dir: string, _config: ResolvedForgeConfig) {
         this.setDirectories(_dir);
     }
@@ -39,7 +39,7 @@ export default class RemoveNodeModulesFoldersPlugin extends PluginBase<RemoveNod
                         }
                     }
 
-                }, 'Removing unneeded packages')
+                }, `Removing unneeded packages: ${this.config.foldersToRemove.join(',')}`)
             ]
         }
     }

@@ -1,7 +1,7 @@
 {
   "name": "cimon-desktop",
   "productName": "cimon-desktop",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "module": "main.js",
@@ -9,7 +9,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "make-mac": "electron-forge make -- --platform=darwin",
+    "make:mac": "electron-forge make -- --platform=darwin",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
@@ -59,7 +59,7 @@
     "electron-log": "^4.4.8",
     "electron-request": "^1.8.3",
     "electron-squirrel-startup": "^1.0.0",
-    "node-win-toast-notifier": "^0.1.12",
+    "node-win-toast-notifier": "^0.1.13",
     "nodejs-gravatar": "^1.0.2"
   }
 }

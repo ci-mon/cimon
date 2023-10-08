@@ -182,7 +182,7 @@ export class CimonApp {
 
     private _currentState: ConnectionState;
 
-    private _onConnectionStateChanged(state: ConnectionState) {
+    private async _onConnectionStateChanged(state: ConnectionState) {
         if (this._currentState == state) {
             return;
         }
@@ -191,12 +191,14 @@ export class CimonApp {
         this._currentState = state;
         this._updateContextMenuVisibility();
         if (state === ConnectionState.Connected) {
+            // TODO fix not hiding problem
+            await NotifierWrapper.hide('connection');
             this._onConnected();
             return;
         }
         if (ConnectionState.Disconnected === state) {
             this._onDisconnected();
-            NotifierWrapper.notify('main', {
+            await NotifierWrapper.notify('connection', {
                 title: "Something went wrong",
                 subtitle: `Connection lost`
             });
@@ -207,7 +209,7 @@ export class CimonApp {
             previousState !== ConnectionState.Disconnected
         ) {
             this._onDisconnected();
-            NotifierWrapper.notify('main', {
+            await NotifierWrapper.notify('connection', {
                 title: "Oops",
                 subtitle: "Can't connect",
             });

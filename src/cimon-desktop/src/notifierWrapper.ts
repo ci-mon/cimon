@@ -4,17 +4,22 @@ import {Notifier as ToastNotifier} from "node-win-toast-notifier/lib/notifier";
 import {build} from './../package.json';
 import process from "process";
 
-interface INotification{
-    close(): void;
+interface INotification {
+    remove(): Promise<void>;
 }
 
 export class NotifierWrapper {
     public static AppId: string = build.appId;
     private static _saved: Record<string, INotification> = {};
 
+    static async hide(id: string) {
+        await NotifierWrapper._saved[id]?.remove();
+        delete NotifierWrapper._saved[id];
+    }
+
     static async notify(id: string, config: NotificationConstructorOptions) {
-        this._saved[id]?.close();
-        if (process.platform === 'win32'){
+        await NotifierWrapper.hide(id);
+        if (process.platform === 'win32') {
             const notifier = await NotifierWrapper._getNotifier();
             const notification = await notifier.notify({
                 body: [
@@ -29,22 +34,23 @@ export class NotifierWrapper {
                 ],
             });
             notification.onChange(() => {
-                delete this._saved[id];
+                delete NotifierWrapper._saved[id];
             });
-            this._saved[id] = {
-                close() {
-                    notification.remove();
-                }
-            };
+            NotifierWrapper._saved[id] = notification;
             return;
         }
         const notification = new Notification({
             ...config
         });
-        this._saved[id] = notification;
+        NotifierWrapper._saved[id] = {
+            remove(): Promise<void> {
+                notification.close();
+                return Promise.resolve();
+            }
+        };
         notification.show();
         notification.on("close", (_) => {
-            delete this._saved[id];
+            delete NotifierWrapper._saved[id];
         });
     }
 
@@ -57,7 +63,6 @@ export class NotifierWrapper {
                 application_id: NotifierWrapper.AppId, // use process.execPath after start menu fix
             });
         }
-        // TODO Notifier._notifier.onClosed += recreate;
         return NotifierWrapper._notifier;
     }
 
