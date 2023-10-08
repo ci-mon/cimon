@@ -39,7 +39,7 @@ public class BuildDiscussionService : IBuildDiscussionService
 			Comments = currentState.Comments.Add(comment)
 		};
 		var commentSimpleText = ExtractText(comment);
-		await _notificationService.Notify(BuildId, comment.Id, data.Author.Name, comment.Mentions, commentSimpleText);
+		await _notificationService.Notify(BuildId, comment.Id, data.Author, comment.Mentions, commentSimpleText);
 		_state.OnNext(state);
 	}
 

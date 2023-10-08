@@ -10,7 +10,7 @@ namespace Cimon.Users;
 
 public interface IUserClientApi
 {
-	Task NotifyWithUrl(string buildId, string url, string header, string message);
+	Task NotifyWithUrl(string buildId, string url, string header, string message, string authorEmail);
 	Task UpdateMentions(IEnumerable<MentionInfo> mentions);
 	Task CheckForUpdates();
 }

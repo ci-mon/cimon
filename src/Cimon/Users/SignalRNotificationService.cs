@@ -14,10 +14,11 @@ public class SignalRNotificationService : INotificationService, INotificationHan
 		_hubContext = hubContext;
 	}
 
-	public async Task Notify(string buildId, string commentId, string messageAuthor, 
+	public async Task Notify(string buildId, string commentId, User messageAuthor, 
 			IReadOnlyCollection<MentionedEntityId> groups, string comment) {
-		await _hubContext.Clients.Groups(groups.Select(x=>x.Name)).NotifyWithUrl(buildId, $"/buildDiscussion/{buildId}#{commentId}",
-			$"{messageAuthor} mentioned you in a comment", comment);
+		await _hubContext.Clients.Groups(groups.Select(x=>x.Name))
+			.NotifyWithUrl(buildId, $"/buildDiscussion/{buildId}#{commentId}",
+				$"{messageAuthor.Name} mentioned you in a comment", comment, messageAuthor.Email ?? string.Empty);
 	}
 
 	public async Task Handle(NativeAppPublished notification, CancellationToken cancellationToken) {
