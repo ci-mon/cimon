@@ -24,5 +24,5 @@ public record User(UserName Name, string FullName, IReadOnlyCollection<string> T
 
 public static class Utils
 {
-	public static bool IsGuest(this User user) => user == User.Guest;
+	public static bool IsGuest(this User? user) => user == User.Guest;
 }

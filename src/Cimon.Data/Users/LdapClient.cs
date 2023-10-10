@@ -6,10 +6,24 @@ using Microsoft.Extensions.Options;
 
 namespace Cimon.Data.Users;
 
+using System.DirectoryServices.AccountManagement;
+using System.Runtime.Versioning;
+
 public class LdapClientSecrets
 {
 	public string Host { get; set; } = "dc.com";
 	public TimeSpan ConnectionTimeout { get; set; }
+	public string[] TeamGroups { get; set; } = Array.Empty<string>();
+	public string[] AdminGroups { get; set; } = Array.Empty<string>();
+}
+
+public class LdapUserInfo
+{
+	required public string SamAccountName { get; set; }
+	required public string DisplayName { get; set; }
+	required public string EmailAddress { get; set; }
+	public List<string> Teams { get; set; }
+	public bool IsAdmin { get; set; }
 }
 
 public class LdapClient
@@ -46,5 +60,30 @@ public class LdapClient
 			_logger.LogWarning(e, "Error during user [{User}] auth", userName);
 		}
 		return false;
+	}
+
+	[SupportedOSPlatform("windows")]
+	public LdapUserInfo FindUserInfo(string name) {
+		var context = new PrincipalContext(ContextType.Domain, _options.Host);
+		UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, name) ??
+			throw new Exception($"User {name} is not found in {_options.Host}");
+		var user = new LdapUserInfo {
+			SamAccountName = userPrincipal.SamAccountName,
+			DisplayName = userPrincipal.DisplayName,
+			EmailAddress = userPrincipal.EmailAddress?.ToLowerInvariant() ?? string.Empty,
+			Teams = new List<string>()
+		};
+		var teamGroups = _options.TeamGroups.ToHashSet();
+		foreach (Principal group in userPrincipal.GetGroups(context)) {
+			bool isValidTeam = teamGroups.Contains(group.Name) ||
+				teamGroups.Any(g => group.IsMemberOf(context, IdentityType.SamAccountName, g));
+			if (isValidTeam) {
+				user.Teams.Add(group.SamAccountName);
+				if (_options.AdminGroups.Any(g => g.Equals(group.Name, StringComparison.OrdinalIgnoreCase))) {
+					user.IsAdmin = true;
+				}
+			}
+		}
+		return user;
 	}
 }

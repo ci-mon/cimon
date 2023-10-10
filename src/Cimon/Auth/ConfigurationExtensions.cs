@@ -3,6 +3,8 @@ using System.Security.Claims;
 using Cimon.Data.Users;
 
 namespace Cimon.Auth;
+
+using System.Security.Principal;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -70,15 +72,20 @@ public static class ConfigurationExtensions
 		public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) {
 			return builder => {
 				builder.Use(async (httpContext, func) => {
-					if (httpContext.User.Identity?.Name is { Length: > 0 } name 
-							&& await httpContext.RequestServices.GetRequiredService<UserManager>()
-								.IsDeactivated(name)) {
+					IIdentity? identity = httpContext.User.Identity;
+					if (identity?.Name is { Length: > 0 } name
+							&& await GetIsDeactivated(httpContext, name)) {
 						await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 					}
 					await func.Invoke(httpContext);
 				});
 				next(builder);
 			};
+		}
+
+		private static async Task<bool> GetIsDeactivated(HttpContext httpContext, string name) {
+			var userManager = httpContext.RequestServices.GetRequiredService<UserManager>();
+			return await userManager.IsDeactivated(name);
 		}
 	}
 

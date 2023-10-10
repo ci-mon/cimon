@@ -31,3 +31,9 @@ window.blazorExtensions = {
         document.cookie = `${name}=${value}${expires}; path=/`;
     }
 }
+class AuthApi {
+    async autologin(returnUrl){
+        window.location.href = `/auth/autologin?returnUrl=${returnUrl}`;
+    }
+}
+window.authAPI = new AuthApi(); 

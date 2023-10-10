@@ -57,6 +57,12 @@
         NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}");
     }
 
-    private string GetDuration() => $"({TimeSpan.FromSeconds(Math.Round(Info.Duration.TotalSeconds)).ToString("g").ReplaceFirst("0:", string.Empty)})";
+    private string GetDuration() {
+        string duration = TimeSpan.FromSeconds(Math.Round(Info.Duration.TotalSeconds)).ToString("g");
+        if (duration.StartsWith("0:")) {
+            duration = duration.Substring(2);
+        }
+        return $"({duration})";
+    }
 
 }

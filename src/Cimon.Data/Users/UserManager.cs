@@ -12,6 +12,9 @@ using UserModel = Cimon.DB.Models.User;
 
 namespace Cimon.Data.Users;
 
+using System.DirectoryServices.AccountManagement;
+using System.Runtime.InteropServices;
+
 public class UserManager : ITechnicalUsers
 {
 	private record UserCache(UserModel Model, User User);
@@ -56,7 +59,8 @@ public class UserManager : ITechnicalUsers
 
 	public async Task<bool> IsDeactivated(UserName name) {
 		var userCache = await GetUserCache(name);
-		return userCache?.Model.IsDeactivated ?? true;
+		// if we have no user in db we should not try to sign out him from cookie scheme
+		return userCache?.Model.IsDeactivated ?? false;
 	}
 
 	private IReadOnlyCollection<string> GetRoles(List<Role> rootRoles, List<Role> allRoles) {
@@ -94,24 +98,48 @@ public class UserManager : ITechnicalUsers
 	}
 
 	public async Task<User?> FindOrCreateUser(UserName name) {
-		var user = await FindUser(name);
-		if (user is not null) {
-			return user.User;
+		UserCache? userCache = await GetUserCache(name);
+		if (userCache is not null) {
+			return userCache.User;
 		}
-		await using var dbContext = await _dbContextFactory.CreateDbContextAsync(); 
-		var allTeams = await dbContext.Teams.ToListAsync();
-		/*
-		 TODO create user
-		 var server = $"{domain}.com";
-		  var context = new PrincipalContext (ContextType.Domain, server);
-		 * UserPrincipal user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, userName.Name);
-		user.DisplayName.Dump();
-		foreach (GroupPrincipal group in user.GetGroups(context))
-		{
-		    group.Name.Dump();
+		await CreateUserInDb(name);
+		_cachedUsers.Remove(name.Name, out _);
+		userCache = await GetUserCache(name);
+		return userCache?.User;
+	}
+
+	private async Task CreateUserInDb(UserName name) {
+		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			return;
 		}
-		 */
-		return null;
+		await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+		var userInfo = _ldapClient.FindUserInfo(name.Name);
+		var user = new Cimon.DB.Models.User {
+			Name = userInfo.SamAccountName,
+			FullName = userInfo.DisplayName,
+			Email = userInfo.EmailAddress
+		};
+		foreach (var teamName in userInfo.Teams) {
+			Team? team = await dbContext.Teams.FirstOrDefaultAsync(t => t.Name == teamName);
+			if (team is null) {
+				team = new Team {
+					Name = teamName
+				};
+				dbContext.Teams.Add(team);
+				await dbContext.SaveChangesAsync();
+			}
+			user.Teams.Add(team);
+		}
+		if (userInfo.IsAdmin) {
+			if (await dbContext.Teams.FirstOrDefaultAsync(x => x.Name == "admins") is { } adminsTeam) {
+				user.Teams.Add(adminsTeam);
+			}
+			if (await dbContext.Roles.FirstOrDefaultAsync(x => x.Name == "admin") is { } adminRole) {
+				user.Roles.Add(adminRole);
+			}
+		}
+		dbContext.Users.Add(user);
+		await dbContext.SaveChangesAsync();
 	}
 
 	public async Task<bool> SignInAsync(UserName userName, string password) {
@@ -131,7 +159,8 @@ public class UserManager : ITechnicalUsers
 			.Where(u => EF.Functions.Like(u.FullName, $"%{searchTerm}%"))
 			.ToAsyncEnumerable();
 		await foreach (var user in users) {
-			var mainTeam = user.Teams.SingleOrDefault(t => !t.ChildTeams.Any());
+			// TODO how to find main team? 
+			var mainTeam = user.Teams.FirstOrDefault(t => !t.ChildTeams.Any());
 			yield return new UserInfo(user.Name, user.FullName, mainTeam?.Name, user.Teams.Select(CreateTeamInfo).ToImmutableList());
 		}
 	}
@@ -157,11 +186,11 @@ public class UserManager : ITechnicalUsers
 		if (identity is null || !identity.IsAuthenticated || name is null) {
 			return User.Guest;
 		}
-		var userCache = await GetUserCache((UserName)name);
+		var userCache = await GetUserCache(name);
 		return userCache?.User ?? User.Guest;
 	}
 
-	private Task<UserCache?> GetUserCache(UserName name) => _cachedUsers.GetOrAdd(name, FindUser);
+	private Task<UserCache?> GetUserCache(UserName name) => _cachedUsers.GetOrAdd(name.Name, FindUser);
 
 	private IImmutableList<Claim> CreateClaims(UserModel user, IEnumerable<string> roles,
 			IEnumerable<string> teams) {

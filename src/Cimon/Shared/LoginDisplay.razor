@@ -2,6 +2,8 @@
 @using Cimon.Profile
 @inject ContextMenuService ContextMenuService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
 <AuthorizeView>
     <Authorized>
         <ProfileComponent />
@@ -9,16 +11,12 @@
     <NotAuthorized>
         <RadzenMenu >
             <RadzenMenuItem Text="Login" Icon="login">
-                <RadzenMenuItem Icon="login" Click="OnLoginMenuClicked" Text="Auto" Path="/auth/autologin?returnUrl=/"></RadzenMenuItem>
-                <RadzenMenuItem Icon="password" Click="OnLoginMenuClicked" Text="Password" Path="/Login"></RadzenMenuItem>
+                <RadzenMenuItem Icon="login" Text="Auto" Path="/auth/autologin?returnUrl=/"></RadzenMenuItem>
+                <RadzenMenuItem Icon="password"
+                                Text="Password"
+                                Path="/Login"></RadzenMenuItem>
             </RadzenMenuItem>
         </RadzenMenu>
     </NotAuthorized>
 </AuthorizeView>
 
-@code {
-
-    void OnLoginMenuClicked(MenuItemEventArgs args) {
-        NavigationManager.NavigateTo(args.Path);
-    }
-}

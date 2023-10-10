@@ -10,7 +10,14 @@
             <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user.Email"></RadzenGravatar>
         </Template>
         <ChildContent>
-            <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
+            @if (_user?.IsGuest() ?? false) {
+                <RadzenProfileMenuItem Icon="login" Text="Login: Auto" Path="/auth/autologin?returnUrl=/"></RadzenProfileMenuItem>
+                <RadzenProfileMenuItem Icon="password"
+                                       Text="Login: Password"
+                                       Path="/Login"></RadzenProfileMenuItem>
+            } else {
+                <RadzenProfileMenuItem Text="Logout" Path="/auth/logout" Icon="logout"></RadzenProfileMenuItem>
+            }
         </ChildContent>
     </RadzenProfileMenu>
     <MentionsInfoComponent />
