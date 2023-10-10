@@ -8,13 +8,13 @@ interface INotification {
     remove(): Promise<void>;
 }
 
+const savedNotifications: Record<string, INotification> = {};
 export class NotifierWrapper {
     public static AppId: string = build.appId;
-    private static _saved: Record<string, INotification> = {};
 
     static async hide(id: string) {
-        await NotifierWrapper._saved[id]?.remove();
-        delete NotifierWrapper._saved[id];
+        await savedNotifications[id]?.remove();
+        delete savedNotifications[id];
     }
 
     static async notify(id: string, config: NotificationConstructorOptions) {
@@ -33,16 +33,18 @@ export class NotifierWrapper {
                     }
                 ],
             });
-            notification.onChange(() => {
-                delete NotifierWrapper._saved[id];
+            notification.onChange((statusMessage) => {
+                if (statusMessage.dismissReason === 'UserCanceled' || statusMessage.type === 'Activated') {
+                    delete savedNotifications[id];
+                }
             });
-            NotifierWrapper._saved[id] = notification;
+            savedNotifications[id] = notification;
             return;
         }
         const notification = new Notification({
             ...config
         });
-        NotifierWrapper._saved[id] = {
+        savedNotifications[id] = {
             remove(): Promise<void> {
                 notification.close();
                 return Promise.resolve();
@@ -50,7 +52,7 @@ export class NotifierWrapper {
         };
         notification.show();
         notification.on("close", (_) => {
-            delete NotifierWrapper._saved[id];
+            delete savedNotifications[id];
         });
     }
 

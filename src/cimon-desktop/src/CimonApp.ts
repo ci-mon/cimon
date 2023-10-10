@@ -218,9 +218,14 @@ export class CimonApp {
         this._currentState = state;
         this._updateContextMenuVisibility();
         if (state === ConnectionState.Connected) {
-            // TODO fix not hiding problem
             await NotifierWrapper.hide('connection');
             this._onConnected();
+            await NotifierWrapper.notify('connection', {
+                title: "All good",
+                subtitle: `Connection restored`
+            });
+            await new Promise<void>(r => setTimeout(r, 5000));
+            await NotifierWrapper.hide('connection');
             return;
         }
         if (ConnectionState.Disconnected === state) {
