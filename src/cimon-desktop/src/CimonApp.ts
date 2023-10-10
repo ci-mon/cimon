@@ -220,7 +220,7 @@ export class CimonApp {
             this._onConnected();
             await NotifierWrapper.notify('connection', {
                 title: "All good",
-                subtitle: `Connection restored`
+                subtitle: `Connected`
             });
             await new Promise<void>(r => setTimeout(r, 5000));
             await NotifierWrapper.hide('connection');
