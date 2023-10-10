@@ -44,6 +44,7 @@ type TokenDataReceiver = PromiseInfo<TokenInfo>;
 export class CimonApp {
     private _window: Electron.CrossProcessExports.BrowserWindow;
     private _discussionWindow: Electron.CrossProcessExports.BrowserWindow;
+    private _loginWindow: Electron.CrossProcessExports.BrowserWindow;
 
     private tokenDataReceiver: TokenDataReceiver;
     private _mentions: MentionInfo[] = [];
@@ -92,7 +93,7 @@ export class CimonApp {
     }
 
     private async _initMainWindow() {
-        this._session = isDev ? session.fromPartition("persist:cimon", { cache: true }) : session.defaultSession;
+        this._session = session.fromPartition("persist:cimon", { cache: true });
         if (isDev){
             this._session.allowNTLMCredentialsForDomains('*');
         }
@@ -150,6 +151,32 @@ export class CimonApp {
     private _trayContextMenu: Electron.Menu;
     private _session: Electron.Session;
     private _signalR: SignalRClient;
+
+    private async _openLoginWindow(){
+        if (this._loginWindow == null) {
+            this._loginWindow = new BrowserWindow({
+                webPreferences: {
+                    session: this._session,
+                    allowRunningInsecureContent: true,
+                },
+                show: false,
+                paintWhenInitiallyHidden: true,
+                autoHideMenuBar: true,
+                center: true,
+                width: 300,
+                height: 250,
+                frame: false
+            });
+            electron.globalShortcut.register('Escape', () => {
+                if (this._loginWindow.isVisible()) {
+                    this._loginWindow.hide();
+                }
+            });
+        }
+        await this._loginWindow.loadURL(options.baseUrl + '/Login');
+        this._loginWindow.center();
+        this._loginWindow.show();
+    }
 
     private async _onOpenDiscussionWindow(url: string) {
         if (this._discussionWindow == null) {
@@ -371,21 +398,16 @@ export class CimonApp {
 
     private _subscribeForEvents() {
         ipcMain.handle("cimon-get-base-url", () => options.baseUrl);
-        ipcMain.handle("cimon-show-window", (event, code: "login" | string) => {
+        ipcMain.handle("cimon-show-window", async (event, code: "login" | string) => {
             if (code == "login") {
                 if (this._window.isVisible()) {
-                    return;
-                }
-                this._window.webContents.once("did-redirect-navigation", () => {
-                    this._window.setSize(800, 600);
-                    this._window.center();
-                });
-                this._window.setSize(500, 260);
-                this._window.show();
-                this._window.center();
-                this._window.webContents.session.webRequest.onBeforeRedirect(() => {
                     this._window.hide();
-                    this._window.webContents.session.webRequest.onBeforeRedirect(null);
+                }
+                await this._openLoginWindow()
+                this._loginWindow.webContents.once("did-redirect-navigation", async () => {
+                    this._loginWindow.destroy();
+                    this._loginWindow = null;
+                    await this._window.loadURL(options.entrypoint);
                 });
             }
         });
