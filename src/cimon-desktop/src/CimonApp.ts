@@ -94,9 +94,7 @@ export class CimonApp {
 
     private async _initMainWindow() {
         this._session = session.fromPartition("persist:cimon", { cache: true });
-        if (isDev){
-            this._session.allowNTLMCredentialsForDomains('*');
-        }
+        this._session.allowNTLMCredentialsForDomains('*');
         this._window = new BrowserWindow({
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
