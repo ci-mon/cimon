@@ -29,6 +29,9 @@ export const options = {
     get entrypoint() {
         return `${options.baseUrl}`;
     },
+    get autologin() {
+        return `${options.baseUrl}/auth/autologin?returnUrl=/`;
+    },
     get lastMonitor() {
         return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
     },

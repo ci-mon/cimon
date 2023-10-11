@@ -8,11 +8,10 @@ class Cimon {
     async init() {
         if (this._disabled) return;
         const baseUrl = await ipcRenderer.invoke('cimon-get-base-url');
-        const tokenUrl = `${baseUrl}/auth/token`;
-        const result = await fetch(tokenUrl);
+        const result = await fetch(`${baseUrl}/auth/token`, {credentials: 'same-origin'});
         if (result.ok) {
             const tokenResponse = await result.json();
-            await ipcRenderer.send('cimon-token-ready', tokenResponse);
+            ipcRenderer.send('cimon-token-ready', tokenResponse);
             return;
         }
         window.location.href = `${baseUrl}${this._loginPathName}`;
@@ -41,9 +40,7 @@ window.onload = async () => {
         return
     }
     if (cimon.isLogin()) {
-        await ipcRenderer.invoke('cimon-show-window', 'login');
         return;
     }
     await cimon.init();
 };
-

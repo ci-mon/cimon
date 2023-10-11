@@ -1,4 +1,3 @@
-
 import {
     app,
     autoUpdater,
@@ -20,7 +19,7 @@ const process = require('process');
 import * as electron from "electron";
 import {NotifierWrapper} from "./notifierWrapper";
 import path from "path";
-import { options } from "./options";
+import {options} from "./options";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -65,7 +64,7 @@ export class CimonApp {
                         reject: reject,
                     };
                     this._window.hide();
-                    await this._window.loadURL(options.entrypoint);
+                    await this._window.loadURL(options.autologin);
                 } catch (e) {
                     this.tokenDataReceiver.reject();
                     this.tokenDataReceiver = null;
@@ -93,7 +92,7 @@ export class CimonApp {
     }
 
     private async _initMainWindow() {
-        this._session = session.fromPartition("persist:cimon", { cache: true });
+        this._session = session.fromPartition("persist:cimon", {cache: true});
         this._session.allowNTLMCredentialsForDomains('*');
         this._window = new BrowserWindow({
             webPreferences: {
@@ -115,6 +114,24 @@ export class CimonApp {
         });
         this._window.on("hide", () => {
             this._updateContextMenuVisibility();
+        });
+        this._window.webContents.on('did-navigate-in-page', async (details, url, isInPlace, isMainFrame) => {
+            if (url.endsWith('/Login')) {
+                let windowWasHidden = false;
+                if (this._window.isVisible()) {
+                    this._window.hide();
+                    windowWasHidden = true;
+                }
+                await this._openLoginWindow();
+                this._loginWindow.webContents.once("did-redirect-navigation", async () => {
+                    this._loginWindow.destroy();
+                    this._loginWindow = null;
+                    await this._window.loadURL(options.entrypoint);
+                    if (windowWasHidden) {
+                        this._window.show();
+                    }
+                });
+            }
         });
     }
 
@@ -150,7 +167,7 @@ export class CimonApp {
     private _session: Electron.Session;
     private _signalR: SignalRClient;
 
-    private async _openLoginWindow(){
+    private async _openLoginWindow() {
         if (this._loginWindow == null) {
             this._loginWindow = new BrowserWindow({
                 webPreferences: {
@@ -279,7 +296,8 @@ export class CimonApp {
         await this._startSignalR();
     }
 
-    private _restartMenuClicked =  false;
+    private _restartMenuClicked = false;
+
     private _rebuildMenu() {
         const versionMenuLabel = this._updateReady ? `Restart to update` : `Version: ${app.getVersion()}`;
         const template: MenuItemConstructorOptions[] = [
@@ -308,7 +326,7 @@ export class CimonApp {
                 label: versionMenuLabel,
                 enabled: this._updateReady,
                 click: async () => {
-                    if (this._restartMenuClicked){
+                    if (this._restartMenuClicked) {
                         app.quit();
                         return;
                     }
@@ -402,17 +420,7 @@ export class CimonApp {
     private _subscribeForEvents() {
         ipcMain.handle("cimon-get-base-url", () => options.baseUrl);
         ipcMain.handle("cimon-show-window", async (event, code: "login" | string) => {
-            if (code == "login") {
-                if (this._window.isVisible()) {
-                    this._window.hide();
-                }
-                await this._openLoginWindow()
-                this._loginWindow.webContents.once("did-redirect-navigation", async () => {
-                    this._loginWindow.destroy();
-                    this._loginWindow = null;
-                    await this._window.loadURL(options.entrypoint);
-                });
-            }
+
         });
         ipcMain.handle("cimon-load", async (event, relativeUrl) => {
             await this._loadHash(event.sender, relativeUrl);

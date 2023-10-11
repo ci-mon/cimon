@@ -14,6 +14,7 @@ namespace Cimon.Data.Users;
 
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 public class UserManager : ITechnicalUsers
 {
@@ -180,13 +181,16 @@ public class UserManager : ITechnicalUsers
 		return new TeamInfo(x.Name, x.ChildTeams.Select(c=>c.Name).ToImmutableList());
 	}
 
+	private string? FindClaim(ClaimsPrincipal? principal, string claimName) => 
+		principal?.Claims.FirstOrDefault(x => x.Type == claimName)?.Value;
+
 	public async Task<User> GetUser(ClaimsPrincipal? principal) {
-		var identity = principal?.Identity;
-		var name = principal?.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+		IIdentity? identity = principal?.Identity;
+		string? name = FindClaim(principal, ClaimTypes.NameIdentifier) ?? FindClaim(principal, ClaimTypes.Name);
 		if (identity is null || !identity.IsAuthenticated || name is null) {
 			return User.Guest;
 		}
-		var userCache = await GetUserCache(name);
+		UserCache? userCache = await GetUserCache(name);
 		return userCache?.User ?? User.Guest;
 	}
 

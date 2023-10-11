@@ -59,11 +59,14 @@ public class AuthController : Controller
 	}
 
 	[Route("autologin")]
-	[Authorize(AuthenticationSchemes = NegotiateDefaults.AuthenticationScheme)]
+	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Autologin(string returnUrl) {
 		var userName = User.Identity?.Name?.ToLowerInvariant();
 		if (string.IsNullOrWhiteSpace(userName)) {
-			return Unauthorized();
+			return LocalRedirect("/Login");
+		}
+		if (User.Identities.Any(i => i.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme)) {
+			return string.IsNullOrWhiteSpace(returnUrl) ? Ok() : LocalRedirect(returnUrl);
 		}
 		return await SignInUsingCookie(returnUrl, userName);
 	}
@@ -92,6 +95,9 @@ public class AuthController : Controller
 		};
 		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
 			new ClaimsPrincipal(claimsIdentity), authProperties);
-		return LocalRedirect(returnUrl);
+		if (!string.IsNullOrWhiteSpace(returnUrl)) {
+			return LocalRedirect(returnUrl);
+		}
+		return Ok();
 	}
 }
