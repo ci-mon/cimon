@@ -9,11 +9,13 @@ using Optional.Collections;
 
 namespace Cimon.Data.BuildInformation;
 
+using Cimon.Contracts.CI;
+
 public class BuildMonitoringService : IBuildMonitoringService
 {
 	private readonly BuildDiscussionStoreService _discussionStore;
 	private Option<IImmutableList<BuildInfo>> _previousState;
-	private IMediator _mediator;
+	private readonly IMediator _mediator;
 
 	public BuildMonitoringService(BuildDiscussionStoreService discussionStore, IMediator mediator) {
 		_discussionStore = discussionStore;

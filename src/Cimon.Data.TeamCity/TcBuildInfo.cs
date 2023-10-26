@@ -3,6 +3,8 @@ using TeamCityAPI.Models;
 
 namespace Cimon.Data.TeamCity;
 
+using Cimon.Contracts.CI;
+
 record TcBuildInfo : BuildInfo, IBuildInfoActionsProvider
 {
 	private readonly TcClientFactory _clientFactory;

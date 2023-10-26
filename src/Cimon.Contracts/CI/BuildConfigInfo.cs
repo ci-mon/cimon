@@ -1,4 +1,4 @@
-﻿namespace Cimon.Contracts;
+﻿namespace Cimon.Contracts.CI;
 
 public record BaseBuildConfigInfo(string Key, string? Branch, bool IsDefaultBranch);
 

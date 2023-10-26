@@ -5,6 +5,8 @@ using MediatR;
 
 namespace Cimon.Data.Discussions;
 
+using Cimon.Contracts.CI;
+
 class DiscussionHandler: INotificationHandler<DiscussionOpenNotification>, INotificationHandler<DiscussionClosedNotification>
 {
 	private readonly ITechnicalUsers _technicalUsers;
@@ -13,7 +15,7 @@ class DiscussionHandler: INotificationHandler<DiscussionOpenNotification>, INoti
 	}
 
 	private string BuildCommentMessage(BuildInfo buildInfo) {
-		var users = buildInfo.CommitterUsers;
+		var users = buildInfo.Changes.Select(x=>x.Author);
 		var values = users?.Select(u => GetUserMention(u.Name, u.FullName)) ?? new[] { "somebody" };
 		return $"<p>Build failed by: {string.Join(", ", values)}</p>";
 	}

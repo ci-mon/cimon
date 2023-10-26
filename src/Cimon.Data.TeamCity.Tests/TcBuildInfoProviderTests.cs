@@ -8,6 +8,9 @@ using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity.Tests;
 
+using Cimon.Contracts.CI;
+using Cimon.Data.ML;
+
 [TestFixture]
 public class TcBuildInfoProviderTests : BaseTeamCityTest
 {
@@ -18,6 +21,12 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		base.Setup();
 		_buildInfoProvider = (ServiceProvider.GetRequiredService<IBuildInfoProvider>() as TcBuildInfoProvider)!;
 		_clientFactory = ServiceProvider.GetRequiredService<TcClientFactory>();
+	}
+
+	[Test]
+	public async Task Debug() {
+		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5738602);
+		info.Should().NotBeNull();
 	}
 
 	[Test]
@@ -46,12 +55,11 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		info.Status.Should().Be(BuildStatus.Failed);
 		var commit = DateTimeOffset.Now.AddDays(-10);
 		info.StartDate.Should().BeAfter(commit);
-		info.EndDate.Should().BeAfter(info.StartDate);
+		info.EndDate.Should().BeAfter(info.StartDate.Value);
 		info.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
-		info.Committers.Should().Contain("test");
 		var change = info.Changes.Should().ContainSingle().Subject;
 		change.Author.Name.Should().Be("test");
-		change.Date.Should().BeBefore(info.StartDate);
+		change.Date.Should().BeBefore(info.StartDate.Value);
 		change.Date.Should().BeAfter(commit);
 		change.CommitMessage.Should().Contain("Changes from");
 		change.Modifications.Should().ContainEquivalentOf(new FileModification(FileModificationType.Edit, "1.txt"));

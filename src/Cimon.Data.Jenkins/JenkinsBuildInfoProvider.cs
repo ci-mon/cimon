@@ -3,9 +3,11 @@ using System.Collections.Immutable;
 using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Narochno.Jenkins.Entities.Builds;
-using BuildInfo = Cimon.Contracts.BuildInfo;
+using BuildInfo = Cimon.Contracts.CI.BuildInfo;
 
 namespace Cimon.Data.Jenkins;
+
+using Cimon.Contracts.CI;
 
 public class JenkinsBuildInfoProvider : IBuildInfoProvider
 {
@@ -38,7 +40,6 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 				StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
 				Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
 				Status = GetStatus(buildInfo.Result),
-				Committers = changes.Select(x=>x.Author.Name).Distinct().ToList(),
 				Changes = changes
 			};
 			var lastBuildNumber = options?.LastBuildNumber;
@@ -73,15 +74,17 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		return new InternalBuildInfo(branchBuildInfo, buildInfoQuery, branchJobFullName);
 	}
 
-	private async Task<IReadOnlyCollection<VCSChange>> GetChanges(Narochno.Jenkins.Entities.Builds.BuildInfo buildInfo) {
+	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(Narochno.Jenkins.Entities.Builds.BuildInfo buildInfo) {
 		if (!buildInfo.ChangeSet.Items.Any()) {
-			return Array.Empty<VCSChange>();
+			return Array.Empty<VcsChange>();
 		}
-		var res = new List<VCSChange>();
+		var res = new List<VcsChange>();
 		foreach (var changeSetItem in buildInfo.ChangeSet.Items) {
 			var modifiedFiles = changeSetItem.Paths.Select(GetFileModification).ToImmutableArray();
-			var userName = await FindUserId(changeSetItem.Author.FullName); 
-			var change = new VCSChange(userName, changeSetItem.Timestamp.ToDate(),
+			var userName = await FindUserId(changeSetItem.Author.FullName);
+			// TODO get user email from jenkins
+			var author = new VcsUser(userName, changeSetItem.Author.FullName);
+			var change = new VcsChange(author, changeSetItem.Timestamp.ToDate(),
 				changeSetItem.Message, modifiedFiles);
 			res.Add(change);
 		}

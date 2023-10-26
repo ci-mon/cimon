@@ -9,6 +9,8 @@ using Cimon.Data.Users;
 
 namespace Cimon.Data.Discussions;
 
+using Cimon.Contracts.CI;
+
 public class BuildDiscussionService : IBuildDiscussionService
 {
 

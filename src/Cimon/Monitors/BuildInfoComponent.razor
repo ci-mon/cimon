@@ -3,12 +3,17 @@
 @using System.Text.Encodings.Web
 @using AngleSharp.Text
 @using Cimon.Contracts
+@using Cimon.Contracts.CI
+@using Cimon.Data.BuildInformation
+@using Cimon.Data.Common
+@using Microsoft.Extensions.Options
 @inject NavigationManager NavigationManager
+@inject TooltipService TooltipService
 
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
         <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
-            <RadzenLink Path="@Info.Url">
+            <RadzenLink Path="@Info.Url" Target="blank">
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenText TextStyle="TextStyle.H4" Style="color: white">
                         @Info.Name # @Info.Number
@@ -17,28 +22,34 @@
             </RadzenLink>
             <RadzenStack Orientation="Orientation.Horizontal">
                 @if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
-                    <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StatusText"></RadzenText>
+                    <RadzenText MouseEnter="@(ShowStatusTooltip )" TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StatusText.Strip(70)"></RadzenText>
                 }
-            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                                    <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
-                                </RadzenButton>
             </RadzenStack>
             
-        <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StartDate.ToString("HH:mm")"></RadzenText>
-            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="-"></RadzenText>
-            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.EndDate.ToString("HH:mm")"></RadzenText>
-            <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetDuration()"></RadzenText>
-        </RadzenStack>
+            <RadzenStack Orientation="Orientation.Horizontal">
+                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StartDate?.ToString("HH:mm")"></RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="-"></RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.EndDate?.ToString("HH:mm")"></RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetDuration()"></RadzenText>
+                 <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
+                            </RadzenButton>
+            </RadzenStack>
+            
+           
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
             @if (Info.Status == BuildStatus.Failed) {
-                foreach (var user in Info.CommitterUsers) {
+                foreach (var committer in GetCommitters()) {
+                    var user = committer.User;
                     <RadzenStack class="committer"
                                  Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                  AlignItems="AlignItems.Center" Gap="0">
-                        <RadzenGravatar Email="@user.Email">@user.Name</RadzenGravatar>
+                        <div class="avatar">
+                            <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
+                            <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
+                        </div>
                         <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
                     </RadzenStack>
                 }
@@ -46,9 +57,27 @@
         </RadzenStack>
     </RadzenStack>
 </div>
-
+<style>
+.avatar {
+position: relative;
+}
+    .commits-count{
+       color: white;
+       position: absolute;
+       right: -4px;
+       background-color: #e66060;
+       border-radius: 2px;
+    }
+    .status-tooltip{
+        max-width: 400px;
+        text-wrap: balance;
+        line-break: anywhere;
+    }
+</style>
 @code {
 
+    record CommitterInfo(VcsUser User, int CommitsCount);
+    
     [Parameter]
     public BuildInfo Info { get; set; } = null!;
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
@@ -56,13 +85,28 @@
     private void Discuss() {
         NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}");
     }
+    
+    void ShowStatusTooltip(ElementReference elementReference) {
+        var options = new TooltipOptions {
+            Duration = 50000
+        };
+        TooltipService.Open(elementReference, _ => @<div class="status-tooltip">@Info.StatusText</div>, options);
+    }
 
     private string GetDuration() {
-        string duration = TimeSpan.FromSeconds(Math.Round(Info.Duration.TotalSeconds)).ToString("g");
+        string duration = TimeSpan.FromSeconds(Math.Round(Info.Duration?.TotalSeconds ?? 0)).ToString("g");
         if (duration.StartsWith("0:")) {
             duration = duration.Substring(2);
         }
         return $"({duration})";
+    }
+
+    private IReadOnlyCollection<CommitterInfo> GetCommitters() {
+        return Info?.Changes.GroupBy(x => x.Author)
+            .OrderByDescending(x => x.Count())
+            .Take(5)
+            .Select(x => new CommitterInfo(x.Key, x.Count())).ToList()
+        ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
     }
 
 }

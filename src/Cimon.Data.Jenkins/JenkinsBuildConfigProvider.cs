@@ -3,6 +3,8 @@ using Cimon.Contracts.Services;
 
 namespace Cimon.Data.Jenkins;
 
+using Cimon.Contracts.CI;
+
 public class JenkinsBuildConfigProvider : IBuildConfigProvider
 {
 	private readonly ClientFactory _clientFactory;

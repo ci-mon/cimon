@@ -1,6 +1,7 @@
 @page "/monitor/{monitorId?}"
 @using System.Reactive.Linq
 @using Cimon.Contracts
+@using Cimon.Contracts.CI
 @using Cimon.Data.BuildInformation
 @using Cimon.Data.Users
 @using Cimon.DB.Models
@@ -26,7 +27,7 @@
 <style>
     .monitor{
         background-color: var(--rz-base-800);
-        font-size: xx-small;
+        font-size: small;
         height: 100%;
         display: grid;
         align-content: stretch;
@@ -38,7 +39,7 @@
         color: var(--rz-danger);
     }
 
- .build-info-item {
+    .build-info-item {
         background: rgb(76,116,34);
         background: linear-gradient(1deg, rgba(76,116,34,1) 0%, rgba(131,190,64,1) 100%);
         padding: 0.5em;
@@ -58,11 +59,19 @@
         .monitor {
              grid-template-columns: auto auto;
          }
+        .build-info-item .committer .commits-count {
+            font-size: clamp(10px, 8cqmin, 15px);
+        }
         .build-info-item .committer p {
-            font-size: clamp(5px, 8cqmin, 15px);
+            font-size: clamp(8px, 8cqmin, 15px);
+        }
+        .build-info-item {
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
         .build-info-item h5 {
             font-size: clamp(5px, 17cqmin, 20px);
+            max-width: 420px;
         }
         .build-info-item h4 {
              font-size: clamp(10px, 22cqmin, 30px);

@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Jenkins", "Cimon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.Jenkins.Tests", "Cimon.Data.Jenkins.Tests\Cimon.Data.Jenkins.Tests.csproj", "{1C3660DF-ED3E-4765-821D-80D046AF39BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cimon.Data.ML", "Cimon.Data.ML\Cimon.Data.ML.csproj", "{80726C46-FB25-43E7-9F05-5E80699A68BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C3660DF-ED3E-4765-821D-80D046AF39BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80726C46-FB25-43E7-9F05-5E80699A68BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80726C46-FB25-43E7-9F05-5E80699A68BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80726C46-FB25-43E7-9F05-5E80699A68BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80726C46-FB25-43E7-9F05-5E80699A68BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

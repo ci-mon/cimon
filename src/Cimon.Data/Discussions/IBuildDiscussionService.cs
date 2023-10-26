@@ -2,6 +2,8 @@
 
 namespace Cimon.Data.Discussions;
 
+using Cimon.Contracts.CI;
+
 public interface IBuildDiscussionService
 {
 	IObservable<BuildDiscussionState> State { get; }

@@ -8,6 +8,8 @@ using TeamCityAPI.Queries.Interfaces;
 
 namespace Cimon.Data.TeamCity;
 
+using Cimon.Contracts.CI;
+
 public class TcBuildConfigProvider : IBuildConfigProvider
 {
 
@@ -22,7 +24,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 			if (!branches.Any()) {
 				var item = new BuildConfigInfo(buildConfig.Id, null, true) {
 					Props = new Dictionary<string, string> {
-						{"ProjectName", buildConfig.ProjectName}
+						{"ProjectId", buildConfig.ProjectId}
 					}
 				};
 				results.Add(item);
@@ -37,7 +39,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 				}
 				var item = new BuildConfigInfo(buildConfig.Id, branchName, branch.Default ?? false) {
 					Props = new Dictionary<string, string> {
-						{"ProjectName", buildConfig.ProjectName}
+						{"ProjectId", buildConfig.ProjectId}
 					}
 				};
 				results.Add(item);
@@ -48,11 +50,20 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 
 	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs() {
 		using var client = _clientFactory.GetClient();
-		var configs = client.Client.BuildTypes
+		var configs = client.Client
+			.BuildTypes
 			.Include(x => x.BuildType).ThenInclude(x=>x.Branches, IncludeType.Long)
 			.GetAsyncEnumerable<BuildTypes, BuildType>()
 			.Select(buildType => buildType);
+		// TODO filter projects, user project key
+		var allowedProjects = new List<string> {
+			"ContinuousIntegration_ProductsDiagnostics",
+			"ContinuousIntegration_UnitTest_C"
+		};
 		await foreach (var buildType in configs) {
+			if (!allowedProjects.Any(x => buildType.ProjectId.StartsWith(x, StringComparison.OrdinalIgnoreCase))) {
+				continue;
+			}
 			var locator = new BuildTypeLocator {
 				Id = buildType.Id
 			}.ToString();

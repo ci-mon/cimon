@@ -38,7 +38,7 @@ builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
 
 builder.Services.AddSingleton<NativeAppService>();
-builder.Services.AddSingleton<INotificationService, Cimon.Users.SignalRNotificationService>();
+builder.Services.AddSingleton<INotificationService, SignalRNotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 	return async () => {

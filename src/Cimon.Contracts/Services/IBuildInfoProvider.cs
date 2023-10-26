@@ -1,5 +1,7 @@
 ﻿namespace Cimon.Contracts.Services;
 
+using Cimon.Contracts.CI;
+
 public interface IBuildInfoProvider
 {
 	CISystem CiSystem { get; }

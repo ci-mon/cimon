@@ -8,6 +8,9 @@ using User = Cimon.DB.Models.User;
 
 namespace Cimon.DB;
 
+using System.Collections.Immutable;
+using Cimon.Contracts.CI;
+
 public class DbSeedOptions
 {
 	public bool UseTestData { get; set; }
@@ -172,7 +175,10 @@ public class DbInitializer
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Committers = new []{"test","admin"},
+				Changes = new[] {
+					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+				},
 				BuildConfigId = "app.studio-enterprise.shell",
 			}
 		});
@@ -184,7 +190,10 @@ public class DbInitializer
 				Number = "",
 				Status = BuildStatus.Failed,
 				BranchName = "",
-				Committers = new []{"test","admin"},
+				Changes = new[] {
+					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+				},
 				BuildConfigId = "app.studio-enterprise.schema-view",
 			}
 		});
@@ -197,7 +206,10 @@ public class DbInitializer
 				Status = BuildStatus.Success,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
-				Committers = new []{"test","admin"},
+				Changes = new[] {
+					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+				},
 				BuildConfigId = "app.studio-enterprise.process-designer",
 			}
 		});
@@ -210,7 +222,10 @@ public class DbInitializer
 				Status = BuildStatus.Success,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
-				Committers = new []{"test","admin"},
+				Changes = new[] {
+					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+				},
 				BuildConfigId = "lib.studio-enterprise.process",
 			}
 		});

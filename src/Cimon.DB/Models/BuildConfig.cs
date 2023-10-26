@@ -2,6 +2,8 @@
 
 namespace Cimon.DB.Models;
 
+using Cimon.Contracts.CI;
+
 public enum BuildConfigStatus
 {
 	Ok,

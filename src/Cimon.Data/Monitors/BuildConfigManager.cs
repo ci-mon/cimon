@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.Monitors;
 
+using Cimon.Contracts.CI;
+
 public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildConfig>>
 {
 	private readonly IDbContextFactory<CimonDbContext> _contextFactory;

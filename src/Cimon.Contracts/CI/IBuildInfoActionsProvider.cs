@@ -1,4 +1,4 @@
-﻿namespace Cimon.Contracts;
+﻿namespace Cimon.Contracts.CI;
 
 public class BuildInfoActionDescriptor
 {

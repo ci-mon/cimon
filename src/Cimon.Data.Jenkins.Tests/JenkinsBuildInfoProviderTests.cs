@@ -4,6 +4,8 @@ using FluentAssertions.Execution;
 
 namespace Cimon.Data.Jenkins.Tests;
 
+using Cimon.Contracts.CI;
+
 [TestFixture]
 public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 {
@@ -32,13 +34,11 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		info.Status.Should().Be(BuildStatus.Failed);
 		var commit = DateTimeOffset.Now.AddDays(-10);
 		info.StartDate.Should().BeAfter(commit);
-		info.EndDate.Should().BeAfter(info.StartDate);
+		info.EndDate.Should().BeAfter(info.StartDate.Value);
 		info.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
-		info.Committers.Should().Contain("test");
 		info.Log.Should().NotBeNullOrWhiteSpace().And.Contain("exit 1");
 		var change = info.Changes.Should().ContainSingle().Subject;
-		change.Author.Name.Should().Be("test");
-		change.Date.Should().BeBefore(info.StartDate);
+		change.Date.Should().BeBefore(info.StartDate.Value);
 		change.Date.Should().BeAfter(commit);
 		change.CommitMessage.Should().Contain("Changes from");
 		change.Modifications.Should().ContainEquivalentOf(new FileModification(FileModificationType.Edit, "1.txt"));

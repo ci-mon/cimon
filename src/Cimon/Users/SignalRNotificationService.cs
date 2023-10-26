@@ -16,7 +16,8 @@ public class SignalRNotificationService : INotificationService, INotificationHan
 
 	public async Task Notify(string buildId, string commentId, User messageAuthor, 
 			IReadOnlyCollection<MentionedEntityId> groups, string comment) {
-		await _hubContext.Clients.Groups(groups.Select(x=>x.Name))
+		var groupNames = groups.Select(x=>x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
+		await _hubContext.Clients.Groups(groupNames)
 			.NotifyWithUrl(buildId, $"/buildDiscussion/{buildId}#{commentId}",
 				$"{messageAuthor.Name} mentioned you in a comment", comment, messageAuthor.Email ?? string.Empty);
 	}
