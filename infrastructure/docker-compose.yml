@@ -10,7 +10,9 @@ version: '3.1'
 
 services:
   db:
-    image: postgres:latest
+    profiles:
+      - tc
+    image: postgres:15
     environment:
       - POSTGRES_PASSWORD=teamcity_password
       - POSTGRES_USER=teamcity_user
@@ -21,8 +23,25 @@ services:
     ports:
       - 5433:5432
 
+  # docker compose exec db psql -d postgres -U teamcity_user -c "DROP DATABASE teamcity_db;"
+  pg-upgrade:
+    profiles:
+      - db-upgrade
+    image: tianon/postgres-upgrade:15-to-16
+    volumes:
+      - ./buildserver_pgdata_old:/var/lib/postgresql/15/data
+      - ./buildserver_pgdata:/var/lib/postgresql/16/data
+    environment:
+      - POSTGRES_USER=teamcity_user
+      - POSTGRES_PASSWORD=teamcity_password
+      - POSTGRES_DB=teamcity_db
+      - PGUSER=teamcity_user
+      - POSTGRES_INITDB_ARGS="-U teamcity_user"
+
   teamcity:
     image: jetbrains/teamcity-server:${TEAMCITY_VERSION}-linux
+    profiles:
+      - tc
     ports:
       - "8112:8111"
     volumes:
@@ -34,6 +53,8 @@ services:
 
   teamcity-agent-1:
     image: jetbrains/teamcity-agent:${TEAMCITY_VERSION}-linux-sudo
+    profiles:
+      - tc
     privileged: true
     volumes:
       - ./agent/conf:/data/teamcity_agent/conf
@@ -43,7 +64,10 @@ services:
       - gogs
 
   vault-server:
-    image: vault:latest
+    image: vault:1.13.3
+    profiles:
+      - tc
+      - jenkins
     ports:
       - "8200:8200"
     environment:
@@ -60,6 +84,9 @@ services:
 
   vault-client:
     build: ./vault-client
+    profiles:
+      - tc
+      - jenkins
     environment:
       VAULT_ADDR: "http://vault-server:8200"
     depends_on:
@@ -69,7 +96,9 @@ services:
       - ./vault-client/init.sh:/init.sh
 
   jenkins:
-    image: jenkins/jenkins:lts
+    image: jenkins/jenkins:latest-jdk21-preview
+    profiles:
+      - jenkins
     privileged: true
     user: root
     ports:
@@ -82,6 +111,9 @@ services:
 
   gogs:
     image: gogs/gogs:latest
+    profiles:
+      - jenkins
+      - tc
     ports:
       - "2222:2222"
       - "3001:3001"
