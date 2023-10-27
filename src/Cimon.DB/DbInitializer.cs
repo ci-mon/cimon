@@ -175,10 +175,10 @@ public class DbInitializer
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Changes = new[] {
-					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
-					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
-				},
+				Changes = Enumerable.Range(0, 10).Select(i => 
+						new VcsChange(new VcsUser($"test{i}", "Test {i}", "milton.soto@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+					.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+					.ToArray(),
 				BuildConfigId = "app.studio-enterprise.shell",
 			}
 		});

@@ -8,9 +8,9 @@
 @using Cimon.Data.Monitors
 @using System.Collections.Immutable
 @using System.Text.Json
-@using Cimon.Contracts
 @using Cimon.Contracts.CI
 @using Cimon.DB.Models
+@using System.Collections.Concurrent
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -23,8 +23,8 @@
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-            @foreach (var system in Enum.GetNames<CISystem>()) {
-                <RadzenButton Text="@($"Refresh {system}")" Icon="refresh" Click="() => RefreshAvailableBuilds(Enum.Parse<CISystem>(system))"></RadzenButton>
+            @foreach (var system in Enum.GetValues<CISystem>()) {
+                <RadzenButton Disabled="@GetIsCiSystemRefreshing(system)" Text="@($"Refresh {system}")" Icon="refresh" Click="() => RefreshAvailableBuilds(system)"></RadzenButton>
             }
         </RadzenStack>
         <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
@@ -104,8 +104,15 @@
         SetSelectedLocators(args ? _buildConfigs.Value?.ToList() : null);
     }
 
+    private readonly ConcurrentDictionary<CISystem, bool> _refreshingCiSystems = new ();
     private async Task RefreshAvailableBuilds(CISystem ciSystem) {
+        _refreshingCiSystems[ciSystem] = true;
+        StateHasChanged();
         await BuildConfigService.RefreshBuildConfigs(ciSystem);
+        _refreshingCiSystems.TryRemove(ciSystem, out _);
+        StateHasChanged();
     }
+
+    private bool GetIsCiSystemRefreshing(CISystem system) => _refreshingCiSystems.ContainsKey(system);
 
 }

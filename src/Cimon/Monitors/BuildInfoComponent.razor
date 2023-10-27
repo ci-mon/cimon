@@ -11,55 +11,56 @@
 @inject TooltipService TooltipService
 
 <div class="build-info-item @GetClasses()">
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
+    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
+            </RadzenButton>
             <RadzenLink Path="@Info.Url" Target="blank">
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenText TextStyle="TextStyle.H4" Style="color: white">
-                        @Info.Name # @Info.Number
+                        @Info.Name @(string.IsNullOrWhiteSpace(Info.Number) ? string.Empty : Info.Number)
                     </RadzenText>
                 </RadzenStack>
             </RadzenLink>
-            <RadzenStack Orientation="Orientation.Horizontal">
-                @if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
-                    <RadzenText MouseEnter="@(ShowStatusTooltip )" TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StatusText.Strip(70)"></RadzenText>
-                }
-            </RadzenStack>
-            
-            <RadzenStack Orientation="Orientation.Horizontal">
-                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.StartDate?.ToString("HH:mm")"></RadzenText>
-                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="-"></RadzenText>
-                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@Info.EndDate?.ToString("HH:mm")"></RadzenText>
-                <RadzenText TextStyle="TextStyle.H5" Style="color: white" Text="@GetDuration()"></RadzenText>
-                 <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
-                                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
-                            </RadzenButton>
-            </RadzenStack>
-            
-           
         </RadzenStack>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
-            @if (Info.Status == BuildStatus.Failed) {
-                foreach (var committer in GetCommitters()) {
-                    var user = committer.User;
-                    
-                    <RadzenStack class="committer"
-                                 Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                                 AlignItems="AlignItems.Center" Gap="0">
-                        <div class="avatar">
-                            <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
-                            @if (Info.FailureSuspect?.User == user) {
-                                <p class="failure-author-confidence" title="Confidence">@Info.FailureSuspect.Confidence %</p>
-                            }
-                            <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
-                        </div>
-                        <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
-                    </RadzenStack>
-                }
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenText Visible="@(Info.Status != BuildStatus.Failed)" TextStyle="TextStyle.H6" Style="color: white">
+                 @GetDuration()
+                 @Info.StartDate?.ToString("HH:mm")
+                 @if (Info.EndDate.HasValue) {
+                     <p>-</p>
+                     @Info.EndDate?.ToString("HH:mm")
+                 }
+             </RadzenText>
+            @if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
+                <RadzenText TextStyle="TextStyle.H6" Style="color: white">|</RadzenText>
+                <RadzenText MouseEnter="@(ShowStatusTooltip)" TextStyle="TextStyle.H6" Style="color: white" Text="@Info.StatusText.Strip(70)"></RadzenText>
             }
         </RadzenStack>
     </RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
+        @if (Info.Status == BuildStatus.Failed) {
+            foreach (var committer in GetCommitters()) {
+                var user = committer.User;
+
+                <RadzenStack class="committer"
+                             Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                             AlignItems="AlignItems.Center" Gap="0">
+                    <div class="avatar">
+                        <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
+                        @if (Info.FailureSuspect?.User == user) {
+                            <p class="failure-author-confidence" title="Confidence">@Info.FailureSuspect.Confidence %</p>
+                        }
+                        <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
+                    </div>
+                    <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
+                </RadzenStack>
+            }
+        }
+    </RadzenStack>
+    
 </div>
 <style>
 .avatar {
@@ -85,18 +86,20 @@ position: relative;
         line-break: anywhere;
     }
 </style>
+
 @code {
 
     record CommitterInfo(VcsUser User, int CommitsCount);
-    
+
     [Parameter]
     public BuildInfo Info { get; set; } = null!;
+
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
 
     private void Discuss() {
         NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}");
     }
-    
+
     void ShowStatusTooltip(ElementReference elementReference) {
         var options = new TooltipOptions {
             Duration = 50000
@@ -109,7 +112,7 @@ position: relative;
         if (duration.StartsWith("0:")) {
             duration = duration.Substring(2);
         }
-        return $"({duration})";
+        return $"[{duration}]";
     }
 
     private IReadOnlyCollection<CommitterInfo> GetCommitters() {
@@ -117,7 +120,7 @@ position: relative;
             .OrderByDescending(x => x.Count())
             .Take(5)
             .Select(x => new CommitterInfo(x.Key, x.Count())).ToList()
-        ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+               ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
     }
 
 }
