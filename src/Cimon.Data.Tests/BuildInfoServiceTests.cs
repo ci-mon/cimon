@@ -10,6 +10,7 @@ namespace Cimon.Data.Tests;
 
 using System.Reactive.Subjects;
 using Cimon.Contracts.CI;
+using Cimon.Data.ML;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -48,7 +49,8 @@ public class BuildInfoServiceTests
 		var notificationService = Substitute.For<INotificationService>();
 		_buildDiscussionStoreService = new BuildDiscussionStoreService(notificationService);
 		_service = new BuildInfoService(options.Value, _buildInfoProviders, _buildDiscussionStoreService, 
-			Substitute.For<IBuildMonitoringService>(), span => _timer);
+			Substitute.For<IBuildMonitoringService>(), Substitute.For<IBuildFailurePredictor>(),
+			span => _timer);
 		_sampleBuildLocator1 = new BuildConfig(CISystem.TeamCity, "testId1");
 		_sampleBuildLocator2 = new BuildConfig(CISystem.TeamCity, "testId2");
 		_buildInfoProvider.CiSystem.Returns(CISystem.TeamCity);

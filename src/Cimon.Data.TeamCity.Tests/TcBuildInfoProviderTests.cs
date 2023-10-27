@@ -25,8 +25,11 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 
 	[Test]
 	public async Task Debug() {
-		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5738602);
+		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629);//5711671,5738602
 		info.Should().NotBeNull();
+		var utils = new BuildFailurePredictor();
+		var author = utils.FindFailureSuspect(info);
+		Console.WriteLine($"{author.User.Name}: {author.Confidence}");
 	}
 
 	[Test]

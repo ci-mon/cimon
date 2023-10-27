@@ -3,6 +3,7 @@ using Cimon.Auth;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Jenkins;
+using Cimon.Data.ML;
 using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
 using Cimon.Data.Users;
@@ -36,6 +37,7 @@ builder.Services.AddCimonData()
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
+builder.Services.AddCimonML();
 
 builder.Services.AddSingleton<NativeAppService>();
 builder.Services.AddSingleton<INotificationService, SignalRNotificationService>();

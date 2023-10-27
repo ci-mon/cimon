@@ -43,11 +43,15 @@
             @if (Info.Status == BuildStatus.Failed) {
                 foreach (var committer in GetCommitters()) {
                     var user = committer.User;
+                    
                     <RadzenStack class="committer"
                                  Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                  AlignItems="AlignItems.Center" Gap="0">
                         <div class="avatar">
                             <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
+                            @if (Info.FailureSuspect?.User == user) {
+                                <p class="failure-author-confidence" title="Confidence">@Info.FailureSuspect.Confidence %</p>
+                            }
                             <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
                         </div>
                         <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
@@ -66,6 +70,13 @@ position: relative;
        position: absolute;
        right: -4px;
        background-color: #e66060;
+       border-radius: 2px;
+    }
+    .failure-author-confidence{
+       color: white;
+       position: absolute;
+       right: -4px;
+       background-color: #a8005f;
        border-radius: 2px;
     }
     .status-tooltip{

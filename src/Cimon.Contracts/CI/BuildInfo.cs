@@ -18,6 +18,7 @@ public record BuildInfo
 	public IReadOnlyCollection<CITestOccurence> FailedTests { get; set; } = Array.Empty<CITestOccurence>();
 	required public string BuildConfigId { get; set; }
 	public int CommentsCount { get; set; }
+	public BuildFailureSuspect? FailureSuspect { get; set; }
 	public bool IsNotOk() => Status == BuildStatus.Failed;
 	public bool CanHaveDiscussion() => Status is BuildStatus.Failed or BuildStatus.Investigated or BuildStatus.Fixed;
 }

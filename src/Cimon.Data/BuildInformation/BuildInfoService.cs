@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Cimon.Data.BuildInformation;
 
 using Cimon.Contracts.CI;
+using Cimon.Data.ML;
 
 public class BuildInfoService : IDisposable
 {
@@ -20,11 +21,14 @@ public class BuildInfoService : IDisposable
 		new(new HashSet<BuildConfig>());
 	private readonly IObservable<IImmutableList<BuildInfo>> _buildInfos;
 	private readonly HashSet<string> _systemUserLogins;
+	private readonly IBuildFailurePredictor _buildFailurePredictor;
 
 	public BuildInfoService(BuildInfoMonitoringSettings settings,
 			IList<IBuildInfoProvider> buildInfoProviders, BuildDiscussionStoreService discussionStore,
-			IBuildMonitoringService buildMonitoringService, Func<TimeSpan, IObservable<long>>? timerFactory = null) {
+			IBuildMonitoringService buildMonitoringService, IBuildFailurePredictor buildFailurePredictor,
+			Func<TimeSpan, IObservable<long>>? timerFactory = null) {
 		_discussionStore = discussionStore;
+		_buildFailurePredictor = buildFailurePredictor;
 		timerFactory ??= Observable.Interval;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		async Task<IImmutableList<BuildInfo>> GetBuildInfos((HashSet<BuildConfig> First, long Second) tuple) {
@@ -44,6 +48,9 @@ public class BuildInfoService : IDisposable
 				.Select(x => x.DemoState)!);
 			foreach (BuildInfo buildInfo in buildInfos) {
 				RemoveSystemUserChanges(buildInfo);
+				// TODO add caching
+				//var author = _buildFailurePredictor.FindFailureSuspect(buildInfo);
+				//buildInfo.FailureSuspect = author;
 			}
 			return buildInfos.ToImmutableList();
 		}
