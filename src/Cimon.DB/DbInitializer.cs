@@ -140,6 +140,10 @@ public class DbInitializer
 				BuildConfigId = "Integration (MSSQL)",
 			}
 		});
+		var manyChanges = Enumerable.Range(0, 10).Select(i => 
+				new VcsChange(new VcsUser($"test{i}", $"Test {i}", "milton.soto@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+			.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+			.ToArray();
 		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (PostgreSQL)") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
@@ -147,10 +151,13 @@ public class DbInitializer
 				Name = "Integration (PostgreSQL)",
 				Number = "8.1.0.610 ProductBase Softkey ENU",
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
-				Status = 0,
+				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
+				Duration = TimeSpan.FromSeconds(1234),
 				BranchName = "trunk",
 				BuildConfigId = "Integration (PostgreSQL)",
+				Changes = manyChanges,
+				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
 			}
 		});
 		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (Oracle)") {
@@ -175,10 +182,7 @@ public class DbInitializer
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				Changes = Enumerable.Range(0, 10).Select(i => 
-						new VcsChange(new VcsUser($"test{i}", $"Test {i}", "milton.soto@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
-					.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
-					.ToArray(),
+				Changes = manyChanges,
 				BuildConfigId = "app.studio-enterprise.shell",
 			}
 		});

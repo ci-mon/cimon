@@ -13,10 +13,6 @@
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
         <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
-                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
-            </RadzenButton>
             <RadzenLink Path="@Info.Url" Target="blank">
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenText TextStyle="TextStyle.H4" Style="color: white">
@@ -42,6 +38,10 @@
     </RadzenStack>
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
         @if (Info.Status == BuildStatus.Failed) {
+            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
+            </RadzenButton>
             foreach (var committer in GetCommitters()) {
                 var user = committer.User;
 
@@ -51,7 +51,7 @@
                     <div class="avatar">
                         <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
                         @if (Info.FailureSuspect?.User == user) {
-                            <p class="failure-author-confidence" title="Confidence">@Info.FailureSuspect.Confidence %</p>
+                            <p class="failure-author-confidence" title="Suspected in build failure">@Info.FailureSuspect.Confidence%</p>
                         }
                         <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
                     </div>
@@ -76,7 +76,7 @@ position: relative;
     .failure-author-confidence{
        color: white;
        position: absolute;
-       right: -4px;
+       left: -4px;
        background-color: #a8005f;
        border-radius: 2px;
     }
@@ -101,6 +101,9 @@ position: relative;
     }
 
     void ShowStatusTooltip(ElementReference elementReference) {
+        if ((Info.StatusText?.Length ?? 0) < 70) {
+            return;
+        }
         var options = new TooltipOptions {
             Duration = 50000
         };
