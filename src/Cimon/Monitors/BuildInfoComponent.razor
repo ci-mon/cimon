@@ -6,9 +6,11 @@
 @using Cimon.Contracts.CI
 @using Cimon.Data.BuildInformation
 @using Cimon.Data.Common
+@using Cimon.Users
 @using Microsoft.Extensions.Options
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
+@inject AppInitialStateAccessor AppInitialStateAccessor
 
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
@@ -44,16 +46,20 @@
             </RadzenButton>
             foreach (var committer in GetCommitters()) {
                 var user = committer.User;
-
                 <RadzenStack class="committer"
                              Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                              AlignItems="AlignItems.Center" Gap="0">
-                    <div class="avatar">
-                        <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
-                        @if (Info.FailureSuspect?.User == user) {
-                            <p class="failure-author-confidence" title="Suspected in build failure">@Info.FailureSuspect.Confidence%</p>
+                    @{
+                        var style = string.Empty;
+                        var title = string.Empty;
+                        @if (Info.FailureSuspect?.User.Name == user.Name) {
+                            style = GetAvatarSuspectStyles();
+                            title = "Suspected in build failure";
                         }
-                        <RadzenGravatar Email="@user.Email?.ToLowerInvariant()">@user.Name</RadzenGravatar>
+                    }
+                    <div class="avatar" style="@style" title="@title">
+                        <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                        <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
                     </div>
                     <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
                 </RadzenStack>
@@ -63,22 +69,23 @@
     
 </div>
 <style>
-.avatar {
-position: relative;
-}
-    .commits-count{
-       color: white;
-       position: absolute;
-       right: -4px;
-       background-color: #e66060;
-       border-radius: 2px;
+    .avatar {
+        position: relative;
+        border-radius: 32px;
     }
-    .failure-author-confidence{
-       color: white;
-       position: absolute;
-       left: -4px;
-       background-color: #a8005f;
-       border-radius: 2px;
+    .commits-count, .failure-author-confidence {
+        color: white;
+        position: absolute;
+        width: 16px;
+        text-align: center; 
+        border-radius: 8px;
+        line-height: 16px;
+    }
+    .commits-count {
+       top: -4px;
+       right: -10px;
+       
+       background-color: #e66060;
     }
     .status-tooltip{
         max-width: 400px;
@@ -94,10 +101,18 @@ position: relative;
     [Parameter]
     public BuildInfo Info { get; set; } = null!;
 
+    public AppClientType AppClientType { get; set; }
+
+    protected override Task OnInitializedAsync() {
+        AppClientType = AppInitialStateAccessor.State.ClientType;
+        return base.OnInitializedAsync();
+    }
+
     private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
 
     private void Discuss() {
-        NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}");
+        var isElectron = AppClientType == AppClientType.Electron;
+        NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}", isElectron, isElectron);
     }
 
     void ShowStatusTooltip(ElementReference elementReference) {
@@ -124,6 +139,12 @@ position: relative;
             .Take(5)
             .Select(x => new CommitterInfo(x.Key, x.Count())).ToList()
                ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+    }
+
+    private string GetAvatarSuspectStyles() {
+        var percent = Math.Min(60 + Math.Round(30f * (Info.FailureSuspect.Confidence / 100f)), 100);
+        return $"box-shadow: 0px 0px 6px 5px rgb(255 220 65 / {percent}%);";
+        
     }
 
 }

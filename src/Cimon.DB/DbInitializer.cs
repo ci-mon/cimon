@@ -141,7 +141,7 @@ public class DbInitializer
 			}
 		});
 		var manyChanges = Enumerable.Range(0, 10).Select(i => 
-				new VcsChange(new VcsUser($"test{i}", $"Test {i}", "milton.soto@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+				new VcsChange(new VcsUser($"test{i}", $"Test {i}", $"user{i}@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.ToArray();
 		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (PostgreSQL)") {

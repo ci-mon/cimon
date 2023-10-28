@@ -1,0 +1,65 @@
+﻿@using Microsoft.IdentityModel.Tokens
+@using System.Security.Cryptography
+@using System.Text
+@inherits RadzenGravatar 
+@if (Visible)
+{
+    <div class="cimon-avatar">
+        <div class="backoff" style="@GetBackgroundGradient()">
+            @GetUserInitials()
+        </div>
+        <img @ref="@Element" style="@Style"
+             @attributes="Attributes"
+             class="@GetCssClass()"
+             src="@(Url)&d=blank"
+             id="@GetId()"/>
+    </div>
+    <style>
+        .cimon-avatar img {
+            position: relative;
+        }
+        .cimon-avatar .backoff {
+             position: absolute;
+            top: 0;
+            text-transform: uppercase;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4CAF50, #FFC107);
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            font-family: system-ui;
+        }
+    </style>
+}
+@code {
+    private static readonly GradientGenerator GradientGenerator = new();
+
+    [Parameter]
+    public string? UserName { get; set; }
+
+    private string GetUserInitials() {
+        if (string.IsNullOrWhiteSpace(UserName)) {
+            return string.Empty;
+        }
+        var parts = UserName.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 2 && parts.All(p => p.Length > 0)) {
+            return $"{parts[0][0]}{parts[1][0]}";
+        }
+        var name = UserName.Where(char.IsAsciiLetter).ToArray().AsSpan();
+        return name.Length > 2 ? new string(name[..2]): UserName;
+    }
+
+    private string GetBackgroundGradient() {
+        if (string.IsNullOrWhiteSpace(Email)) {
+            return "background: linear-gradient(45deg, #4CAF50, #FFC107)";
+        }
+        var (color1, color2) = GradientGenerator.GetContrastingColors(Email);
+        return $"background: linear-gradient(45deg, {color1}, {color2});";
+    }
+
+}

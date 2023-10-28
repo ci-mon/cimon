@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Cimon.Shared
 @using Microsoft.AspNetCore.Components.Web
 @namespace Cimon.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
@@ -22,7 +23,16 @@
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
-<component type="typeof(App)" render-mode="ServerPrerendered"/>
+@{
+    var initialState = new InitialApplicationState {
+        ClientType = AppClientType.Web
+    };
+    if (HttpContext.Request.Cookies.TryGetValue("Cimon-ClientType", out var type) 
+            && Enum.TryParse<AppClientType>(type, out var clientType)) {
+        initialState.ClientType = clientType;
+    }
+}
+<component type="typeof(App)" render-mode="ServerPrerendered" param-InitialState="initialState"/>
 <div id="ql-fullscreen-image-background">
     <div id="ql-fullscreen-image"></div>
 </div>

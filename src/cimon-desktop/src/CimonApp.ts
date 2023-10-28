@@ -95,7 +95,9 @@ export class CimonApp {
     private async _initMainWindow() {
         this._session = session.fromPartition("persist:cimon", {cache: true});
         this._session.allowNTLMCredentialsForDomains('*');
-        await this._session.cookies.set({name: 'NativeAppType', value: 'electron', url: options.baseUrl});
+        await this._session.clearStorageData();
+        await this._session.clearCache();
+        await this._session.cookies.set({name: 'Cimon-ClientType', value: 'Electron', url: options.baseUrl});
         this._window = new BrowserWindow({
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
@@ -117,18 +119,21 @@ export class CimonApp {
         this._window.on("hide", () => {
             this._updateContextMenuVisibility();
         });
-        this._window.webContents.on('will-navigate', function (e, url) {
+        this._window.webContents.on('will-navigate', async (e, url) => {
+            if (this._getIsDiscussionUrl(url)) {
+                e.preventDefault();
+                await this._openBuildDiscussionInWindow(url);
+                return;
+            }
             if (url.startsWith(options.baseUrl)) {
                 return;
             }
             e.preventDefault();
-            shell.openExternal(url);
+            await shell.openExternal(url);
         });
         this._window.webContents.setWindowOpenHandler(({url}) => {
-            if (url.startsWith(options.discussionWindowUrl)) {
-                const path = url.split('/');
-                const buildId = path[path.length - 1];
-                this._onOpenDiscussionWindow(`/buildDiscussion/${buildId}`);
+            if (this._getIsDiscussionUrl(url)) {
+                this._openBuildDiscussionInWindow(url);
                 return { action: 'deny' };
             }
             if (url.startsWith(options.baseUrl)) {
@@ -155,6 +160,16 @@ export class CimonApp {
                 });
             }
         });
+    }
+
+    private _getIsDiscussionUrl(url: string) {
+        return url.startsWith(options.discussionWindowUrl);
+    }
+
+    private async _openBuildDiscussionInWindow(url: string) {
+        const path = url.split('/');
+        const buildId = path[path.length - 1];
+        await this._onOpenDiscussionWindow(`/buildDiscussion/${buildId}`);
     }
 
     private _onDisconnected() {
@@ -387,7 +402,11 @@ export class CimonApp {
 
     private async _startSignalR() {
         await this._waitForConnection();
-        await this._signalR.start();
+        try {
+            await this._signalR.start();
+        } catch (e){
+            log.error(e);
+        }
     }
 
     private _waitForConnectionTimeout: NodeJS.Timeout;

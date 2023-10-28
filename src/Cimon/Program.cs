@@ -50,7 +50,8 @@ builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 		return state.User;
 	};
 });
-
+builder.Services.AddScoped<AppInitialStateAccessor>();
+	
 builder.Services.AddOptions()
 	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOptions"))
 	.Configure<CimonDataSettings>(settings => {
