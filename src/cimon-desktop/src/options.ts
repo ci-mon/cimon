@@ -25,7 +25,6 @@ class IconLocator {
 export const options = {
     baseUrl: CimonConfig.url,
     waitForConnectionRetryDelay: 10000,
-
     get entrypoint() {
         return `${options.baseUrl}`;
     },
@@ -34,6 +33,9 @@ export const options = {
     },
     get lastMonitor() {
         return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
+    },
+    get discussionWindowUrl(){
+        return `${options.baseUrl}/buildDiscussion/`;
     },
     get resourcesPath() {
         if (isDev) {

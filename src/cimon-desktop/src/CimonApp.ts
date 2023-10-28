@@ -9,7 +9,8 @@ import {
     IpcMainEvent,
     MenuItemConstructorOptions,
     net,
-    WebContents
+    WebContents,
+    shell
 } from "electron";
 import {ConnectionState, SignalRClient} from "./SignalRClient";
 import log from "electron-log";
@@ -94,6 +95,7 @@ export class CimonApp {
     private async _initMainWindow() {
         this._session = session.fromPartition("persist:cimon", {cache: true});
         this._session.allowNTLMCredentialsForDomains('*');
+        await this._session.cookies.set({name: 'NativeAppType', value: 'electron', url: options.baseUrl});
         this._window = new BrowserWindow({
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
@@ -114,6 +116,26 @@ export class CimonApp {
         });
         this._window.on("hide", () => {
             this._updateContextMenuVisibility();
+        });
+        this._window.webContents.on('will-navigate', function (e, url) {
+            if (url.startsWith(options.baseUrl)) {
+                return;
+            }
+            e.preventDefault();
+            shell.openExternal(url);
+        });
+        this._window.webContents.setWindowOpenHandler(({url}) => {
+            if (url.startsWith(options.discussionWindowUrl)) {
+                const path = url.split('/');
+                const buildId = path[path.length - 1];
+                this._onOpenDiscussionWindow(`/buildDiscussion/${buildId}`);
+                return { action: 'deny' };
+            }
+            if (url.startsWith(options.baseUrl)) {
+                return;
+            }
+            shell.openExternal(url);
+            return { action: 'deny' };
         });
         this._window.webContents.on('did-navigate-in-page', async (details, url, isInPlace, isMainFrame) => {
             if (url.endsWith('/Login')) {
