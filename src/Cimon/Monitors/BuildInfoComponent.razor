@@ -8,6 +8,7 @@
 @using Cimon.Data.Common
 @using Cimon.Users
 @using Microsoft.Extensions.Options
+@using System.Text
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
 @inject AppInitialStateAccessor AppInitialStateAccessor
@@ -15,35 +16,26 @@
 <div class="build-info-item @GetClasses()">
     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
         <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenLink Path="@Info.Url" Target="blank">
-                <RadzenStack Orientation="Orientation.Horizontal">
-                    <RadzenText TextStyle="TextStyle.H4" Style="color: white">
+            <RadzenStack Orientation="Orientation.Horizontal">
+                <RadzenText TextStyle="TextStyle.H4">
+                    <RadzenLink Path="@Info.Url" Target="blank" Style="color: white">
                         @Info.Name @(string.IsNullOrWhiteSpace(Info.Number) ? string.Empty : Info.Number)
-                    </RadzenText>
-                </RadzenStack>
-            </RadzenLink>
+                    </RadzenLink>
+                    <RadzenButton class="discussion-button" Visible="@Info.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
+                            <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                            @Info.CommentsCount.ToString()
+                        </RadzenBadge>
+                    </RadzenButton>
+                </RadzenText>
+            </RadzenStack>
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenText Visible="@(Info.Status != BuildStatus.Failed)" TextStyle="TextStyle.H6" Style="color: white">
-                 @GetDuration()
-                 @Info.StartDate?.ToString("HH:mm")
-                 @if (Info.EndDate.HasValue) {
-                     <p>-</p>
-                     @Info.EndDate?.ToString("HH:mm")
-                 }
-             </RadzenText>
-            @if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
-                <RadzenText TextStyle="TextStyle.H6" Style="color: white">|</RadzenText>
-                <RadzenText MouseEnter="@(ShowStatusTooltip)" TextStyle="TextStyle.H6" Style="color: white" Text="@Info.StatusText.Strip(70)"></RadzenText>
-            }
+            <RadzenText TextStyle="TextStyle.H6" Style="color: white" Text="@GetStatusInfo()" MouseEnter="@(ShowStatusTooltip)"/>
         </RadzenStack>
     </RadzenStack>
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
         @if (Info.Status == BuildStatus.Failed) {
-            <RadzenButton Visible="@Info.IsNotOk()" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
-                <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" Text="@Info.CommentsCount.ToString()" class="rz-ml-2"/>
-            </RadzenButton>
             foreach (var committer in GetCommitters()) {
                 var user = committer.User;
                 <RadzenStack class="committer"
@@ -66,9 +58,19 @@
             }
         }
     </RadzenStack>
-    
+
 </div>
 <style>
+    .discussion-button {
+        padding: 0;
+        position: absolute;
+    }
+    .discussion-button:hover {
+         background-color: transparent !important;
+    }
+    .discussion-button:not(:hover) .rz-badge{
+        background-color: transparent;
+    }
     .avatar {
         position: relative;
         border-radius: 32px;
@@ -144,7 +146,24 @@
     private string GetAvatarSuspectStyles() {
         var percent = Math.Min(60 + Math.Round(30f * (Info.FailureSuspect.Confidence / 100f)), 100);
         return $"box-shadow: 0px 0px 6px 5px rgb(255 220 65 / {percent}%);";
-        
+    }
+
+    private string GetStatusInfo() {
+        var result = new StringBuilder();
+        result.Append(GetDuration());
+        result.Append(" ");
+        result.Append(Info.StartDate?.ToString("HH:mm"));
+        result.Append("-");
+        if (Info.EndDate.HasValue) {
+            result.Append(Info.EndDate?.ToString("HH:mm"));
+        } else {
+            result.Append("?");
+        }
+        if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
+            result.Append(" | ");
+            result.Append(Info.StatusText.Strip(70));
+        }
+        return result.ToString();
     }
 
 }
