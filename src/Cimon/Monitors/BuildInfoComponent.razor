@@ -23,7 +23,7 @@
                     </RadzenLink>
                     <RadzenButton class="discussion-button" Visible="@Info.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
-                            <RadzenIcon Icon="chat" Style="color: var(--rz-white)"/>
+                            <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
                             @Info.CommentsCount.ToString()
                         </RadzenBadge>
                     </RadzenButton>
@@ -31,36 +31,52 @@
             </RadzenStack>
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenText TextStyle="TextStyle.H6" Style="color: white" Text="@GetStatusInfo()" MouseEnter="@(ShowStatusTooltip)"/>
+            <RadzenText TextStyle="TextStyle.H6" Style="color: white" MouseEnter="@(ShowStatusTooltip)">
+                @{
+                    var durationInfo = GetDurationInfo();
+                }
+                <span>@durationInfo.Small</span><span>@GetStatusInfo()</span>
+            </RadzenText>
         </RadzenStack>
     </RadzenStack>
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
-        @if (Info.Status == BuildStatus.Failed) {
-            foreach (var committer in GetCommitters()) {
-                var user = committer.User;
-                <RadzenStack class="committer"
-                             Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                             AlignItems="AlignItems.Center" Gap="0">
-                    @{
-                        var style = string.Empty;
-                        var title = string.Empty;
-                        @if (Info.FailureSuspect?.User.Name == user.Name) {
-                            style = GetAvatarSuspectStyles();
-                            title = "Suspected in build failure";
-                        }
-                    }
-                    <div class="avatar" style="@style" title="@title">
-                        <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
-                        <p class="commits-count" title="Commits count">@committer.CommitsCount</p>
-                    </div>
-                    <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
-                </RadzenStack>
-            }
-        }
-    </RadzenStack>
-
+    @if (Info.Status == BuildStatus.Failed) {
+        <div class="avatar-group">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
+                @foreach (var committer in GetCommitters()) {
+                    var user = committer.User;
+                    var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                    <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                                 AlignItems="AlignItems.Center" Gap="0">
+                        <div class="avatar committer @committerClasses">
+                            <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                            <div class="commits-count">
+                                <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
+                                @if (IsSuspect(user)) {
+                                    var confidence = Info.FailureSuspect?.Confidence ?? 0;
+                                    var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
+                                    <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
+                                        <RadzenIcon Icon="local_fire_department"/>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
+                    </RadzenStack>
+                }
+            </RadzenStack>
+        </div>
+    }
 </div>
 <style>
+    .avatar-group > .rz-stack {
+        overflow-x: clip;
+    }
+    .committer.suspect .commits-count {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+    }
     .discussion-button {
         padding: 0;
         position: absolute;
@@ -86,8 +102,10 @@
     .commits-count {
        top: -4px;
        right: -10px;
-       
        background-color: #e66060;
+    }
+    .commits-count p {
+    margin-bottom: 0;
     }
     .status-tooltip{
         max-width: 400px;
@@ -132,38 +150,38 @@
         if (duration.StartsWith("0:")) {
             duration = duration.Substring(2);
         }
-        return $"[{duration}]";
+        return $"{duration}";
     }
 
     private IReadOnlyCollection<CommitterInfo> GetCommitters() {
         return Info?.Changes.GroupBy(x => x.Author)
             .OrderByDescending(x => x.Count())
-            .Take(5)
             .Select(x => new CommitterInfo(x.Key, x.Count())).ToList()
                ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
     }
 
-    private string GetAvatarSuspectStyles() {
-        var percent = Math.Min(60 + Math.Round(30f * (Info.FailureSuspect.Confidence / 100f)), 100);
-        return $"box-shadow: 0px 0px 6px 5px rgb(255 220 65 / {percent}%);";
+    private string GetStatusInfo() {
+        return !string.IsNullOrWhiteSpace(Info.StatusText) ? $" | {Info.StatusText.Strip(70)}" : string.Empty;
     }
 
-    private string GetStatusInfo() {
+    private (string Small, string Full) GetDurationInfo() {
         var result = new StringBuilder();
-        result.Append(GetDuration());
-        result.Append(" ");
-        result.Append(Info.StartDate?.ToString("HH:mm"));
+        var startDate = Info.StartDate?.ToString("HH:mm") ?? "?";
+        result.Append(startDate);
         result.Append("-");
-        if (Info.EndDate.HasValue) {
-            result.Append(Info.EndDate?.ToString("HH:mm"));
-        } else {
-            result.Append("?");
-        }
-        if (!string.IsNullOrWhiteSpace(Info.StatusText)) {
-            result.Append(" | ");
-            result.Append(Info.StatusText.Strip(70));
-        }
-        return result.ToString();
+        result.Append(Info.EndDate?.ToString("HH:mm") ?? "?");
+        result.Append(" | ");
+        var duration = GetDuration();
+        result.Append(duration);
+        return ($"{startDate} | {duration}", result.ToString());
+    }
+
+}
+
+@code {
+
+    private bool IsSuspect(VcsUser user) {
+        return Info.FailureSuspect?.User.Name == user.Name;
     }
 
 }
