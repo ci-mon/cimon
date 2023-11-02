@@ -106,8 +106,14 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 .build-info-item h4 {
     font-size: clamp(12px, 30cqmin, 20px);
 }
+.committer-wrap {
+    scale: 0.7;
+}
 
 @media only screen and (min-width: 700px) {
+    .committer-wrap{
+        scale: 1;
+    }
     .monitor {
         grid-template-columns: auto auto;
     }
@@ -123,6 +129,7 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-info-item {
         white-space: normal;
         text-overflow: ellipsis;
+        overflow: auto;
     }
 
     .build-info-item h5 {
@@ -132,6 +139,9 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 
     .build-info-item h4 {
         font-size: clamp(10px, 22cqmin, 20px);
+    }
+    .build-info-item:not(.failed) h4 {
+        font-size: clamp(10px, 38cqmin, 20px);
     }
 }
 
