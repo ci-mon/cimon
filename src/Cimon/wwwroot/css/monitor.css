@@ -1,0 +1,145 @@
+﻿.build-info-item h4 {
+    margin-bottom: 4px;
+}
+
+.build-info-item h6 {
+    margin-bottom: 2px;
+}
+
+.user-name {
+    color: white !important;
+    text-wrap: balance;
+    max-width: 50px;
+    line-break: anywhere;
+    text-align: center;
+    margin-bottom: 0;
+    margin-top: -6px;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+}
+
+.avatar-group > .rz-stack {
+    overflow-x: clip;
+}
+
+.committer.suspect .commits-count {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+button.rz-button.discussion-button {
+    padding: 0;
+    position: absolute;
+}
+
+button.rz-button.discussion-button:hover {
+    background-color: transparent !important;
+}
+
+button.rz-button.discussion-button:not(:hover) .rz-badge {
+    background-color: transparent;
+}
+
+.avatar {
+    position: relative;
+    border-radius: 32px;
+}
+
+.commits-count, .failure-author-confidence {
+    color: white;
+    position: absolute;
+    width: 16px;
+    text-align: center;
+    border-radius: 8px;
+    line-height: 16px;
+}
+
+.commits-count {
+    top: -4px;
+    right: -10px;
+    background-color: #e66060;
+}
+
+.commits-count p {
+    margin-bottom: 0;
+}
+
+.status-tooltip {
+    max-width: 400px;
+    text-wrap: balance;
+    line-break: anywhere;
+}
+
+.monitor {
+    background-color: var(--rz-base-800);
+    font-size: small;
+    height: 100%;
+    display: grid;
+    align-content: stretch;
+    justify-items: stretch;
+    align-items: stretch;
+    grid-template-columns: auto;
+}
+
+.monitor h1 {
+    color: var(--rz-danger);
+}
+
+.build-info-item {
+    background: rgb(76, 116, 34);
+    background: linear-gradient(1deg, rgba(76, 116, 34, 1) 0%, rgba(131, 190, 64, 1) 100%);
+    padding: 0.5em;
+    margin: 0.1em;
+    container-type: size;
+}
+
+.build-info-item .committer p {
+    font-size: clamp(5px, 12cqmin, 15px);
+}
+
+.build-info-item h5 {
+    font-size: clamp(8px, 15cqmin, 20px);
+}
+
+.build-info-item h4 {
+    font-size: clamp(12px, 30cqmin, 20px);
+}
+
+@media only screen and (min-width: 700px) {
+    .monitor {
+        grid-template-columns: auto auto;
+    }
+
+    .build-info-item .committer .commits-count {
+        font-size: clamp(10px, 8cqmin, 15px);
+    }
+
+    .build-info-item .committer p {
+        font-size: clamp(8px, 8cqmin, 15px);
+    }
+
+    .build-info-item {
+        white-space: normal;
+        text-overflow: ellipsis;
+    }
+
+    .build-info-item h5 {
+        font-size: clamp(5px, 17cqmin, 20px);
+        max-width: 420px;
+    }
+
+    .build-info-item h4 {
+        font-size: clamp(10px, 22cqmin, 20px);
+    }
+}
+
+.build-info-item.failed.with-committers {
+    grid-row: auto / span 2;
+}
+
+.build-info-item.failed {
+    background: rgb(76, 116, 34);
+    background: linear-gradient(1deg, rgb(116, 34, 34) 0%, rgb(190, 64, 64) 100%);
+}

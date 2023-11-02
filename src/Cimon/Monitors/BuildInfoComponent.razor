@@ -9,12 +9,14 @@
 @using Cimon.Users
 @using Microsoft.Extensions.Options
 @using System.Text
+@using Microsoft.Extensions.Primitives
+@using System.Runtime.CompilerServices
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
 @inject AppInitialStateAccessor AppInitialStateAccessor
 
 <div class="build-info-item @GetClasses()">
-    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5em">
+    <RadzenStack Orientation="Orientation.Vertical" Gap="2px">
         <RadzenStack Orientation="Orientation.Horizontal">
             <RadzenStack Orientation="Orientation.Horizontal">
                 <RadzenText TextStyle="TextStyle.H4">
@@ -42,10 +44,10 @@
     @if (Info.Status == BuildStatus.Failed) {
         <div class="avatar-group">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal">
-                @foreach (var committer in GetCommitters()) {
+                @foreach (var committer in Committers) {
                     var user = committer.User;
                     var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
-                    <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                    <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                  AlignItems="AlignItems.Center" Gap="0">
                         <div class="avatar committer @committerClasses">
                             <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
@@ -60,66 +62,31 @@
                                 }
                             </div>
                         </div>
-                        <RadzenText Text="@user.Name" Style="color: white"></RadzenText>
+                        <RadzenText Text="@user.Name" class="user-name"></RadzenText>
                     </RadzenStack>
                 }
             </RadzenStack>
         </div>
     }
 </div>
-<style>
-    .avatar-group > .rz-stack {
-        overflow-x: clip;
-    }
-    .committer.suspect .commits-count {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-    }
-    .discussion-button {
-        padding: 0;
-        position: absolute;
-    }
-    .discussion-button:hover {
-         background-color: transparent !important;
-    }
-    .discussion-button:not(:hover) .rz-badge{
-        background-color: transparent;
-    }
-    .avatar {
-        position: relative;
-        border-radius: 32px;
-    }
-    .commits-count, .failure-author-confidence {
-        color: white;
-        position: absolute;
-        width: 16px;
-        text-align: center; 
-        border-radius: 8px;
-        line-height: 16px;
-    }
-    .commits-count {
-       top: -4px;
-       right: -10px;
-       background-color: #e66060;
-    }
-    .commits-count p {
-    margin-bottom: 0;
-    }
-    .status-tooltip{
-        max-width: 400px;
-        text-wrap: balance;
-        line-break: anywhere;
-    }
-</style>
 
 @code {
+    private BuildInfo _info = null!;
 
     record CommitterInfo(VcsUser User, int CommitsCount);
 
     [Parameter]
-    public BuildInfo Info { get; set; } = null!;
+    public BuildInfo Info {
+        get => _info;
+        set {
+            _info = value;
+            Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
+                .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
+                (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+        }
+    }
+
+    private IReadOnlyCollection<CommitterInfo> Committers { get; set; }
 
     public AppClientType AppClientType { get; set; }
 
@@ -128,7 +95,16 @@
         return base.OnInitializedAsync();
     }
 
-    private string GetClasses() => Info.Status == BuildStatus.Failed ? "failed" : "";
+    private string GetClasses() {
+        var builder = new DefaultInterpolatedStringHandler();
+        if (Info.Status == BuildStatus.Failed) {
+            builder.AppendLiteral(" failed");
+            if (Committers.Any()) {
+                builder.AppendLiteral(" with-committers");
+            }
+        }
+        return builder.ToStringAndClear();
+    }
 
     private void Discuss() {
         var isElectron = AppClientType == AppClientType.Electron;
@@ -153,12 +129,6 @@
         return $"{duration}";
     }
 
-    private IReadOnlyCollection<CommitterInfo> GetCommitters() {
-        return Info?.Changes.GroupBy(x => x.Author)
-            .OrderByDescending(x => x.Count())
-            .Select(x => new CommitterInfo(x.Key, x.Count())).ToList()
-               ?? (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
-    }
 
     private string GetStatusInfo() {
         return !string.IsNullOrWhiteSpace(Info.StatusText) ? $" | {Info.StatusText.Strip(70)}" : string.Empty;
