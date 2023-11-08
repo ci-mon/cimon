@@ -16,39 +16,40 @@
 @inject AppInitialStateAccessor AppInitialStateAccessor
 
 <div class="build-info-item @GetClasses()">
-    <RadzenStack Orientation="Orientation.Vertical" Gap="2px">
-        <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenStack Orientation="Orientation.Horizontal">
-                <RadzenText TextStyle="TextStyle.H4">
-                    <RadzenLink Path="@Info.Url" Target="blank" Style="color: var(--rz-white)">
-                        @Info.Name @(string.IsNullOrWhiteSpace(Info.Number) ? string.Empty : Info.Number)
-                    </RadzenLink>
-                    <RadzenButton class="discussion-button" Visible="@Info.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
-                            <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
-                            @Info.CommentsCount.ToString()
-                        </RadzenBadge>
-                    </RadzenButton>
-                </RadzenText>
-            </RadzenStack>
-        </RadzenStack>
-        <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenText TextStyle="TextStyle.H6" Style="color: white" MouseEnter="@(ShowStatusTooltip)">
-                @{
-                    var durationInfo = GetDurationInfo();
-                }
-                <span title="@durationInfo.Full">@durationInfo.Small</span><span>@GetStatusInfo()</span>
+    <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
+        <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
+            <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
+                <RadzenLink Path="@Info.Url" Target="blank" class="build-info-link">
+                    @Info.Name @(string.IsNullOrWhiteSpace(Info.Number) ? string.Empty : Info.Number)
+                </RadzenLink>
+                <RadzenButton class="discussion-button" Visible="@Info.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
+                        <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
+                        @Info.CommentsCount.ToString()
+                    </RadzenBadge>
+                </RadzenButton>
             </RadzenText>
         </RadzenStack>
+        <RadzenText TextStyle="TextStyle.H4" MouseEnter="@(ShowStatusTooltip)" class="build-status">
+            @{
+                var durationInfo = GetDurationInfo();
+            }
+            <span title="@durationInfo.Full">@durationInfo.Start</span>
+            <span> | </span>
+            <span title="@durationInfo.Full">@durationInfo.Duration</span>
+            <span> | </span>
+            <span>@GetStatusInfo()</span>
+        </RadzenText>
     </RadzenStack>
     @if (Info.Status == BuildStatus.Failed) {
         <div class="avatar-group">
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Normal" Gap="0px">
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Normal" Gap="8px">
                 @foreach (var committer in Committers) {
                     var user = committer.User;
                     var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
                     <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                                 AlignItems="AlignItems.Center" Gap="0">
+                                 AlignItems="AlignItems.Center" Gap="2px">
                         <div class="avatar committer @committerClasses">
                             <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
                             <div class="commits-count">
@@ -62,7 +63,7 @@
                                 }
                             </div>
                         </div>
-                        <RadzenText Text="@user.Name" class="user-name"></RadzenText>
+                        <RadzenText Text="@user.Name" title="@user.Name" class="user-name"></RadzenText>
                     </RadzenStack>
                 }
             </RadzenStack>
@@ -82,7 +83,7 @@
             _info = value;
             Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+                         (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
         }
     }
 
@@ -131,10 +132,10 @@
 
 
     private string GetStatusInfo() {
-        return !string.IsNullOrWhiteSpace(Info.StatusText) ? $" | {Info.StatusText.Strip(70)}" : string.Empty;
+        return !string.IsNullOrWhiteSpace(Info.StatusText) ? $"{Info.StatusText.Strip(70)}" : string.Empty;
     }
 
-    private (string Small, string Full) GetDurationInfo() {
+    private (string Start, string Duration, string Full) GetDurationInfo() {
         var result = new StringBuilder();
         var startDate = Info.StartDate?.ToString("HH:mm") ?? "?";
         result.Append(startDate);
@@ -143,7 +144,7 @@
         result.Append(" | ");
         var duration = GetDuration();
         result.Append(duration);
-        return ($"{startDate} | {duration}", result.ToString());
+        return (startDate, duration, result.ToString());
     }
 
 }

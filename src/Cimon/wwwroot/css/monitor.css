@@ -1,4 +1,4 @@
-﻿.build-info-item h4 {
+.build-info-item h4 {
     margin-bottom: 4px;
 }
 
@@ -103,13 +103,61 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     font-size: clamp(8px, 15cqmin, 20px);
 }
 
-.build-info-item h4 {
-    font-size: clamp(12px, 30cqmin, 20px);
-}
 .committer-wrap {
     scale: 0.7;
 }
 
+.build-info-item .build-info-link
+, .build-info-item .build-info-link:hover
+, .build-status {
+    color: var(--rz-white) !important;
+}
+.build-info-item h4 {
+    font-size: clamp(10px, 2vw, 20px) !important;
+}
+@media only screen and (max-width: 700px) {
+    .build-info-item {
+        grid-row: auto / span 1;
+        &.failed.with-committers {
+            grid-row: auto / span 2;
+        }
+
+        .build-name {
+            max-width: 320px;
+            white-space: nowrap;
+            display: contents;
+        }
+        .build-name-text {
+            display: contents;
+        }
+        .build-info-link, .build-status {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .build-status {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+        &.failed {
+            .build-info-link {
+                 margin-left: 22px;
+            }
+            .build-name-and-status {
+                flex-direction: row !important;
+            }
+            .build-status {
+                align-self: self-end;
+            }
+        }
+        .discussion-button {
+            position: fixed !important;
+            top: 4px;
+            left: -6px;
+        }
+    }
+}
 @media only screen and (min-width: 700px) {
     .committer-wrap{
         scale: 1;
@@ -143,12 +191,14 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-info-item:not(.failed) h4 {
         font-size: clamp(10px, 38cqmin, 20px);
     }
-}
+    .build-info-item.failed.with-committers {
+        grid-row: auto / span 3;
+    }
+    .build-info-item {
+        grid-row: auto / span 2;
+    }
 
-.build-info-item.failed.with-committers {
-    grid-row: auto / span 2;
 }
-
 .build-info-item.failed {
     background: rgb(76, 116, 34);
     background: linear-gradient(1deg, rgb(116, 34, 34) 0%, rgb(190, 64, 64) 100%);
