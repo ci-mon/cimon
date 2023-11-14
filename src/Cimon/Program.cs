@@ -94,4 +94,5 @@ app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList
 app.MapFallbackToPage("/_Host");
 app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");
 
+AppActors.Init(app.Services);
 app.Run();

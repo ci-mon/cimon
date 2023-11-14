@@ -1,7 +1,10 @@
 @page "/monitor/{monitorId?}"
 @using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using Akka.Actor
 @using Cimon.Contracts
 @using Cimon.Contracts.CI
+@using Cimon.Data.Actors
 @using Cimon.Data.BuildInformation
 @using Cimon.Data.Users
 @using Cimon.DB.Models
@@ -51,6 +54,8 @@
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
+        var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId));
+        var x = Subscribe(subj);
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
             if (!monitor.Builds.Any()) {
                 _errorMessage = "No build set up";
