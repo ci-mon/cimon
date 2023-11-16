@@ -1,5 +1,4 @@
-﻿using Cimon.Contracts;
-using MediatR;
+﻿using MediatR;
 
 namespace Cimon.Data.Discussions;
 

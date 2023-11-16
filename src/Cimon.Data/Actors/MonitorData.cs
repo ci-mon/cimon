@@ -1,11 +1,11 @@
 ﻿using System.Reactive.Subjects;
 using Cimon.Contracts.CI;
-using Monitor = Cimon.DB.Models.Monitor;
+using Cimon.DB.Models;
 
 namespace Cimon.Data.Actors;
 
 public class MonitorData
 {
-	public Monitor Monitor { get; set; }
+	public MonitorModel Monitor { get; set; }
 	public ISubject<IList<BuildInfo>> Builds { get; set; }
 }

@@ -1,6 +1,4 @@
-﻿using System.Reactive.Subjects;
-
-namespace Cimon.Data.Actors;
+﻿namespace Cimon.Data.Actors;
 
 public class ActorsApi
 {

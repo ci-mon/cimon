@@ -1,6 +1,4 @@
-﻿using Cimon.Contracts;
-
-namespace Cimon.Data.Discussions;
+﻿namespace Cimon.Data.Discussions;
 
 using Cimon.Contracts.CI;
 

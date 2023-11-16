@@ -1,5 +1,4 @@
-﻿using Cimon.Contracts;
-using TeamCityAPI.Models;
+﻿using TeamCityAPI.Models;
 
 namespace Cimon.Data.TeamCity;
 

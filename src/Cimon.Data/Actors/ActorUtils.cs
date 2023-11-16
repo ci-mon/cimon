@@ -9,6 +9,10 @@ public static class ActorUtils
 	public static IActorRef DIActorOf<TActor>(this IUntypedActorContext context, string? name = null)
 			where TActor : ActorBase =>
 		context.ActorOf(DependencyResolver.For(context.System).Props<TActor>(), name);
+	public static void Observe<TItem>(this IUntypedActorContext context, IObservable<TItem> subject, 
+			string? name = null) {
+		context.ActorOf(ObserverActor<TItem>.Create(subject));
+	}
 
 	public static IActorRef GetOrCreateChild<TActor>(this IUntypedActorContext context, string? name = null)
 			where TActor : ActorBase {

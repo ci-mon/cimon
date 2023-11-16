@@ -1,17 +1,12 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
-using System.Runtime.Intrinsics.X86;
-using Cimon.Contracts;
-using Cimon.Contracts.Services;
 using Cimon.Data.Common;
-using Cimon.Data.Monitors;
 using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Monitor = Cimon.DB.Models.Monitor;
+using Monitor = Cimon.DB.Models.MonitorModel;
 
-namespace Cimon.Data.BuildInformation;
+namespace Cimon.Data.Monitors;
 
 public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 {

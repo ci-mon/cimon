@@ -1,9 +1,8 @@
-﻿using Cimon.Contracts;
-using Cimon.DB.Models;
+﻿using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Monitor = Cimon.DB.Models.Monitor;
+using Monitor = Cimon.DB.Models.MonitorModel;
 using User = Cimon.DB.Models.User;
 
 namespace Cimon.DB;

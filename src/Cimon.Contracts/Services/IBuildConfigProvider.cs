@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace Cimon.Contracts.Services;
+﻿namespace Cimon.Contracts.Services;
 
 using Cimon.Contracts.CI;
 

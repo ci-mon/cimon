@@ -1,5 +1,4 @@
-﻿using Cimon.Contracts;
-using Cimon.Contracts.Services;
+﻿using Cimon.Contracts.Services;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;

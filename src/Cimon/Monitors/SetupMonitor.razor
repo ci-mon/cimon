@@ -62,8 +62,8 @@
 
 @code {
 
-    private ReactiveValue<Monitor> _monitor = null!;
-    private Monitor Monitor => _monitor.Value;
+    private ReactiveValue<MonitorModel> _monitor = null!;
+    private MonitorModel Monitor => _monitor.Value;
     RadzenDataGrid<BuildConfig> grid;
     private ReactiveValue<IImmutableList<BuildConfig>> _buildConfigs;
     IList<BuildConfig> _selectedLocators = new List<BuildConfig>();

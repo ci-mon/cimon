@@ -1,10 +1,8 @@
-﻿using Cimon.Contracts;
-using Cimon.Contracts.Services;
+﻿using Cimon.Contracts.Services;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
 using TeamCityAPI.Queries;
 using TeamCityAPI.Queries.Common;
-using TeamCityAPI.Queries.Interfaces;
 
 namespace Cimon.Data.TeamCity;
 

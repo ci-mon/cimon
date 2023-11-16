@@ -1,5 +1,5 @@
 ﻿@page "/MonitorList"
-@using Cimon.Data.BuildInformation
+@using Cimon.Data.Monitors
 @using Cimon.DB.Models
 @using Microsoft.AspNetCore.Http.Extensions
 @inject MonitorService MonitorService
@@ -8,7 +8,7 @@
 
 <RadzenCard class="rz-mt-4 main-panel">
     <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="true"
-                    Data="@_monitors.Value.Where(m => !m.Removed)" TItem="Monitor">
+                    Data="@_monitors.Value.Where(m => !m.Removed)" TItem="MonitorModel">
         <Template Context="monitor">
             <RadzenCard class="monitor-item">
                 <RadzenRow>
@@ -81,28 +81,28 @@
 
 @code {
 
-    private ReactiveValue<IReadOnlyList<Monitor>> _monitors = null!;
+    private ReactiveValue<IReadOnlyList<MonitorModel>> _monitors = null!;
 
     protected override void OnInitialized() {
         base.OnInitialized();
-        _monitors = Subscribe(MonitorService.GetMonitors(), ArraySegment<Monitor>.Empty);
+        _monitors = Subscribe(MonitorService.GetMonitors(), ArraySegment<MonitorModel>.Empty);
     }
 
     private async Task Add() {
         await MonitorService.Add();
     }
 
-    private void ViewMonitor(Monitor monitor) {
+    private void ViewMonitor(MonitorModel monitor) {
         string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
     }
 
-    private void SetupMonitor(Monitor monitor) {
+    private void SetupMonitor(MonitorModel monitor) {
         string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
     }
 
-    private async Task Remove(Monitor monitor) {
+    private async Task Remove(MonitorModel monitor) {
         await MonitorService.Remove(monitor);
     }
 

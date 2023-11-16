@@ -1,7 +1,8 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data.BuildInformation;
+using Cimon.Data.Monitors;
 using Cimon.DB.Models;
-using Monitor = Cimon.DB.Models.Monitor;
+using Monitor = Cimon.DB.Models.MonitorModel;
 
 namespace Cimon.Data.Tests;
 

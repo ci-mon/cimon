@@ -1,4 +1,3 @@
-using Cimon.Contracts;
 using FluentAssertions;
 
 namespace Cimon.Data.Jenkins.Tests;

@@ -1,12 +1,10 @@
 ﻿using System.Collections.Immutable;
-using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
 using TeamCityAPI.Queries;
 using TeamCityAPI.Queries.Common;
-using BuildStatus = Cimon.Contracts.CI.BuildStatus;
 
 namespace Cimon.Data.TeamCity;
 

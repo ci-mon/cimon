@@ -1,5 +1,4 @@
-﻿using Cimon.Contracts;
-using Cimon.Contracts.Services;
+﻿using Cimon.Contracts.Services;
 
 namespace Cimon.Data.Jenkins;
 

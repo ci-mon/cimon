@@ -2,8 +2,6 @@
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using TeamCityAPI;
-using TeamCityAPI.Models;
-using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity;
 

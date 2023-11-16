@@ -1,6 +1,4 @@
-﻿using Cimon.Contracts;
-
-namespace Cimon.DB.Models;
+﻿namespace Cimon.DB.Models;
 
 using Cimon.Contracts.CI;
 

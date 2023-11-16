@@ -1,11 +1,9 @@
 @page "/monitor/{monitorId?}"
 @using System.Reactive.Linq
-@using System.Reactive.Subjects
-@using Akka.Actor
-@using Cimon.Contracts
 @using Cimon.Contracts.CI
 @using Cimon.Data.Actors
 @using Cimon.Data.BuildInformation
+@using Cimon.Data.Monitors
 @using Cimon.Data.Users
 @using Cimon.DB.Models
 @using MediatR
@@ -33,7 +31,7 @@
     public string? MonitorId { get; set; }
 
     private ReactiveValue<IList<BuildInfo>> _buildInfos = null!;
-    private ReactiveValue<Monitor>? _monitor;
+    private ReactiveValue<MonitorModel>? _monitor;
 
     private string GetTitle() => _monitor?.Value?.Title ?? MonitorId ?? string.Empty;
     private string? _errorMessage = "Monitor not found";

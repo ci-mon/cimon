@@ -1,9 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using Narochno.Jenkins.Entities.Builds;
-using BuildInfo = Cimon.Contracts.CI.BuildInfo;
 
 namespace Cimon.Data.Jenkins;
 

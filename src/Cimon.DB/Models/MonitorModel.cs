@@ -1,6 +1,6 @@
 ﻿namespace Cimon.DB.Models;
 
-public class Monitor
+public class MonitorModel
 {
 	public int Id { get; set; }
 	public required string Key { get; set; }

@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Cimon.Contracts;
 using Cimon.Contracts.Services;
 using FluentAssertions;
 using FluentAssertions.Execution;

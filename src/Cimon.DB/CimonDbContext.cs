@@ -1,6 +1,6 @@
 ﻿using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
-using Monitor = Cimon.DB.Models.Monitor;
+using Monitor = Cimon.DB.Models.MonitorModel;
 
 namespace Cimon.DB;
 
