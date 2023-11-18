@@ -86,7 +86,7 @@ public class BuildInfoServiceTests
 		locators.OnNext(new List<BuildConfig>());
 		await Wait.ForConditionNotChanged(() => infos.Should().BeNull());
 		infosForOtherSubscriber.Should().HaveCount(2);
-		_buildInfoProvider.ReceivedCalls().Where(c => c.GetMethodInfo().Name == nameof(IBuildInfoProvider.GetInfo))
+		_buildInfoProvider.ReceivedCalls().Where(c => c.GetMethodInfo().Name == nameof(IBuildInfoProvider.FindInfo))
 			.Should().HaveCount(2);
 	}
 

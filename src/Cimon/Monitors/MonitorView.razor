@@ -19,9 +19,10 @@
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
-    } else if (_buildInfos?.HasValue is true) {
-        @foreach (var buildInfo in _buildInfos.Value.OrderBy(x => x.Group)) {
-            <BuildInfoComponent Info="@buildInfo"></BuildInfoComponent>
+    } else if (_monitor?.HasValue is true) {
+        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Key)) {
+            <BuildInfoComponent BuildConfig="@build.BuildConfig" 
+                                Info="@build.BuildInfo" />
         }
     }
 </div>
@@ -31,9 +32,10 @@
     public string? MonitorId { get; set; }
 
     private ReactiveValue<IList<BuildInfo>> _buildInfos = null!;
-    private ReactiveValue<MonitorModel>? _monitor;
+    private ReactiveValue<MonitorModel>? _monitorOld;
+    private ReactiveValue<MonitorData>? _monitor;
 
-    private string GetTitle() => _monitor?.Value?.Title ?? MonitorId ?? string.Empty;
+    private string GetTitle() => _monitorOld?.Value?.Title ?? MonitorId ?? string.Empty;
     private string? _errorMessage = "Monitor not found";
 
     protected override async Task OnParametersSetAsync() {
@@ -53,18 +55,17 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId));
-        var x = Subscribe(subj);
-        _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            if (!monitor.Builds.Any()) {
+        _monitor = Subscribe(subj).OnChange(info => {
+            if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";
-            } else if (monitor.Removed) {
+            } else if (info.Monitor.Removed) {
                 _errorMessage = "Monitor removed";
             } else {
                 _errorMessage = null;
             }
         });
-        _buildInfos = Subscribe(BuildInfoService.Watch(_monitor.Source.Select(m => m.Builds.Select(x => x.BuildConfig).ToList())));
-        await _buildInfos.WaitForValueAsync();
+        //_buildInfos = Subscribe(BuildInfoService.Watch(_monitorOld.Source.Select(m => m.Builds.Select(x => x.BuildConfig).ToList())));
+        //await _buildInfos.WaitForValueAsync();
     }
 
 }

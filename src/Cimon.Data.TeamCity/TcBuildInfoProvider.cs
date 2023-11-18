@@ -37,21 +37,28 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		using var clientTicket = _clientFactory.GetClient();
 		List<BuildInfo?> list = new List<BuildInfo?>();
 		foreach (var buildInfoQuery in infoQueries) {
-			var buildConfig = buildInfoQuery.BuildConfig;
-			var buildConfigId = buildConfig.Key;
-			var build = await GetBuild(buildConfig, clientTicket);
-			if (build is null)
-				continue;
-			TcBuildInfo info = await GetBuildInfo(build, buildConfigId, clientTicket);
-			string? lastBuildNumber = buildInfoQuery.Options?.LastBuildNumber;
-			if (!string.IsNullOrWhiteSpace(lastBuildNumber) && info.Status == BuildStatus.Failed &&
-					build.Id is { } buildId) {
-				info.Log = await _clientFactory.GetLogsAsync(buildId);
-			}
-			info.AddInvestigationActions(build);
-			list.Add(info);
+			var info = await FindInfo(buildInfoQuery);
+			if (info is not null)
+				list.Add(info);
 		}
 		return (IReadOnlyCollection<BuildInfo>)list;
+	}
+
+	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
+		using var clientTicket = _clientFactory.GetClient();
+		var buildConfig = infoQuery.BuildConfig;
+		var buildConfigId = buildConfig.Key;
+		var build = await GetBuild(buildConfig, clientTicket);
+		if (build is null)
+			return null;
+		TcBuildInfo info = await GetBuildInfo(build, buildConfigId, clientTicket);
+		string? lastBuildNumber = infoQuery.Options?.LastBuildNumber;
+		if (!string.IsNullOrWhiteSpace(lastBuildNumber) && info.Status == BuildStatus.Failed &&
+			build.Id is { } buildId) {
+			info.Log = await _clientFactory.GetLogsAsync(buildId);
+		}
+		info.AddInvestigationActions(build);
+		return info;
 	}
 
 	public async Task<BuildInfo> GetSingleBuildInfo(string buildConfigId, int buildId) {

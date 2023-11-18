@@ -16,10 +16,13 @@ public static class CimonDbExtensions
 				var connectionString = configuration.GetConnectionString(dbTypeName);
 				var migrationAssembly = $"Cimon.DB.Migrations.{dbTypeName}";
 				if (dbType == DbType.SqlServer) {
-					options.UseSqlServer(connectionString, x => x.MigrationsAssembly(migrationAssembly));
+					options.UseSqlServer(connectionString, x => x.MigrationsAssembly(migrationAssembly)
+						.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
 				} else {
-					options.UseSqlite(connectionString, x => x.MigrationsAssembly(migrationAssembly));
+					options.UseSqlite(connectionString, x => x.MigrationsAssembly(migrationAssembly)
+						.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
 				}
+				options.EnableSensitiveDataLogging().EnableDetailedErrors();
 			})
 			.AddScoped<DbInitializer>()
 			.Configure<DbSeedOptions>(options => options.UseTestData = isDevelopment);

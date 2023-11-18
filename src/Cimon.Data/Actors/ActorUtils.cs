@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using System.Web;
+using Akka.Actor;
 using Akka.DependencyInjection;
 
 namespace Cimon.Data.Actors;
@@ -14,10 +15,20 @@ public static class ActorUtils
 		context.ActorOf(ObserverActor<TItem>.Create(subject));
 	}
 
-	public static IActorRef GetOrCreateChild<TActor>(this IUntypedActorContext context, string? name = null)
+	public static IActorRef GetOrCreateChild<TActor>(this IUntypedActorContext context, string? name = null) 
 			where TActor : ActorBase {
+		return context.GetOrCreateChild<TActor>(name, out _);
+	}
+
+	public static IActorRef GetOrCreateChild<TActor>(this IUntypedActorContext context, string? name, out bool created)
+			where TActor : ActorBase {
+		if (!ActorPath.IsValidPathElement(name)) {
+			name = HttpUtility.UrlEncode(name);
+		}
 		var child = context.Child(name);
+		created = false;
 		if (child.IsNobody()) {
+			created = true;
 			child = context.DIActorOf<TActor>(name);
 		}
 		return child;

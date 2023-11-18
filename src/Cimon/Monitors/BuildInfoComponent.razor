@@ -11,136 +11,145 @@
 @using System.Text
 @using Microsoft.Extensions.Primitives
 @using System.Runtime.CompilerServices
+@using Cimon.DB.Models
+@inherits ReactiveComponent
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
 @inject AppInitialStateAccessor AppInitialStateAccessor
 
-<div class="build-info-item @GetClasses()">
-    <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
-        <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
-            <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
-                <RadzenLink Path="@Info.Url" Target="blank" class="build-info-link">
-                    @Info.Name @(string.IsNullOrWhiteSpace(Info.Number) ? string.Empty : Info.Number)
-                </RadzenLink>
-                <RadzenButton class="discussion-button" Visible="@Info.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
-                    <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
-                        <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
-                        @Info.CommentsCount.ToString()
-                    </RadzenBadge>
-                </RadzenButton>
+@if (_infoSubscription.HasValue) {
+    <div class="build-info-item @GetClasses()">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
+            <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
+                <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
+                    <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
+                        @BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)
+                    </RadzenLink>
+                    <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
+                            <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
+                            @BuildInfo.CommentsCount.ToString()
+                        </RadzenBadge>
+                    </RadzenButton>
+                </RadzenText>
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.H4" MouseEnter="@(ShowStatusTooltip)" class="build-status">
+                @{
+                    var durationInfo = GetDurationInfo();
+                }
+                <span title="@durationInfo.Full">@durationInfo.Start</span>
+                <span> | </span>
+                <span title="@durationInfo.Full">@durationInfo.Duration</span>
+                <span> | </span>
+                <span>@GetStatusInfo()</span>
             </RadzenText>
         </RadzenStack>
-        <RadzenText TextStyle="TextStyle.H4" MouseEnter="@(ShowStatusTooltip)" class="build-status">
-            @{
-                var durationInfo = GetDurationInfo();
-            }
-            <span title="@durationInfo.Full">@durationInfo.Start</span>
-            <span> | </span>
-            <span title="@durationInfo.Full">@durationInfo.Duration</span>
-            <span> | </span>
-            <span>@GetStatusInfo()</span>
-        </RadzenText>
-    </RadzenStack>
-    @if (Info.Status == BuildStatus.Failed) {
-        <div class="avatar-group">
-            <RadzenStack Orientation="Orientation.Horizontal"
-                         AlignItems="AlignItems.Normal" Gap="8px">
-                @foreach (var committer in Committers) {
-                    var user = committer.User;
-                    var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
-                    <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                                 AlignItems="AlignItems.Center" Gap="2px">
-                        <div class="avatar committer @committerClasses">
-                            <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
-                            <div class="commits-count">
-                                <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
-                                @if (IsSuspect(user)) {
-                                    var confidence = Info.FailureSuspect?.Confidence ?? 0;
-                                    var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
-                                    <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
-                                        <RadzenIcon Icon="local_fire_department"/>
-                                    </div>
-                                }
+        @if (BuildInfo.Status == BuildStatus.Failed) {
+            <div class="avatar-group">
+                <RadzenStack Orientation="Orientation.Horizontal"
+                             AlignItems="AlignItems.Normal" Gap="8px">
+                    @foreach (var committer in Committers) {
+                        var user = committer.User;
+                        var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                        <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                                     AlignItems="AlignItems.Center" Gap="2px">
+                            <div class="avatar committer @committerClasses">
+                                <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                                <div class="commits-count">
+                                    <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
+                                    @if (IsSuspect(user)) {
+                                        var confidence = BuildInfo.FailureSuspect?.Confidence ?? 0;
+                                        var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
+                                        <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
+                                            <RadzenIcon Icon="local_fire_department"/>
+                                        </div>
+                                    }
+                                </div>
                             </div>
-                        </div>
-                        <RadzenText Text="@user.Name" title="@user.Name" class="user-name"></RadzenText>
-                    </RadzenStack>
-                }
-            </RadzenStack>
-        </div>
-    }
-</div>
+                            <RadzenText Text="@user.Name" title="@user.Name" class="user-name"></RadzenText>
+                        </RadzenStack>
+                    }
+                </RadzenStack>
+            </div>
+        }
+    </div>
+} else {
+    <RadzenText Text="Loading..." />
+}
 
 @code {
-    private BuildInfo _info = null!;
+    private ReactiveValue<BuildInfo> _infoSubscription = null!;
+    public BuildInfo BuildInfo => _infoSubscription.Value;
+
 
     record CommitterInfo(VcsUser User, int CommitsCount);
 
-    [Parameter]
-    public BuildInfo Info {
-        get => _info;
-        set {
-            _info = value;
-            Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
-                .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                         (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
-        }
-    }
+    [Parameter] public BuildConfig BuildConfig { get; set; }
+
+    [Parameter] public IObservable<BuildInfo> Info { get; set; }
 
     private IReadOnlyCollection<CommitterInfo> Committers { get; set; }
 
     public AppClientType AppClientType { get; set; }
 
-    protected override Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;
-        return base.OnInitializedAsync();
+        await base.OnInitializedAsync();
+        _infoSubscription = Subscribe(Info).OnChange(value => {
+            Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
+                             .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
+                         (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+        });
     }
 
     private string GetClasses() {
         var builder = new DefaultInterpolatedStringHandler();
-        if (Info.Status == BuildStatus.Failed) {
+        if (BuildInfo.Status == BuildStatus.Failed) {
             builder.AppendLiteral(" failed");
             if (Committers.Any()) {
                 builder.AppendLiteral(" with-committers");
             }
         }
+
         return builder.ToStringAndClear();
     }
 
     private void Discuss() {
         var isElectron = AppClientType == AppClientType.Electron;
-        NavigationManager.NavigateTo($"/buildDiscussion/{Info.BuildConfigId}", isElectron, isElectron);
+        NavigationManager.NavigateTo($"/buildDiscussion/{BuildInfo.BuildConfigId}", isElectron, isElectron);
     }
 
     void ShowStatusTooltip(ElementReference elementReference) {
-        if ((Info.StatusText?.Length ?? 0) < 70) {
+        if ((BuildInfo.StatusText?.Length ?? 0) < 70) {
             return;
         }
+
         var options = new TooltipOptions {
             Duration = 50000
         };
-        TooltipService.Open(elementReference, _ => @<div class="status-tooltip">@Info.StatusText</div>, options);
+        TooltipService.Open(elementReference, _ => @<div class="status-tooltip">@BuildInfo.StatusText</div>, options);
     }
 
     private string GetDuration() {
-        string duration = TimeSpan.FromSeconds(Math.Round(Info.Duration?.TotalSeconds ?? 0)).ToString("g");
+        string duration = TimeSpan.FromSeconds(Math.Round(BuildInfo.Duration?.TotalSeconds ?? 0)).ToString("g");
         if (duration.StartsWith("0:")) {
             duration = duration.Substring(2);
         }
+
         return $"{duration}";
     }
 
 
     private string GetStatusInfo() {
-        return !string.IsNullOrWhiteSpace(Info.StatusText) ? $"{Info.StatusText.Strip(70)}" : string.Empty;
+        return !string.IsNullOrWhiteSpace(BuildInfo.StatusText) ? $"{BuildInfo.StatusText.Strip(70)}" : string.Empty;
     }
 
     private (string Start, string Duration, string Full) GetDurationInfo() {
         var result = new StringBuilder();
-        var startDate = Info.StartDate?.ToString("HH:mm") ?? "?";
+        var startDate = BuildInfo.StartDate?.ToString("HH:mm") ?? "?";
         result.Append(startDate);
         result.Append("-");
-        result.Append(Info.EndDate?.ToString("HH:mm") ?? "?");
+        result.Append(BuildInfo.EndDate?.ToString("HH:mm") ?? "?");
         result.Append(" | ");
         var duration = GetDuration();
         result.Append(duration);
@@ -152,7 +161,7 @@
 @code {
 
     private bool IsSuspect(VcsUser user) {
-        return Info.FailureSuspect?.User.Name == user.Name;
+        return BuildInfo.FailureSuspect?.User.Name == user.Name;
     }
 
 }

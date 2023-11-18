@@ -6,15 +6,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj" />
+        <ProjectReference Include="..\Cimon.Contracts\Cimon.Contracts.csproj"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Microsoft.ML" Version="3.0.0-preview.23511.1" />
+        <PackageReference Include="Microsoft.ML" Version="3.0.0-preview.23511.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
     </ItemGroup>
-    <ItemGroup>
-      <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
-        <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.0-rc.2.23480.2\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
 </Project>
