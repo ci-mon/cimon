@@ -2,12 +2,17 @@
 using Akka.Event;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
+using Cimon.Data.BuildInformation;
+using Cimon.Data.Common;
 using Cimon.DB.Models;
 
 namespace Cimon.Data.Actors;
 
 class BuildInfoActor : ReceiveActor
 {
+	private readonly IEnumerable<IBuildInfoProvider> _buildInfoProviders;
+	private readonly BuildInfoMonitoringSettings _settings;
+
 	record StopIfIdle;
 	record GetBuildInfo;
 
@@ -17,46 +22,78 @@ class BuildInfoActor : ReceiveActor
 	private BuildConfig? _config;
 	private IBuildInfoProvider? _provider;
 	private ICancelable? _refreshBuildInfoScheduler;
+	private readonly HashSet<string> _systemUserLogins;
+	private readonly RingBuffer<BuildInfo> _buildInfos = new(50);
 
-	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders) {
-		Receive<BuildInfoServiceActorApi.Unsubscribe>(_ => {
-			_subscribers.Remove(Sender);
-			if (_subscribers.Count == 0)
-				Context.System.Scheduler.ScheduleTellOnce(TimeSpan.FromSeconds(30), Self, _stopIfIdle, Self);
-		});
-		Receive<StopIfIdle>(_ => {
-			if (_subscribers.Count == 0) {
-				_refreshBuildInfoScheduler?.Cancel();
-				Self.Tell(PoisonPill.Instance);
-			}
-		});
-		Receive<BuildConfig>(config => {
-			_subscribers.Add(Sender);
-			if (_config == null) {
-				_config = config;
-				_provider = buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
-				_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-					TimeSpan.FromSeconds(Random.Shared.Next(3,10)), TimeSpan.FromSeconds(5), Self,
-					_getBuildInfo, Self);
-			}
-		});
-		Receive<GetBuildInfo>(_ => {
-			var options = new BuildInfoQueryOptions();
-			var query = new BuildInfoQuery(_config!, options);
-			if (_config!.DemoState is not null) {
-				_config.DemoState.BuildConfigId = _config.Id.ToString();
-				_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
-				Self.Tell(_config.DemoState);
-				return;
-			}
-			_provider!.FindInfo(query).PipeTo(Self);
-		});
-		Receive<BuildInfo>(info => {
-			if (info is null) return;
-			_subscribers.ForEach(s=>s.Tell(info));
-		});
+	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders,
+			BuildInfoMonitoringSettings settings) {
+		_buildInfoProviders = buildInfoProviders;
+		_settings = settings;
+		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
+		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
+		Receive<StopIfIdle>(OnStopIfIdle);
+		Receive<BuildConfig>(InitBuildConfig);
+		Receive<GetBuildInfo>(OnGetBuildInfo);
+		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<Status.Failure>(failure => {
 			Context.GetLogger().Error(failure.Cause, failure.Cause.Message);
 		});
+	}
+
+	private void InitBuildConfig(BuildConfig config) {
+		_subscribers.Add(Sender);
+		if (_config == null) {
+			_config = config;
+			_provider = _buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
+			_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+				TimeSpan.FromSeconds(Random.Shared.Next(0, 10)), _settings.Delay, Self, _getBuildInfo, Self);
+		}
+	}
+
+	private bool _discussionOpen;
+	private void HandleBuildInfo(BuildInfo? current) {
+		if (current is null) return;
+		if (_buildInfos.Last?.Number.Equals(current.Number) is true) {
+			return;
+		}
+		current.Changes = current.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
+		HandleDiscussion(current);
+		_subscribers.ForEach(s => s.Tell(current));
+	}
+
+	private void HandleDiscussion(BuildInfo current) {
+		var canHaveDiscussion = current.CanHaveDiscussion();
+		if (_discussionOpen && !canHaveDiscussion) {
+			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Key));
+			_discussionOpen = false;
+		} else if (!_discussionOpen && canHaveDiscussion) {
+			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!.Key, current));
+			_discussionOpen = true;
+		}
+	}
+
+	private void OnGetBuildInfo(GetBuildInfo _) {
+		var options = new BuildInfoQueryOptions();
+		var query = new BuildInfoQuery(_config!, options);
+		if (_config!.DemoState is not null) {
+			_config.DemoState.BuildConfigId = _config.Id.ToString();
+			_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
+			Self.Tell(_config.DemoState);
+			return;
+		}
+		_provider!.FindInfo(query).PipeTo(Self);
+	}
+
+	private void OnStopIfIdle(StopIfIdle _) {
+		if (_subscribers.Count == 0) {
+			_refreshBuildInfoScheduler?.Cancel();
+			Self.Tell(PoisonPill.Instance);
+		}
+	}
+
+	private void Unsubscribe(BuildInfoServiceActorApi.Unsubscribe _) {
+		_subscribers.Remove(Sender);
+		if (_subscribers.Count == 0)
+			Context.System.Scheduler.ScheduleTellOnce(TimeSpan.FromSeconds(30), Self, _stopIfIdle, Self);
 	}
 }

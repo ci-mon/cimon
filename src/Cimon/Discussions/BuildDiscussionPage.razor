@@ -1,7 +1,8 @@
 ﻿@namespace Cimon.Discussions
-@page "/buildDiscussion/{buildId?}"
+@page "/buildDiscussion/{BuildConfigId?}"
 @using System.Reactive.Linq
 @using Cimon.Contracts
+@using Cimon.Data.Actors
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @inject BuildDiscussionStoreService DiscussionStoreService
@@ -100,7 +101,7 @@
 @code {
 
     [Parameter]
-    public string BuildId { get; set; } = null!;
+    public string BuildConfigId { get; set; } = null!;
 
     private ReactiveValue<IBuildDiscussionService> _discussionService = null!;
     private ReactiveValue<BuildDiscussionState> _state = null!;
@@ -115,9 +116,11 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;
-        var discussionService = DiscussionStoreService.GetDiscussionService(BuildId);
+        var discussionService = DiscussionStoreService.GetDiscussionService(BuildConfigId);
         _discussionService = Subscribe(discussionService);
         _state = Subscribe(_discussionService.Source.SelectMany(x => x.State));
+        var discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(BuildConfigId));
+        // TODO
         ClearComment();
     }
 

@@ -11,6 +11,7 @@ public class AppActors
 
 	public IActorRef MonitorService { get; set; }
 	public IActorRef BuildInfoService { get; set; }
+	public IActorRef DiscussionsService { get; set; }
 
 	public static void Init(IServiceProvider serviceProvider) {
 		var instance = new AppActors();
@@ -23,7 +24,8 @@ public class AppActors
 		var di = DependencyResolverSetup.Create(serviceProvider);
 		var actorSystemSetup = bootstrap.And(di);
 		_actorSystem = ActorSystem.Create("cimon", actorSystemSetup);
-		BuildInfoService = _actorSystem.ActorOf(_actorSystem.DI().Props<BuildInfoServiceActor>());
+		DiscussionsService = _actorSystem.ActorOf(_actorSystem.DI().Props<DiscussionStoreActor>());
+		BuildInfoService = _actorSystem.ActorOf(_actorSystem.DI().Props<BuildInfoServiceActor>(DiscussionsService));
 		MonitorService = _actorSystem.ActorOf(_actorSystem.DI().Props<MonitorServiceActor>(BuildInfoService));
 	}
 }

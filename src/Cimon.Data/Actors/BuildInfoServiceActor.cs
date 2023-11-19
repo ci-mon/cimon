@@ -10,7 +10,7 @@ static class BuildInfoServiceActorApi
 }
 public class BuildInfoServiceActor : ReceiveActor
 {
-	public BuildInfoServiceActor() {
+	public BuildInfoServiceActor(IActorRef discussionsService) {
 		Receive<BuildInfoServiceActorApi.Subscribe>(msg => {
 			Context.GetOrCreateChild<BuildInfoActor>(msg.BuildConfig.Id.ToString())
 				.Forward(msg.BuildConfig);
@@ -18,5 +18,7 @@ public class BuildInfoServiceActor : ReceiveActor
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(msg => {
 			Context.Child(msg.BuildConfigId.ToString()).Forward(msg);
 		});
+		Receive<ActorsApi.OpenDiscussion>(discussionsService.Forward);
+		Receive<ActorsApi.CloseDiscussion>(discussionsService.Forward);
 	}
 }
