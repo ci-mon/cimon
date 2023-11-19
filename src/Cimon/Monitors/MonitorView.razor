@@ -1,14 +1,8 @@
 @page "/monitor/{monitorId?}"
-@using System.Reactive.Linq
 @using Cimon.Contracts.CI
 @using Cimon.Data.Actors
-@using Cimon.Data.BuildInformation
-@using Cimon.Data.Monitors
 @using Cimon.Data.Users
-@using Cimon.DB.Models
 @using MediatR
-@inject MonitorService MonitorService
-@inject BuildInfoService BuildInfoService
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
@@ -20,7 +14,7 @@
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
     } else if (_monitor?.HasValue is true) {
-        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Key)) {
+        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.CISystem)) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig" 
                                 Info="@build.BuildInfo" />
         }
@@ -30,12 +24,9 @@
 
     [Parameter]
     public string? MonitorId { get; set; }
-
-    private ReactiveValue<IList<BuildInfo>> _buildInfos = null!;
-    private ReactiveValue<MonitorModel>? _monitorOld;
     private ReactiveValue<MonitorData>? _monitor;
 
-    private string GetTitle() => _monitorOld?.Value?.Title ?? MonitorId ?? string.Empty;
+    private string GetTitle() => _monitor?.Value?.Monitor.Title ?? MonitorId ?? string.Empty;
     private string? _errorMessage = "Monitor not found";
 
     protected override async Task OnParametersSetAsync() {
@@ -64,8 +55,6 @@
                 _errorMessage = null;
             }
         });
-        //_buildInfos = Subscribe(BuildInfoService.Watch(_monitorOld.Source.Select(m => m.Builds.Select(x => x.BuildConfig).ToList())));
-        //await _buildInfos.WaitForValueAsync();
     }
 
 }

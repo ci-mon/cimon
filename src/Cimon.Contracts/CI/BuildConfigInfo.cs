@@ -1,6 +1,9 @@
 ﻿namespace Cimon.Contracts.CI;
 
-public record BaseBuildConfigInfo(string Key, string? Branch, bool IsDefaultBranch);
+public record BaseBuildConfigInfo(string Key, string? Branch, bool IsDefaultBranch)
+{
+	public int Id { get; init; }
+}
 
 public record BuildConfigInfo(string Key, string? Branch = null, bool IsDefaultBranch = false) : BaseBuildConfigInfo(Key, Branch, IsDefaultBranch)
 {

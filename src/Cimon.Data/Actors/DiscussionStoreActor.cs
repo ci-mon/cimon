@@ -7,7 +7,7 @@ namespace Cimon.Data.Actors;
 public class DiscussionStoreActor : ReceiveActor
 {
 	record State(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject, bool Merged);
-	private readonly Dictionary<string, State> _discussions = new();
+	private readonly Dictionary<int, State> _discussions = new();
 	private readonly Dictionary<IActorRef, State> _stateMap = new();
 	public DiscussionStoreActor() {
 		Receive<ActorsApi.FindDiscussion>(FindDiscussion);
@@ -24,11 +24,12 @@ public class DiscussionStoreActor : ReceiveActor
 		if (_discussions.ContainsKey(req.BuildConfigId)) {
 			return;
 		}
-		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId);
+		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId.ToString());
 		var state = new State(child, new ReplaySubject<BuildDiscussionState>(1), false);
 		_stateMap[child] = state;
 		_discussions.Add(req.BuildConfigId, state);
 		child.Forward(req.BuildInfo);
+		child.Forward(new DiscussionActorApi.Subscribe());
 	}
 
 	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {

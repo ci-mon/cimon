@@ -20,9 +20,9 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	};
 
 	private readonly ReplaySubject<MonitorData> _monitorSubject = new();
-	private ImmutableDictionary<string, WatchedBuildInfo> _buildInfos =
-		ImmutableDictionary<string, WatchedBuildInfo>.Empty;
-	private MonitorModel? _model;
+	private ImmutableDictionary<int, WatchedBuildInfo> _buildInfos =
+		ImmutableDictionary<int, WatchedBuildInfo>.Empty;
+	private IImmutableList<BuildInMonitor>? _builds;
 	private readonly IObservable<MonitorData> _dataObservable;
 	private volatile int _subscriptionsCount;
 	private ICancelable _stopCountdown = Cancelable.CreateCanceled();
@@ -52,19 +52,17 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 
 	protected override void PostStop() {
 		base.PostStop();
-		if (_model is null) return;
-		foreach (var build in _model.Builds) {
-			var id = build.BuildConfigId.ToString();
-			Context.Parent.Tell(new BuildInfoServiceActorApi.Unsubscribe(id));
+		if (_builds is null) return;
+		foreach (var build in _builds) {
+			Context.Parent.Tell(new BuildInfoServiceActorApi.Unsubscribe(build.BuildConfigId));
 		}
 	}
 
 	private void OnMonitorChange(MonitorModel model) {
-		var builds = _model?.Builds;
-		var diff = builds.CompareWith(model.Builds, build => build.BuildConfigId);
-		var toRemove = new List<string>();
+		var diff = _builds.CompareWith(model.Builds, build => build.BuildConfigId);
+		var toRemove = new List<int>();
 		foreach (var removed in diff.Removed) {
-			var id = removed.BuildConfigId.ToString();
+			var id = removed.BuildConfigId;
 			Context.Parent.Tell(new BuildInfoServiceActorApi.Unsubscribe(id));
 			toRemove.Add(id);
 		}
@@ -76,8 +74,8 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		}
 		_buildInfos = _buildInfos
 			.RemoveRange(toRemove)
-			.AddRange(toAdd.Select(x => new KeyValuePair<string, WatchedBuildInfo>(x.BuildConfig.Id.ToString(), x)));
-		_model = model;
+			.AddRange(toAdd.Select(x => new KeyValuePair<int, WatchedBuildInfo>(x.BuildConfig.Id, x)));
+		_builds = model.Builds.ToImmutableList();
 		_monitorSubject.OnNext(new MonitorData {
 			Monitor = model,
 			Builds = _buildInfos.Values

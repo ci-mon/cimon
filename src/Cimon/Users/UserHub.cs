@@ -10,7 +10,7 @@ namespace Cimon.Users;
 
 public interface IUserClientApi
 {
-	Task NotifyWithUrl(string buildId, string url, string header, string message, string authorEmail);
+	Task NotifyWithUrl(string buildConfigId, string url, string header, string message, string authorEmail);
 	Task UpdateMentions(IEnumerable<MentionInfo> mentions);
 	Task CheckForUpdates();
 }
@@ -63,7 +63,7 @@ public class UserHub : Hub<IUserClientApi>
 
 	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string comment) {
 		await _mediator.Publish(new AddReplyCommentNotification {
-			BuildId = buildId,
+			BuildConfigId = int.Parse(buildId),// TODO change type
 			QuickReplyType = quickReplyType,
 			Comment = comment
 		});

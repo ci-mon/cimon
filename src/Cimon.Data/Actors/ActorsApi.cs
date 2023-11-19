@@ -9,18 +9,18 @@ public static class ActorsApi
 {
 	public record WatchMonitor(string Id) : IMessageWithResponse<IObservable<MonitorData>>;
 
-	public abstract record DiscussionAction(string BuildConfigId);
+	public abstract record DiscussionAction(int BuildConfigId);
 
-	public record OpenDiscussion(string BuildConfigId, BuildInfo BuildInfo) : DiscussionAction(BuildConfigId);
+	public record OpenDiscussion(int BuildConfigId, BuildInfo BuildInfo) : DiscussionAction(BuildConfigId);
 
-	public record CloseDiscussion(string BuildConfigId) : DiscussionAction(BuildConfigId);
+	public record CloseDiscussion(int BuildConfigId) : DiscussionAction(BuildConfigId);
 
-	public record DiscussionHandle(bool Active, IActorRef Api, IObservable<BuildDiscussionState> State)
+	public record DiscussionHandle(bool Active, IActorRef Discussion, IObservable<BuildDiscussionState> State)
 	{
 		public static DiscussionHandle Empty { get; } = new(false, ActorRefs.Nobody,
 			Observable.Empty<BuildDiscussionState>());
 	}
 
-	public record FindDiscussion(string BuildConfigId)
+	public record FindDiscussion(int BuildConfigId)
 		: DiscussionAction(BuildConfigId), IMessageWithResponse<DiscussionHandle>;
 }

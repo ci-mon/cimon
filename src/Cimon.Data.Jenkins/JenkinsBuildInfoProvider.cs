@@ -34,7 +34,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 				Group = null,
 				BranchName = buildConfig.Branch,
 				Number = buildInfo.Number.ToString(),
-				BuildConfigId = buildConfig.Key,
+				BuildConfigId = buildConfig.Id,
 				StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
 				Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
 				Status = GetStatus(buildInfo.Result),

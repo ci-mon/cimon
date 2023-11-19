@@ -4,6 +4,6 @@ namespace Cimon.Data.Users;
 
 public interface INotificationService
 {
-	public Task Notify(string buildId, string commentId, User messageAuthor, IReadOnlyCollection<MentionedEntityId> groups,
+	public Task Notify(string buildConfigId, string commentId, User messageAuthor, IReadOnlyCollection<MentionedEntityId> groups,
 		string comment);
 }

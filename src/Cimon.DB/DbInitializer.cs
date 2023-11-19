@@ -97,7 +97,7 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = "BpmsPlatformWorkDiagnostic"
+				BuildConfigId = 1
 			}
 		});
 		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit") {
@@ -110,7 +110,7 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = "Unit"
+				BuildConfigId = 2
 			}
 		});
 		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit (.Net 6)") {
@@ -123,7 +123,7 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = "Unit (.Net 6)",
+				BuildConfigId = 3
 			}
 		});
 		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (MSSQL)") {
@@ -136,7 +136,7 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = "Integration (MSSQL)",
+				BuildConfigId = 4
 			}
 		});
 		var manyChanges = Enumerable.Range(0, 10).Select(i => 
@@ -154,7 +154,7 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				Duration = TimeSpan.FromSeconds(1234),
 				BranchName = "trunk",
-				BuildConfigId = "Integration (PostgreSQL)",
+				BuildConfigId = 5,
 				Changes = manyChanges,
 				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
 			}
@@ -169,7 +169,7 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = "Integration (Oracle)",
+				BuildConfigId = 6,
 			}
 		});
 		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.shell") {
@@ -182,7 +182,7 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				Changes = manyChanges,
-				BuildConfigId = "app.studio-enterprise.shell",
+				BuildConfigId = 7,
 			}
 		});
 		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.schema-view") {
@@ -197,7 +197,7 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = "app.studio-enterprise.schema-view",
+				BuildConfigId = 8,
 			}
 		});
 		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.process-designer") {
@@ -213,7 +213,7 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = "app.studio-enterprise.process-designer",
+				BuildConfigId = 9,
 			}
 		});
 		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "lib.studio-enterprise.process") {
@@ -229,13 +229,13 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = "lib.studio-enterprise.process",
+				BuildConfigId = 10,
 			}
 		});
 
 		async Task AddBuildsToMonitor(Monitor monitor, params BuildConfig[] buildConfigs) {
 			foreach (var config in buildConfigs) {
-				await context.MonitorBuilds.AddAsync(new BuildInMonitor() {
+				await context.MonitorBuilds.AddAsync(new BuildInMonitor {
 					Monitor = monitor,
 					MonitorId = monitor.Id,
 					BuildConfig = config,

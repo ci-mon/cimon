@@ -6,17 +6,18 @@ namespace Cimon.Data.Discussions;
 
 public class MentionsService
 {
-	private readonly BuildDiscussionStoreService _discussionStore;
-	public MentionsService(BuildDiscussionStoreService discussionStore) {
-		_discussionStore = discussionStore;
+	public MentionsService() {
+		
 	}
 
 	public IObservable<int> GetMentionsCount(User user) => GetMentions(user).Select(x => x.Sum(m => m.CommentsCount));
 
 	public IObservable<IReadOnlyCollection<MentionInfo>> GetMentions(User user) {
 		var buffer = new BehaviorSubject<List<MentionInfo>>(new List<MentionInfo>());
-		var buildCommentsObs = _discussionStore.AllDiscussions.SelectMany(x => x)
-			.SelectMany(x => x.Comments.Select(c => (x.BuildId, c)));
+		/*var buildCommentsObs = _discussionStore.AllDiscussions.SelectMany(x => x)
+			.SelectMany(x => x.Comments.Select(c => (x.BuildId, c)));*/
+		// TODO FIX
+		var buildCommentsObs = Observable.Empty<(string, IEnumerable<BuildComment>)>();
 		return buffer.CombineLatest(buildCommentsObs).Select(tuple => {
 			var (mentions, (buildId, allComments)) = tuple;
 			var buildComments = allComments.Where(c => c.Mentions.Any(m => m.Name == user.Name.Name)).ToList();

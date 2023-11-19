@@ -1,16 +1,14 @@
 ﻿@namespace Cimon.Discussions
 @page "/buildDiscussion/{BuildConfigId?}"
-@using System.Reactive.Linq
 @using Cimon.Contracts
 @using Cimon.Data.Actors
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
-@inject BuildDiscussionStoreService DiscussionStoreService
 @inject IJSRuntime JsRuntime;
 @inject ICurrentUserAccessor CurrentUserAccessor;
 @inherits ReactiveComponent
 
-@if (_state.HasValue) {
+@if (_state?.HasValue ?? false) {
     <div class="container">
         <RadzenRow JustifyContent="JustifyContent.Center">
             <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
@@ -101,12 +99,12 @@
 @code {
 
     [Parameter]
-    public string BuildConfigId { get; set; } = null!;
+    public string BuildConfigId { get; set; }
 
-    private ReactiveValue<IBuildDiscussionService> _discussionService = null!;
-    private ReactiveValue<BuildDiscussionState> _state = null!;
+    private ReactiveValue<BuildDiscussionState>? _state;
     private CommentData _newComment = new();
     private User _user = null!;
+    private ActorsApi.DiscussionHandle? _discussionHandle;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
@@ -116,12 +114,10 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;
-        var discussionService = DiscussionStoreService.GetDiscussionService(BuildConfigId);
-        _discussionService = Subscribe(discussionService);
-        _state = Subscribe(_discussionService.Source.SelectMany(x => x.State));
-        var discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(BuildConfigId));
-        // TODO
+        _discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
+        _state = Subscribe(_discussionHandle.State);
         ClearComment();
+        StateHasChanged();
     }
 
     private void ClearComment() {
@@ -130,24 +126,18 @@
         };
     }
 
-    private async Task AddComment() {
-        if (_discussionService.HasValue) {
-            await _discussionService.Value.AddComment(_newComment);
-        }
+    private void AddComment() {
+        _discussionHandle?.AddComment(_newComment);
         ClearComment();
         StateHasChanged();
     }
 
-    private async Task OnSave(BuildComment comment) {
-        if (_discussionService.HasValue) {
-            await _discussionService.Value.UpdateComment(comment);
-        }
+    private void OnSave(BuildComment comment) {
+        _discussionHandle?.UpdateComment(comment);
     }
 
-    private async Task OnDelete(BuildComment comment) {
-        if (_discussionService.HasValue) {
-            await _discussionService.Value.RemoveComment(comment);
-        }
+    private void OnDelete(BuildComment comment) {
+        _discussionHandle?.RemoveComment(comment);
     }
 
     private BuildDiscussionState State => _state.Value;

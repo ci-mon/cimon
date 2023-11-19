@@ -16,7 +16,7 @@ public record BuildInfo
 	public IReadOnlyCollection<VcsChange> Changes { get; set; } = Array.Empty<VcsChange>();
 	public IReadOnlyCollection<CIBuildProblem> Problems { get; set; } = Array.Empty<CIBuildProblem>();
 	public IReadOnlyCollection<CITestOccurence> FailedTests { get; set; } = Array.Empty<CITestOccurence>();
-	required public string BuildConfigId { get; set; }
+	required public int BuildConfigId { get; set; }
 	public int CommentsCount { get; set; }
 	public BuildFailureSuspect? FailureSuspect { get; set; }
 	public bool IsNotOk() => Status == BuildStatus.Failed;

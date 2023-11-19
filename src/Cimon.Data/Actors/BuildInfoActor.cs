@@ -56,6 +56,7 @@ class BuildInfoActor : ReceiveActor
 		if (_buildInfos.Last?.Number.Equals(current.Number) is true) {
 			return;
 		}
+		_buildInfos.Add(current);
 		current.Changes = current.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		HandleDiscussion(current);
 		_subscribers.ForEach(s => s.Tell(current));
@@ -64,19 +65,20 @@ class BuildInfoActor : ReceiveActor
 	private void HandleDiscussion(BuildInfo current) {
 		var canHaveDiscussion = current.CanHaveDiscussion();
 		if (_discussionOpen && !canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Key));
+			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
 			_discussionOpen = false;
 		} else if (!_discussionOpen && canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!.Key, current));
+			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!.Id, current));
 			_discussionOpen = true;
 		}
+		// TODO subscribe for comments count
 	}
 
 	private void OnGetBuildInfo(GetBuildInfo _) {
 		var options = new BuildInfoQueryOptions();
 		var query = new BuildInfoQuery(_config!, options);
 		if (_config!.DemoState is not null) {
-			_config.DemoState.BuildConfigId = _config.Id.ToString();
+			_config.DemoState.BuildConfigId = _config.Id;
 			_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
 			Self.Tell(_config.DemoState);
 			return;

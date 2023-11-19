@@ -1,23 +1,17 @@
-﻿using System.Reactive.Linq;
-using Cimon.Data.Discussions;
+﻿using Cimon.Data;
+using Cimon.Data.Actors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cimon.Discussions;
 
-
 [Route("discussions")]
 public class DiscussionsService : Controller
 {
-	private readonly BuildDiscussionStoreService _discussionStore;
-	public DiscussionsService(BuildDiscussionStoreService discussionStore) {
-		_discussionStore = discussionStore;
-	}
-
 	[HttpGet]
 	[Route("executeAction")]
-	public async Task<IActionResult> ExecuteAction([FromQuery]string buildTypeId, [FromQuery]Guid actionId) {
-		var discussion = await _discussionStore.GetDiscussionService(buildTypeId).FirstAsync();
-		await discussion.ExecuteAction(actionId);
+	public async Task<IActionResult> ExecuteAction([FromQuery]int buildTypeId, [FromQuery]Guid actionId) {
+		var discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(buildTypeId));
+		discussionHandle.ExecuteAction(actionId);
 		return Ok();
 	}
 }

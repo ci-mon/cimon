@@ -11,7 +11,6 @@ public enum BuildConfigStatus
 public record BuildConfig(CISystem CISystem, string Key, string? Branch = null, bool IsDefaultBranch = false) 
 	: BuildConfigInfo(Key, Branch, IsDefaultBranch)
 {
-	public int Id { get; set; }
 	public BuildConfigStatus Status { get; set; }
 	public BuildInfo? DemoState { get; set; }
 	public List<BuildInMonitor> Monitors { get; set; } = new();

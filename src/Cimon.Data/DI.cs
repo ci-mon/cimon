@@ -11,11 +11,8 @@ public static class DI
 {
 	public static IServiceCollection AddCimonData(this IServiceCollection services) {
 		return services
-			.AddSingleton<IBuildMonitoringService, BuildMonitoringService>()
 			.AddSingleton<UserManager>()
 			.AddSingleton<LdapClient>()
-			.AddSingleton<BuildInfoService>()
-			.AddSingleton<BuildDiscussionStoreService>()
 			.AddSingleton<MentionsService>()
 			.AddSingleton<ITechnicalUsers>(x => x.GetRequiredService<UserManager>())
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()

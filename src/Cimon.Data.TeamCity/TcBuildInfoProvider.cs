@@ -47,11 +47,10 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
 		using var clientTicket = _clientFactory.GetClient();
 		var buildConfig = infoQuery.BuildConfig;
-		var buildConfigId = buildConfig.Key;
 		var build = await GetBuild(buildConfig, clientTicket);
 		if (build is null)
 			return null;
-		TcBuildInfo info = await GetBuildInfo(build, buildConfigId, clientTicket);
+		TcBuildInfo info = await GetBuildInfo(build, buildConfig.Id, clientTicket);
 		string? lastBuildNumber = infoQuery.Options?.LastBuildNumber;
 		if (!string.IsNullOrWhiteSpace(lastBuildNumber) && info.Status == BuildStatus.Failed &&
 			build.Id is { } buildId) {
@@ -70,11 +69,11 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			Id = buildId
 		};
 		var build = await GetBuild(clientTicket, locator);
-		var buildInfo = await GetBuildInfo(build, buildConfigId, clientTicket);
+		var buildInfo = await GetBuildInfo(build, 0, clientTicket);
 		return buildInfo;
 	}
 
-	private async Task<TcBuildInfo> GetBuildInfo(Build build, string buildConfigId, 
+	private async Task<TcBuildInfo> GetBuildInfo(Build build, int buildConfigId, 
 			TeamCityClientTicket clientTicket) {
 		var endDate = ParseDate(build.FinishOnAgentDate);
 		var startDate = ParseDate(build.StartDate);

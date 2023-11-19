@@ -6,7 +6,7 @@ namespace Cimon.Data.Actors;
 static class BuildInfoServiceActorApi
 {
 	public record Subscribe(BuildConfig BuildConfig);
-	public record Unsubscribe(string BuildConfigId);
+	public record Unsubscribe(int BuildConfigId);
 }
 public class BuildInfoServiceActor : ReceiveActor
 {
