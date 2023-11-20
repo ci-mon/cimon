@@ -7,7 +7,9 @@
 @inject NavigationManager NavigationManager
 <PageTitle>Mentions</PageTitle>
 <RadzenCard>
-    @if (_mentions.IsEmpty) {
+    @if (_mentions is null) {
+        <RadzenText TextStyle="TextStyle.H2" Text="Loading..." />
+    } else if (_mentions.IsEmpty) {
         <RadzenText TextStyle="TextStyle.H2" Text="All good..." />
     } else {
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start">
@@ -21,8 +23,8 @@
     }
 </RadzenCard>
 @code {
-    private ReactiveValue<IImmutableList<MentionInfo>?> _mentions = null!;
-    private string StatusText => $"You was mentioned in {_mentions.Value?.Count ?? 0} builds";
+    private ReactiveValue<IImmutableList<MentionInfo>?>? _mentions;
+    private string StatusText => $"You was mentioned in {_mentions?.Value?.Count ?? 0} builds";
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
