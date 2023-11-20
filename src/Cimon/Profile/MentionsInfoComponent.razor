@@ -21,7 +21,7 @@
     protected override async Task OnInitializedAsync() {
         var user = await CurrentUserAccessor.Current;
         var mentions = await AppActors.GetMentions(user);
-        _mentionsCount = Subscribe(mentions.Select(x => x.Count));
+        _mentionsCount = Subscribe(mentions.Select(x => x.Select(m => m.Count).Sum()));
     }
 
     void ShowTooltip(ElementReference elementReference) {

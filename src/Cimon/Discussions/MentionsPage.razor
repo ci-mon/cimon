@@ -17,6 +17,7 @@
             @foreach (var mention in _mentions.Value) {
                 <RadzenStack Orientation="Orientation.Horizontal">
                     <RadzenButton Text="@mention.DiscussionId" Click="() => GoToDiscussion(mention.DiscussionId)"/>
+                    <RadzenText>@mention.Count times</RadzenText>
                 </RadzenStack>
             }
         </RadzenStack>
