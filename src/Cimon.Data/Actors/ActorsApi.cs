@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+﻿using System.Collections.Immutable;
+using System.Reactive.Linq;
 using Akka.Actor;
 using Cimon.Contracts.CI;
 using Cimon.Data.Discussions;
@@ -23,4 +24,17 @@ public static class ActorsApi
 
 	public record FindDiscussion(int BuildConfigId)
 		: DiscussionAction(BuildConfigId), IMessageWithResponse<DiscussionHandle>;
+	
+	public record UserMessage<TMessage>(string UserName, TMessage Payload) : UserMessage(UserName)
+	{
+		public override object Message => Payload;
+	}
+
+	public abstract record UserMessage(string UserName)
+	{
+		public abstract object Message { get; }
+	}
+	public record GetMentions;
+	public record GetUserMentions(string UserName) : UserMessage<GetMentions>(UserName, new GetMentions()),
+		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
 }

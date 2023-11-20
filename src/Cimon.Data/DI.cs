@@ -13,7 +13,6 @@ public static class DI
 		return services
 			.AddSingleton<UserManager>()
 			.AddSingleton<LdapClient>()
-			.AddSingleton<MentionsService>()
 			.AddSingleton<ITechnicalUsers>(x => x.GetRequiredService<UserManager>())
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
 			.AddSingleton<BuildConfigService>()

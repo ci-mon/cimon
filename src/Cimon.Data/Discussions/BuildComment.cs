@@ -3,7 +3,7 @@ using Cimon.Contracts;
 
 namespace Cimon.Data.Discussions;
 
-public class BuildComment
+public record BuildComment
 {
 	public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 	public required string Comment { get; set; }

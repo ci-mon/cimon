@@ -1,12 +1,12 @@
 ﻿@using Cimon.Data.Discussions
 @using Cimon.Data.Users
+@using System.Reactive.Linq
 @inherits ReactiveComponent
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
-@inject MentionsService MentionsService
 @inject ICurrentUserAccessor CurrentUserAccessor
 <RadzenBadge class="mentions-badge"  BadgeStyle="@BadgeStyle" MouseEnter="@(ShowTooltip)">
-    <RadzenButton Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="OpenMentions" Text="@_mentionsCount.ToString()" 
+    <RadzenButton Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="OpenMentions" Text="@_mentionsCount?.ToString()" 
                   Style="color: var(--rz-white);"/>
 </RadzenBadge>
 <style>
@@ -15,17 +15,18 @@
     }
 </style>
 @code {
-    private ReactiveValue<int> _mentionsCount = null!;
-    private BadgeStyle BadgeStyle => _mentionsCount.Value > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
+    private ReactiveValue<int>? _mentionsCount;
+    private BadgeStyle BadgeStyle => _mentionsCount?.Value > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
 
     protected override async Task OnInitializedAsync() {
         var user = await CurrentUserAccessor.Current;
-        _mentionsCount = Subscribe(MentionsService.GetMentionsCount(user));
+        var mentions = await AppActors.GetMentions(user);
+        _mentionsCount = Subscribe(mentions.Select(x => x.Count));
     }
 
     void ShowTooltip(ElementReference elementReference) {
         var message = $"You were mentioned {_mentionsCount} times";
-        var color = _mentionsCount.Value > 0 ? "--rz-danger" : "--rz-primary";
+        var color = _mentionsCount?.Value > 0 ? "--rz-danger" : "--rz-primary";
         TooltipService.Open(elementReference, message, new TooltipOptions {
             Style = $"background-color: var({color}); color: var(--rz-text-contrast-color)",
             Position = TooltipPosition.Bottom,

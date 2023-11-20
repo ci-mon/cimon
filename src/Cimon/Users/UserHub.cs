@@ -1,4 +1,6 @@
 ﻿using System.Reactive.Linq;
+using Cimon.Data;
+using Cimon.Data.Actors;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;
 using MediatR;
@@ -22,18 +24,16 @@ public class UserHub : Hub<IUserClientApi>
 	private readonly IMediator _mediator;
 	private readonly UserManager _userManager;
 	private readonly ICurrentUserAccessor _userAccessor;
-	private readonly MentionsService _mentionsService;
 	private readonly IHubContext<UserHub, IUserClientApi> _hubContext;
 	private const string MentionsSubscriptionKey = "MentionsSubscription";
 
 	public UserHub(ILogger<UserHub> logger, IMediator mediator, UserManager userManager, 
-			ICurrentUserAccessor userAccessor, MentionsService mentionsService, 
+			ICurrentUserAccessor userAccessor, 
 			IHubContext<UserHub, IUserClientApi> hubContext) {
 		_logger = logger;
 		_mediator = mediator;
 		_userManager = userManager;
 		_userAccessor = userAccessor;
-		_mentionsService = mentionsService;
 		_hubContext = hubContext;
 	}
 
@@ -75,7 +75,8 @@ public class UserHub : Hub<IUserClientApi>
 		}
 		var user = await _userAccessor.Current;
 		var connectionId = Context.ConnectionId;
-		subscription = _mentionsService.GetMentions(user)
+		var mentions = await AppActors.GetMentions(user);
+		subscription = mentions
 			.Select(m => _hubContext.Clients.Client(connectionId).UpdateMentions(m))
 			.Subscribe();
 		Context.Items[MentionsSubscriptionKey] = subscription;

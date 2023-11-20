@@ -4,6 +4,7 @@ using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
+using Cimon.Data.Discussions;
 using Cimon.DB.Models;
 
 namespace Cimon.Data.Actors;
@@ -24,6 +25,8 @@ class BuildInfoActor : ReceiveActor
 	private ICancelable? _refreshBuildInfoScheduler;
 	private readonly HashSet<string> _systemUserLogins;
 	private readonly RingBuffer<BuildInfo> _buildInfos = new(50);
+	private int _commentsCount;
+	private bool _discussionWatched;
 
 	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders,
 			BuildInfoMonitoringSettings settings) {
@@ -37,6 +40,17 @@ class BuildInfoActor : ReceiveActor
 		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<Status.Failure>(failure => {
 			Context.GetLogger().Error(failure.Cause, failure.Cause.Message);
+		});
+		Receive<Terminated>(terminated => {
+			_discussionOpen = false;
+		});
+		Receive<BuildDiscussionState>(state => {
+			if (!_discussionWatched) {
+				_discussionWatched = true;
+				Context.Watch(Sender);
+			}
+			_commentsCount = state.Comments.Count;
+			NotifySubscribers(_buildInfos.Last);
 		});
 	}
 
@@ -53,12 +67,18 @@ class BuildInfoActor : ReceiveActor
 	private bool _discussionOpen;
 	private void HandleBuildInfo(BuildInfo? current) {
 		if (current is null) return;
+		HandleDiscussion(current);
 		if (_buildInfos.Last?.Number.Equals(current.Number) is true) {
 			return;
 		}
 		_buildInfos.Add(current);
 		current.Changes = current.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-		HandleDiscussion(current);
+		NotifySubscribers(current);
+	}
+
+	private void NotifySubscribers(BuildInfo? current) {
+		if (current is null) return;
+		current.CommentsCount = _commentsCount;
 		_subscribers.ForEach(s => s.Tell(current));
 	}
 
@@ -71,7 +91,6 @@ class BuildInfoActor : ReceiveActor
 			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!.Id, current));
 			_discussionOpen = true;
 		}
-		// TODO subscribe for comments count
 	}
 
 	private void OnGetBuildInfo(GetBuildInfo _) {

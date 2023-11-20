@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Akka.Actor;
+using Akka.Routing;
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using Cimon.Contracts;
@@ -9,14 +10,23 @@ using Cimon.Data.Users;
 
 namespace Cimon.Data.Actors;
 
+enum ChangeType
+{
+	Add, Remove
+}
+
+record BuildCommentChange(ChangeType ChangeType, BuildComment Comment, string DiscussionId);
+
 public static class DiscussionActorApi
 {
 	internal record AddCommentMsg(CommentData CommentData);
 	internal record UpdateCommentMsg(BuildComment Comment);
 	internal record RemoveCommentMsg(BuildComment Comment);
 	internal record ExecuteActionMsg(Guid ActionId);
-	internal record Subscribe;
-	internal record Unsubscribe;
+	internal record SubscribeForState;
+	internal record UnsubscribeForState;
+	internal record SubscribeForComments;
+	internal record UnsubscribeForComments;
 
 	public static void AddComment(this ActorsApi.DiscussionHandle handle, CommentData commentData) =>
 		handle.Discussion.Tell(new AddCommentMsg(commentData));
@@ -35,28 +45,48 @@ public class DiscussionActor : ReceiveActor
 	private int _buildConfigId;
 	private readonly Dictionary<Guid, BuildInfoActionDescriptor> _actions = new();
 	private readonly ITechnicalUsers _technicalUsers;
-	private readonly List<IActorRef> _subscribers = new();
+	private readonly IActorRef _stateSubscribers;
+	private IActorRef _commentsSubscribers = ActorRefs.Nobody;
 
 	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers) {
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
+		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
+		_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Context.Parent)));
 		ReceiveAsync<BuildInfo>(async info => {
 			if (_state.Status == BuildDiscussionStatus.Unknown) {
 				var state = _state with {
 					Status = BuildDiscussionStatus.Open
 				};
+				StateHasChanged(state);
 				_buildConfigId = info.BuildConfigId;
 				await OpenDiscussion(info);
-				StateHasChanged(state);
 			}
 		});
 		ReceiveAsync<DiscussionActorApi.AddCommentMsg>(msg => AddComment(msg.CommentData));
-		Receive<DiscussionActorApi.UpdateCommentMsg>(msg => UpdateComment(msg.Comment));
+		ReceiveAsync<DiscussionActorApi.UpdateCommentMsg>(msg => UpdateComment(msg.Comment));
 		Receive<DiscussionActorApi.RemoveCommentMsg>(msg => RemoveComment(msg.Comment));
 		ReceiveAsync<PoisonPill>(_ => CloseDiscussion());
 		ReceiveAsync<DiscussionActorApi.ExecuteActionMsg>(msg => ExecuteAction(msg.ActionId));
-		Receive<DiscussionActorApi.Subscribe>(_ => _subscribers.Add(Sender));
-		Receive<DiscussionActorApi.Unsubscribe>(_ => _subscribers.Remove(Sender));
+		Receive<DiscussionActorApi.SubscribeForState>(_ => {
+			_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Sender)));
+			if (_state.Status != BuildDiscussionStatus.Unknown) {
+				Sender.Tell(_state);
+			}
+		});
+		Receive<DiscussionActorApi.UnsubscribeForState>(_ =>
+			_stateSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(Sender))));
+		Receive<DiscussionActorApi.SubscribeForComments>(_ => {
+			if (_commentsSubscribers.Equals(ActorRefs.Nobody)) {
+				_commentsSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
+			}
+			_commentsSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Sender)));
+			foreach (var comment in _state.Comments) {
+				Sender.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
+			}
+		});
+		Receive<DiscussionActorApi.UnsubscribeForComments>(_ =>
+			_commentsSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(Sender))));
 	}
 
 	private async Task AddComment(CommentData data) {
@@ -68,10 +98,12 @@ public class DiscussionActor : ReceiveActor
 		var state = _state with {
 			Comments = _state.Comments.Add(comment)
 		};
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
 		var commentSimpleText = ExtractText(comment);
 		StateHasChanged(state);
 		// TODO _buildConfigId
-		await _notificationService.Notify(_buildConfigId.ToString(), comment.Id, data.Author, comment.Mentions, commentSimpleText);
+		await _notificationService.Notify(_buildConfigId.ToString(), comment.Id, data.Author, comment.Mentions,
+			commentSimpleText);
 	}
 	
 	private string ExtractText(BuildComment comment) {
@@ -98,24 +130,30 @@ public class DiscussionActor : ReceiveActor
 
 	private void StateHasChanged(BuildDiscussionState state) {
 		_state = state;
-		Context.Parent.Tell(state);
-		foreach (var actorRef in _subscribers) {
-			actorRef.Tell(state);
-		}
+		_stateSubscribers.Tell(state);
 	}
 
 	private void RemoveComment(BuildComment comment) {
 		var state = _state with {
 			Comments = _state.Comments.Remove(comment)
 		};
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, comment, Self.Path.Name));
 		StateHasChanged(state);
 	}
 
-	private void UpdateComment(BuildComment comment) {
+	private async Task UpdateComment(BuildComment comment) {
+		var stateComments = _state.Comments;
+		var oldComment = stateComments.FirstOrDefault(x => x.Id == comment.Id);
+		if (oldComment is not null) {
+			_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, oldComment, Self.Path.Name));
+			stateComments = stateComments.Remove(oldComment);
+		}
 		comment.ModifiedOn = DateTime.UtcNow;
+		comment.Mentions = await ExtractMentions(comment.Comment);
 		var state = _state with {
-			Comments = _state.Comments.Replace(comment, comment)
+			Comments = stateComments.Add(comment)
 		};
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
 		StateHasChanged(state);
 	}
 
@@ -142,10 +180,11 @@ public class DiscussionActor : ReceiveActor
 	}
 	
 	private async Task OpenDiscussion(BuildInfo buildInfo) {
-		await AddComment(new CommentData {
+		var commentData = new CommentData {
 			Author = _technicalUsers.MonitoringBot,
 			Comment = BuildCommentMessage(buildInfo)
-		});
+		};
+		await AddComment(commentData);
 		if (buildInfo is IBuildInfoActionsProvider actionProvider) {
 			var actions = actionProvider.GetAvailableActions();
 			RegisterActions(actions);
@@ -161,10 +200,12 @@ public class DiscussionActor : ReceiveActor
 
 	private async Task CloseDiscussion() {
 		var comments = _state.Comments;
-		var mentionedUsers = comments.SelectMany(c => c.Mentions.Where(x => x.Type == MentionedEntityType.User))
+		var mentionedUsers = comments
+			.SelectMany(c => c.Mentions.Where(x => x.Type == MentionedEntityType.User))
 			.ToList();
 		if (!mentionedUsers.Any()) return;
-		var values = mentionedUsers.DistinctBy(x => x.Name).Select(u => GetUserMention(u.Name, u.DisplayName));
+		var values = mentionedUsers.DistinctBy(x => x.Name)
+			.Select(u => GetUserMention(u.Name, u.DisplayName));
 		await AddComment(new CommentData {
 			Author = _technicalUsers.MonitoringBot,
 			Comment = $"<p>{string.Join(", ", values)} build is green now.</p>"

@@ -1,8 +1,8 @@
 ﻿@page "/mentions"
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
+@using System.Collections.Immutable
 @inherits ReactiveComponent
-@inject MentionsService MentionsService
 @inject ICurrentUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
 <PageTitle>Mentions</PageTitle>
@@ -14,23 +14,23 @@
             <RadzenText Text="@StatusText" />
             @foreach (var mention in _mentions.Value) {
                 <RadzenStack Orientation="Orientation.Horizontal">
-                    <RadzenButton Text="@mention.BuildId" Click="() => GoToDiscussion(mention.BuildId)"/>
+                    <RadzenButton Text="@mention.DiscussionId" Click="() => GoToDiscussion(mention.DiscussionId)"/>
                 </RadzenStack>
             }
         </RadzenStack>
     }
 </RadzenCard>
 @code {
-    private ReactiveValue<IReadOnlyCollection<MentionInfo>?> _mentions = null!;
+    private ReactiveValue<IImmutableList<MentionInfo>?> _mentions = null!;
     private string StatusText => $"You was mentioned in {_mentions.Value?.Count ?? 0} builds";
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        _mentions = Subscribe(MentionsService.GetMentions(user))!;
+        _mentions = Subscribe(await AppActors.GetMentions(user))!;
     }
 
-    private void GoToDiscussion(string buildId) {
-        NavigationManager.NavigateTo($"buildDiscussion/{buildId}");
+    private void GoToDiscussion(string discussionId) {
+        NavigationManager.NavigateTo($"buildDiscussion/{discussionId}");
     }
 
 }

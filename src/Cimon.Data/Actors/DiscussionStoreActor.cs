@@ -6,10 +6,13 @@ namespace Cimon.Data.Actors;
 
 public class DiscussionStoreActor : ReceiveActor
 {
+	private readonly IActorRef _mentionsMonitor;
+
 	record State(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject, bool Merged);
 	private readonly Dictionary<int, State> _discussions = new();
 	private readonly Dictionary<IActorRef, State> _stateMap = new();
-	public DiscussionStoreActor() {
+	public DiscussionStoreActor(IActorRef mentionsMonitor) {
+		_mentionsMonitor = mentionsMonitor;
 		Receive<ActorsApi.FindDiscussion>(FindDiscussion);
 		Receive<ActorsApi.CloseDiscussion>(CloseDiscussion);
 		Receive<ActorsApi.OpenDiscussion>(OpenDiscussion);
@@ -21,15 +24,18 @@ public class DiscussionStoreActor : ReceiveActor
 	}
 
 	private void OpenDiscussion(ActorsApi.OpenDiscussion req) {
-		if (_discussions.ContainsKey(req.BuildConfigId)) {
+		if (_discussions.TryGetValue(req.BuildConfigId, out var value)) {
+			Sender.Tell(value.Child);
 			return;
 		}
 		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId.ToString());
 		var state = new State(child, new ReplaySubject<BuildDiscussionState>(1), false);
 		_stateMap[child] = state;
 		_discussions.Add(req.BuildConfigId, state);
-		child.Forward(req.BuildInfo);
-		child.Forward(new DiscussionActorApi.Subscribe());
+		child.Tell(req.BuildInfo);
+		child.Forward(new DiscussionActorApi.SubscribeForState());
+		child.Tell(new DiscussionActorApi.SubscribeForComments(), _mentionsMonitor);
+		Sender.Tell(child);
 	}
 
 	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {
@@ -39,6 +45,7 @@ public class DiscussionStoreActor : ReceiveActor
 			Context.Stop(state.Child);
 			state.Subject.OnCompleted();
 			state.Subject.Dispose();
+			Context.Stop(Self);
 		}
 	}
 

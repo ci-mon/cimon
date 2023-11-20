@@ -1,7 +1,3 @@
 ﻿namespace Cimon.Data.Discussions;
 
-public record MentionInfo(string BuildId, int CommentsCount)
-{
-	public int CommentsCount { get; set; } = CommentsCount;
-
-}
+public record MentionInfo(string DiscussionId, int Count);
