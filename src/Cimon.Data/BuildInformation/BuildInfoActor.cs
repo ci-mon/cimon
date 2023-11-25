@@ -40,7 +40,7 @@ class BuildInfoActor : ReceiveActor
 		Receive<Status.Failure>(failure => {
 			Context.GetLogger().Error(failure.Cause, failure.Cause.Message);
 		});
-		Receive<Terminated>(terminated => {
+		Receive<Terminated>(_ => {
 			_discussionOpen = false;
 		});
 		Receive<BuildDiscussionState>(state => {
@@ -55,12 +55,11 @@ class BuildInfoActor : ReceiveActor
 
 	private void InitBuildConfig(BuildConfig config) {
 		_subscribers.Add(Sender);
-		if (_config == null) {
-			_config = config;
-			_provider = _buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
-			_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-				TimeSpan.FromSeconds(Random.Shared.Next(0, 10)), _settings.Delay, Self, _getBuildInfo, Self);
-		}
+		if (_config != null) return;
+		_config = config;
+		_provider = _buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
+		_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+			TimeSpan.FromSeconds(Random.Shared.Next(0, 5)), _settings.Delay, Self, _getBuildInfo, Self);
 	}
 
 	private bool _discussionOpen;
