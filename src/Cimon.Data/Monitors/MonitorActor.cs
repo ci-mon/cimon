@@ -4,12 +4,13 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
 using Cimon.Contracts.CI;
+using Cimon.Data.Actors;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
-using Cimon.Data.Monitors;
 using Cimon.DB.Models;
 using ICancelable = Akka.Actor.ICancelable;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Monitors;
 
 class MonitorActor : ReceiveActor, IWithUnboundedStash
 {

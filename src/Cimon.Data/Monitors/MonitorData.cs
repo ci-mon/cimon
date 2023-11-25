@@ -1,7 +1,7 @@
 ﻿using Cimon.Contracts.CI;
 using Cimon.DB.Models;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Monitors;
 
 public class MonitorData
 {

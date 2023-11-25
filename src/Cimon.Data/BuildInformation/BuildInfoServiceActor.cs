@@ -1,7 +1,8 @@
 ﻿using Akka.Actor;
+using Cimon.Data.Actors;
 using Cimon.DB.Models;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.BuildInformation;
 
 static class BuildInfoServiceActorApi
 {

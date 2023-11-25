@@ -25,8 +25,4 @@
       <ProjectReference Include="..\Cimon.DB\Cimon.DB.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="BuildInformation\" />
-    </ItemGroup>
-
 </Project>

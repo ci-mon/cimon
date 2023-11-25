@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Subjects;
-using System.Xml.Linq;
 using Akka.Actor;
+using Cimon.Data.Actors;
 using Cimon.Data.Discussions;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Users;
 
 public class UserActor : ReceiveActor
 {

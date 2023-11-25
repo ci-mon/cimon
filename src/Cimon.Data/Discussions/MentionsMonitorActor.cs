@@ -1,7 +1,7 @@
 ﻿using Akka.Actor;
-using Cimon.Data.Discussions;
+using Cimon.Data.Actors;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Discussions;
 
 public class MentionsMonitorActor : ReceiveActor
 {

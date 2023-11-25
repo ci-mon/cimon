@@ -5,10 +5,10 @@ using AngleSharp;
 using AngleSharp.Html.Parser;
 using Cimon.Contracts;
 using Cimon.Contracts.CI;
-using Cimon.Data.Discussions;
+using Cimon.Data.Actors;
 using Cimon.Data.Users;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Discussions;
 
 enum ChangeType
 {

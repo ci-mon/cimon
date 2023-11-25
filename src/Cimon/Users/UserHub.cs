@@ -1,6 +1,5 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data;
-using Cimon.Data.Actors;
 using Cimon.Data.Discussions;
 using Cimon.Data.Users;
 using MediatR;

@@ -2,12 +2,12 @@
 using Akka.Event;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
-using Cimon.Data.BuildInformation;
+using Cimon.Data.Actors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.DB.Models;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.BuildInformation;
 
 class BuildInfoActor : ReceiveActor
 {

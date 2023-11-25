@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
+using Cimon.Data.Actors;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Users;
 
 class UserSupervisorActor : ReceiveActor
 {
