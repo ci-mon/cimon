@@ -4,6 +4,7 @@ using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
+using Cimon.Data.ML;
 using Cimon.DB.Models;
 
 namespace Cimon.Data.BuildInformation;
@@ -12,6 +13,7 @@ class BuildInfoActor : ReceiveActor
 {
 	private readonly IEnumerable<IBuildInfoProvider> _buildInfoProviders;
 	private readonly BuildInfoMonitoringSettings _settings;
+	private readonly IBuildFailurePredictor _buildFailurePredictor;
 
 	record StopIfIdle;
 	record GetBuildInfo;
@@ -28,9 +30,10 @@ class BuildInfoActor : ReceiveActor
 	private bool _discussionWatched;
 
 	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders,
-			BuildInfoMonitoringSettings settings) {
+			BuildInfoMonitoringSettings settings, IBuildFailurePredictor buildFailurePredictor) {
 		_buildInfoProviders = buildInfoProviders;
 		_settings = settings;
+		_buildFailurePredictor = buildFailurePredictor;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
 		Receive<StopIfIdle>(OnStopIfIdle);
@@ -63,15 +66,16 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private bool _discussionOpen;
-	private void HandleBuildInfo(BuildInfo? current) {
-		if (current is null) return;
-		HandleDiscussion(current);
-		if (_buildInfos.Last?.Number.Equals(current.Number) is true) {
+	private void HandleBuildInfo(BuildInfo? newInfo) {
+		if (newInfo is null) return;
+		if (_buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
 			return;
 		}
-		_buildInfos.Add(current);
-		current.Changes = current.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-		NotifySubscribers(current);
+		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
+		newInfo.FailureSuspect = _buildFailurePredictor.FindFailureSuspect(newInfo);
+		HandleDiscussion(newInfo);
+		_buildInfos.Add(newInfo);
+		NotifySubscribers(newInfo);
 	}
 
 	private void NotifySubscribers(BuildInfo? current) {
@@ -86,7 +90,7 @@ class BuildInfoActor : ReceiveActor
 			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
 			_discussionOpen = false;
 		} else if (!_discussionOpen && canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!.Id, current));
+			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!, current));
 			_discussionOpen = true;
 		}
 	}
@@ -112,7 +116,9 @@ class BuildInfoActor : ReceiveActor
 
 	private void Unsubscribe(BuildInfoServiceActorApi.Unsubscribe _) {
 		_subscribers.Remove(Sender);
-		if (_subscribers.Count == 0)
-			Context.System.Scheduler.ScheduleTellOnce(TimeSpan.FromSeconds(30), Self, _stopIfIdle, Self);
+		if (_subscribers.Count == 0) {
+			var delay = TimeSpan.FromSeconds(30);
+			Context.System.Scheduler.ScheduleTellOnce(delay, Self, _stopIfIdle, Self);
+		}
 	}
 }

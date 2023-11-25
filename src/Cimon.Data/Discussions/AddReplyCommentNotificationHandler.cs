@@ -15,7 +15,7 @@ class AddReplyCommentNotificationHandler(ICurrentUserAccessor currentUserAccesso
 			_ => notification.Comment
 		};
 		var handle =
-			await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(notification.BuildConfigId));
+			await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(notification.BuildConfigId));
 		handle.AddComment(new CommentData {
 			Author = await currentUserAccessor.Current,
 			Comment = comment

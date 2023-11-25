@@ -12,19 +12,28 @@ public interface IBuildFailurePredictor
 
 public class BuildFailurePredictor : IBuildFailurePredictor
 {
+	readonly record struct BestMatch(int Index, int Confidence)
+	{
+		public static BestMatch Empty { get; } = new(-1, 0);
+		public bool IsEmpty() => Index == Empty.Index;
+	}
+
 	public BuildFailureSuspect? FindFailureSuspect(BuildInfo buildInfo) {
 		var textData = ExtractTextData(buildInfo);
 		TextData buildStatusTextData = new TextData { Text = textData.BuildStatus.NormalizeText() };
 		var changesTextData = textData.Changes.Select(x => new TextData {
 			Text = x.Item2.NormalizeText()
-		}).ToList();
+		}).Where(x=>!string.IsNullOrWhiteSpace(x.Text)).ToList();
+		if (!changesTextData.Any()) {
+			return null;
+		}
 		try {
-			(int index, float confidence) = FindBestMatch(buildStatusTextData, changesTextData);
-			if (index == -1) {
+			var match = FindBestMatch(buildStatusTextData, changesTextData);
+			if (match.IsEmpty()) {
 				return null;
 			}
-			(VcsUser, string) item = textData.Changes[index];
-			return new BuildFailureSuspect(item.Item1, confidence);
+			(VcsUser, string) item = textData.Changes[match.Index];
+			return new BuildFailureSuspect(item.Item1, match.Confidence);
 		} catch (Exception e) {
 			Console.WriteLine(e);
 			return null;
@@ -50,7 +59,7 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		return new BuildInfoTextData(status, changes.ToList());
 	}
 
-	private static (int Index, int Confidence) FindBestMatch(TextData source, IList<TextData> itemsToMatch) {
+	private static BestMatch FindBestMatch(TextData source, IList<TextData> itemsToMatch) {
 		var mlContext = new MLContext();
 		var dataView = mlContext.Data.LoadFromEnumerable(itemsToMatch.Prepend(source));
 		var pipeline = mlContext.Transforms.Text
@@ -74,15 +83,12 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 			return sourceTopicWeight;
 		}).ToList();
 		var bestFit = probabilities.GetItemWithMaxValue();
-		var confidence = bestFit.Value / probabilities.Sum() * 100;
-		return (bestFit.Index, Convert.ToInt32(confidence));
-	}
-
-
-	private static void PrintLdaFeatures(TransformedTextData prediction) {
-		for (int i = 0; i < prediction.Features.Length; i++)
-			Console.Write($"{prediction.Features[i]:F4}  ");
-		Console.WriteLine();
+		var totalProbabilities = probabilities.Sum();
+		if (totalProbabilities == 0) {
+			return BestMatch.Empty;
+		}
+		var confidence = bestFit.Value / totalProbabilities * 100;
+		return new BestMatch(bestFit.Index, Convert.ToInt32(confidence));
 	}
 
 	private class TextData

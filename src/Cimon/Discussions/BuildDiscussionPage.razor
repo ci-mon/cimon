@@ -114,7 +114,7 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;
-        _discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
+        _discussionHandle = await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
         _state = Subscribe(_discussionHandle.State);
         ClearComment();
         StateHasChanged();

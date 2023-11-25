@@ -6,6 +6,7 @@ using AngleSharp.Html.Parser;
 using Cimon.Contracts;
 using Cimon.Contracts.CI;
 using Cimon.Data.Users;
+using Cimon.DB.Models;
 
 namespace Cimon.Data.Discussions;
 
@@ -14,34 +15,13 @@ enum ChangeType
 	Add, Remove
 }
 
-record BuildCommentChange(ChangeType ChangeType, BuildComment Comment, string DiscussionId);
-
-public static class DiscussionActorApi
-{
-	internal record AddCommentMsg(CommentData CommentData);
-	internal record UpdateCommentMsg(BuildComment Comment);
-	internal record RemoveCommentMsg(BuildComment Comment);
-	internal record ExecuteActionMsg(Guid ActionId);
-	internal record SubscribeForState;
-	internal record UnsubscribeForState;
-	internal record SubscribeForComments;
-	internal record UnsubscribeForComments;
-
-	public static void AddComment(this ActorsApi.DiscussionHandle handle, CommentData commentData) =>
-		handle.Discussion.Tell(new AddCommentMsg(commentData));
-	public static void ExecuteAction(this ActorsApi.DiscussionHandle handle, Guid id) =>
-		handle.Discussion.Tell(new ExecuteActionMsg(id));
-	public static void UpdateComment(this ActorsApi.DiscussionHandle handle, BuildComment buildComment) =>
-		handle.Discussion.Tell(new UpdateCommentMsg(buildComment));
-	public static void RemoveComment(this ActorsApi.DiscussionHandle handle, BuildComment buildComment) =>
-		handle.Discussion.Tell(new RemoveCommentMsg(buildComment));
-}
+record BuildCommentChange(ChangeType ChangeType, BuildComment Comment, int BuildConfigId);
 
 public class DiscussionActor : ReceiveActor
 {
 	private readonly INotificationService _notificationService;
 	private BuildDiscussionState _state = new();
-	private int _buildConfigId;
+	private BuildConfig _buildConfig;
 	private readonly Dictionary<Guid, BuildInfoActionDescriptor> _actions = new();
 	private readonly ITechnicalUsers _technicalUsers;
 	private readonly IActorRef _stateSubscribers;
@@ -52,13 +32,18 @@ public class DiscussionActor : ReceiveActor
 		_technicalUsers = technicalUsers;
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
 		_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Context.Parent)));
+		Receive<BuildConfig>(info => {
+			_buildConfig = info;
+			_state = _state with {
+				Status = BuildDiscussionStatus.Unknown
+			};
+		});
 		ReceiveAsync<BuildInfo>(async info => {
 			if (_state.Status == BuildDiscussionStatus.Unknown) {
 				var state = _state with {
 					Status = BuildDiscussionStatus.Open
 				};
 				StateHasChanged(state);
-				_buildConfigId = info.BuildConfigId;
 				await OpenDiscussion(info);
 			}
 		});
@@ -68,11 +53,14 @@ public class DiscussionActor : ReceiveActor
 		ReceiveAsync<PoisonPill>(_ => CloseDiscussion());
 		ReceiveAsync<DiscussionActorApi.ExecuteActionMsg>(msg => ExecuteAction(msg.ActionId));
 		Receive<DiscussionActorApi.SubscribeForState>(_ => {
+			Context.Watch(Sender);
 			_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Sender)));
 			if (_state.Status != BuildDiscussionStatus.Unknown) {
 				Sender.Tell(_state);
 			}
 		});
+		Receive<Terminated>(terminated =>
+			_stateSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(terminated.ActorRef))));
 		Receive<DiscussionActorApi.UnsubscribeForState>(_ =>
 			_stateSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(Sender))));
 		Receive<DiscussionActorApi.SubscribeForComments>(_ => {
@@ -81,7 +69,7 @@ public class DiscussionActor : ReceiveActor
 			}
 			_commentsSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Sender)));
 			foreach (var comment in _state.Comments) {
-				Sender.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
+				Sender.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
 			}
 		});
 		Receive<DiscussionActorApi.UnsubscribeForComments>(_ =>
@@ -97,11 +85,11 @@ public class DiscussionActor : ReceiveActor
 		var state = _state with {
 			Comments = _state.Comments.Add(comment)
 		};
-		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
 		var commentSimpleText = ExtractText(comment);
 		StateHasChanged(state);
 		// TODO _buildConfigId
-		await _notificationService.Notify(_buildConfigId.ToString(), comment.Id, data.Author, comment.Mentions,
+		await _notificationService.Notify(_buildConfig.Id.ToString(), comment.Id, data.Author, comment.Mentions,
 			commentSimpleText);
 	}
 	
@@ -136,7 +124,7 @@ public class DiscussionActor : ReceiveActor
 		var state = _state with {
 			Comments = _state.Comments.Remove(comment)
 		};
-		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, comment, Self.Path.Name));
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, comment, _buildConfig!.Id));
 		StateHasChanged(state);
 	}
 
@@ -144,7 +132,7 @@ public class DiscussionActor : ReceiveActor
 		var stateComments = _state.Comments;
 		var oldComment = stateComments.FirstOrDefault(x => x.Id == comment.Id);
 		if (oldComment is not null) {
-			_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, oldComment, Self.Path.Name));
+			_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Remove, oldComment, _buildConfig!.Id));
 			stateComments = stateComments.Remove(oldComment);
 		}
 		comment.ModifiedOn = DateTime.UtcNow;
@@ -152,7 +140,7 @@ public class DiscussionActor : ReceiveActor
 		var state = _state with {
 			Comments = stateComments.Add(comment)
 		};
-		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, Self.Path.Name));
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
 		StateHasChanged(state);
 	}
 

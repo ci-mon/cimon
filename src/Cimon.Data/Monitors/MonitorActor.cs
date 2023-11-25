@@ -37,8 +37,8 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			return Disposable.Create(subscription, disposable => {
 				disposable.Dispose();
 				if (Interlocked.Decrement(ref _subscriptionsCount) == 0) {
-					_stopCountdown =
-						scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(30), me, PoisonPill.Instance, me);
+					var shutdownDelay = TimeSpan.FromSeconds(30);
+					_stopCountdown = scheduler.ScheduleTellOnceCancelable(shutdownDelay, me, PoisonPill.Instance, me);
 				}
 			});
 		});

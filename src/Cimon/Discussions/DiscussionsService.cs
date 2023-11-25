@@ -11,7 +11,7 @@ public class DiscussionsService : Controller
 	[HttpGet]
 	[Route("executeAction")]
 	public async Task<IActionResult> ExecuteAction([FromQuery]int buildTypeId, [FromQuery]Guid actionId) {
-		var discussionHandle = await AppActors.Instance.DiscussionsService.Ask(new ActorsApi.FindDiscussion(buildTypeId));
+		var discussionHandle = await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(buildTypeId));
 		discussionHandle.ExecuteAction(actionId);
 		return Ok();
 	}

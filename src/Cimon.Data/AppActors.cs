@@ -12,12 +12,12 @@ namespace Cimon.Data;
 
 public class AppActors
 {
-	private ActorSystem _actorSystem;
+	private ActorSystem _actorSystem = null!;
 	public static AppActors Instance { get; set; }
 
 	public IActorRef MonitorService { get; set; }
 	public IActorRef BuildInfoService { get; set; }
-	public IActorRef DiscussionsService { get; set; }
+	public IActorRef DiscussionStore { get; set; }
 	public IActorRef UserSupervisor { get; set; }
 	public IActorRef MentionsMonitor { get; set; }
 
@@ -35,9 +35,9 @@ public class AppActors
 		UserSupervisor = _actorSystem.ActorOf(_actorSystem.DI().Props<UserSupervisorActor>(), nameof(UserSupervisor));
 		MentionsMonitor = _actorSystem.ActorOf(_actorSystem.DI().Props<MentionsMonitorActor>(UserSupervisor),
 			nameof(MentionsMonitor));
-		DiscussionsService = _actorSystem.ActorOf(_actorSystem.DI().Props<DiscussionStoreActor>(MentionsMonitor),
-			nameof(DiscussionsService));
-		BuildInfoService = _actorSystem.ActorOf(_actorSystem.DI().Props<BuildInfoServiceActor>(DiscussionsService),
+		DiscussionStore = _actorSystem.ActorOf(_actorSystem.DI().Props<DiscussionStoreActor>(MentionsMonitor),
+			nameof(DiscussionStore));
+		BuildInfoService = _actorSystem.ActorOf(_actorSystem.DI().Props<BuildInfoServiceActor>(DiscussionStore),
 			nameof(BuildInfoService));
 		MonitorService = _actorSystem.ActorOf(_actorSystem.DI().Props<MonitorServiceActor>(BuildInfoService),
 			nameof(MonitorService));

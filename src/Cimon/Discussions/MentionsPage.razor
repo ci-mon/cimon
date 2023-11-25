@@ -2,37 +2,48 @@
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @using System.Collections.Immutable
+@using System.Reactive.Linq
+@using Cimon.Data.Monitors
+@using Cimon.DB.Models
+@using Narochno.Primitives
+@using Optional
+@using Optional.Collections
 @inherits ReactiveComponent
 @inject ICurrentUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
+@inject BuildConfigService BuildConfigService 
 <PageTitle>Mentions</PageTitle>
 <RadzenCard>
     @if (_mentions is null) {
         <RadzenText TextStyle="TextStyle.H2" Text="Loading..." />
-    } else if (_mentions.IsEmpty) {
+    } else if (_mentions.IsEmpty || !_mentions.Value.Any()) {
         <RadzenText TextStyle="TextStyle.H2" Text="All good..." />
     } else {
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start">
             <RadzenText Text="@StatusText" />
             @foreach (var mention in _mentions.Value) {
                 <RadzenStack Orientation="Orientation.Horizontal">
-                    <RadzenButton Text="@mention.DiscussionId" Click="() => GoToDiscussion(mention.DiscussionId)"/>
-                    <RadzenText>@mention.Count times</RadzenText>
+                    <RadzenButton Text="@mention.BuildConfig.Map(x=>x.Key).ValueOr(mention.Mention.BuildConfigId.ToString)" Click="() => GoToDiscussion(mention.Item1.BuildConfigId)"/>
+                    <RadzenText>@mention.Mention.Count times</RadzenText>
                 </RadzenStack>
             }
         </RadzenStack>
     }
 </RadzenCard>
 @code {
-    private ReactiveValue<IImmutableList<MentionInfo>?>? _mentions;
+    private ReactiveValue<List<(MentionInfo Mention, Option<BuildConfig> BuildConfig)>>? _mentions;
     private string StatusText => $"You was mentioned in {_mentions?.Value?.Count ?? 0} builds";
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        _mentions = Subscribe(await AppActors.GetMentions(user))!;
+        var mentionsObservable = await AppActors.GetMentions(user);
+        var forkJoin = mentionsObservable.CombineLatest(BuildConfigService.BuildConfigs, (mentions, configs) => {
+            return mentions.Select(m => (m, configs.FirstOrNone(c => c.Id == m.BuildConfigId))).ToList();
+        });
+        _mentions = Subscribe(forkJoin);
     }
 
-    private void GoToDiscussion(string discussionId) {
+    private void GoToDiscussion(int discussionId) {
         NavigationManager.NavigateTo($"buildDiscussion/{discussionId}");
     }
 

@@ -8,15 +8,20 @@ public class MentionsMonitorActor : ReceiveActor
     public MentionsMonitorActor(IActorRef userServiceActor) {
         Receive<BuildCommentChange>(state => {
             var sender = Sender;
-            if (!_compensations.TryGetValue(sender, out var res)) {
-                res = new List<ActorsApi.UserMessage<MentionInfo>>();
-                _compensations[sender] = res;
+            if (!_compensations.TryGetValue(sender, out var compensation)) {
+                compensation = new List<ActorsApi.UserMessage<MentionInfo>>();
+                _compensations[sender] = compensation;
                 Context.Watch(sender);
             }
             foreach (var entityId in state.Comment.Mentions) {
-                var msg = new ActorsApi.UserMessage<MentionInfo>(entityId.Name, new MentionInfo(state.DiscussionId, 1));
+                var countDelta = state.ChangeType switch {
+                    ChangeType.Add => 1,
+                    ChangeType.Remove => -1,
+                    _ => 0
+                };
+                var msg = new ActorsApi.UserMessage<MentionInfo>(entityId.Name, new MentionInfo(state.BuildConfigId, countDelta));
                 userServiceActor.Tell(msg);
-                res.Add(msg with { Payload = msg.Payload  with { Count = -1 } });
+                compensation.Add(msg with { Payload = msg.Payload  with { Count = -1 * countDelta } });
             }
         });
         Receive<Terminated>(terminated => {

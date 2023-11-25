@@ -5,6 +5,7 @@ using Cimon.Contracts.CI;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
+using Cimon.DB.Models;
 
 namespace Cimon.Data;
 
@@ -14,7 +15,7 @@ public static class ActorsApi
 
 	public abstract record DiscussionAction(int BuildConfigId);
 
-	public record OpenDiscussion(int BuildConfigId, BuildInfo BuildInfo) : DiscussionAction(BuildConfigId);
+	public record OpenDiscussion(BuildConfig BuildConfig, BuildInfo BuildInfo) : DiscussionAction(BuildConfig.Id);
 
 	public record CloseDiscussion(int BuildConfigId) : DiscussionAction(BuildConfigId);
 

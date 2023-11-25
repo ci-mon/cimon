@@ -8,7 +8,7 @@ public class DiscussionStoreActor : ReceiveActor
 {
 	private readonly IActorRef _mentionsMonitor;
 
-	record State(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject, bool Merged);
+	record State(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject);
 	private readonly Dictionary<int, State> _discussions = new();
 	private readonly Dictionary<IActorRef, State> _stateMap = new();
 	public DiscussionStoreActor(IActorRef mentionsMonitor) {
@@ -25,23 +25,23 @@ public class DiscussionStoreActor : ReceiveActor
 
 	private void OpenDiscussion(ActorsApi.OpenDiscussion req) {
 		if (_discussions.TryGetValue(req.BuildConfigId, out var value)) {
-			Sender.Tell(value.Child);
+			value.Child.Forward(new DiscussionActorApi.SubscribeForState());
+			value.Child.Tell(req.BuildInfo);
 			return;
 		}
 		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId.ToString());
-		var state = new State(child, new ReplaySubject<BuildDiscussionState>(1), false);
+		var state = new State(child, new ReplaySubject<BuildDiscussionState>(1));
 		_stateMap[child] = state;
 		_discussions.Add(req.BuildConfigId, state);
+		child.Tell(req.BuildConfig);
 		child.Tell(req.BuildInfo);
 		child.Forward(new DiscussionActorApi.SubscribeForState());
 		child.Tell(new DiscussionActorApi.SubscribeForComments(), _mentionsMonitor);
-		Sender.Tell(child);
 	}
 
 	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {
 		if (_discussions.Remove(req.BuildConfigId, out var state)) {
 			_stateMap.Remove(state.Child);
-			if (state.Merged) return;
 			Context.Stop(state.Child);
 			state.Subject.OnCompleted();
 			state.Subject.Dispose();
