@@ -2,7 +2,7 @@
 using Akka.Actor;
 using Akka.DependencyInjection;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Common;
 
 public static class ActorUtils
 {

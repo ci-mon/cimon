@@ -1,6 +1,6 @@
 ﻿using Akka.Actor;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data.Common;
 
 class ObserverActor<T> : ReceiveActor
 {

@@ -1,5 +1,5 @@
 ﻿using Akka.Actor;
-using Cimon.Data.Actors;
+using Cimon.Data.Common;
 
 namespace Cimon.Data.Users;
 

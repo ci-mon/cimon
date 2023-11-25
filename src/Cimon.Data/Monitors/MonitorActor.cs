@@ -4,7 +4,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
 using Cimon.Contracts.CI;
-using Cimon.Data.Actors;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
 using Cimon.DB.Models;

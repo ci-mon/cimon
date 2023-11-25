@@ -2,10 +2,11 @@
 using System.Reactive.Linq;
 using Akka.Actor;
 using Cimon.Contracts.CI;
+using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
 
-namespace Cimon.Data.Actors;
+namespace Cimon.Data;
 
 public static class ActorsApi
 {

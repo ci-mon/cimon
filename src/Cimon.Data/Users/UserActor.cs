@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Subjects;
 using Akka.Actor;
-using Cimon.Data.Actors;
 using Cimon.Data.Discussions;
 
 namespace Cimon.Data.Users;
