@@ -58,7 +58,12 @@ class BuildInfoActor : ReceiveActor
 
 	private void InitBuildConfig(BuildConfig config) {
 		_subscribers.Add(Sender);
-		if (_config != null) return;
+		if (_config != null) {
+			if (_buildInfos.Last is {} currentInfo) {
+				Sender.Tell(currentInfo);
+			}
+			return;
+		}
 		_config = config;
 		_provider = _buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
 		_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
