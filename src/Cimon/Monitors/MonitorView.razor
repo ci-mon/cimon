@@ -14,7 +14,7 @@
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
     } else if (_monitor?.HasValue is true) {
-        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.CISystem)) {
+        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Connector.CISystem)) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig" 
                                 Info="@build.BuildInfo" />
         }

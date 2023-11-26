@@ -3,13 +3,13 @@
 
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager
-@inject BuildConfigService BuildConfigService;
+@inject BuildConfigService BuildConfigService; 
 @using Cimon.Data.Monitors
 @using System.Collections.Immutable
 @using System.Text.Json
 @using Cimon.Contracts.CI
 @using Cimon.DB.Models
-@using System.Collections.Concurrent
+@using Cimon.Data.CIConnectors
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -22,15 +22,15 @@
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-            @foreach (var system in Enum.GetValues<CISystem>()) {
-                <RadzenButton Disabled="@GetIsCiSystemRefreshing(system)" Text="@($"Refresh {system}")" Icon="refresh" Click="() => RefreshAvailableBuilds(system)"></RadzenButton>
-            }
+            <RadzenButton>
+                <RadzenLink Path="/SetupCIConnectors">Setup connectors</RadzenLink>
+            </RadzenButton>
         </RadzenStack>
         <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
-                        Data="@_buildConfigs.Value" TItem="BuildConfig" ColumnWidth="200px"
+                        Data="@_buildConfigs.Value" TItem="BuildConfigModel" ColumnWidth="200px"
                         SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
             <Columns>
                 <RadzenDataGridColumn TItem="BuildConfig" Width="60px" Sortable="false" Filterable="false">
@@ -63,25 +63,25 @@
 
     private ReactiveValue<MonitorModel> _monitor = null!;
     private MonitorModel Monitor => _monitor.Value;
-    RadzenDataGrid<BuildConfig> grid;
-    private ReactiveValue<IImmutableList<BuildConfig>> _buildConfigs;
-    IList<BuildConfig> _selectedLocators = new List<BuildConfig>();
+    RadzenDataGrid<BuildConfigModel> grid;
+    private ReactiveValue<IImmutableList<BuildConfigModel>> _buildConfigs;
+    IList<BuildConfigModel> _selectedLocators = new List<BuildConfigModel>();
     
     [Parameter]
     public string? MonitorId { get; set; }
 
-    void OnRender(DataGridRenderEventArgs<BuildConfig> args) {
+    void OnRender(DataGridRenderEventArgs<BuildConfigModel> args) {
         if (!args.FirstRender)
             return;
-        args.Grid.Groups.Add(new GroupDescriptor() {
-            Property = nameof(BuildConfig.CISystem),
+        args.Grid.Groups.Add(new GroupDescriptor {
+            Property = nameof(BuildConfigModel.Connector),
             SortOrder = SortOrder.Ascending
         });
         StateHasChanged();
     }
 
-    private void SetSelectedLocators(IList<BuildConfig>? list) {
-        _selectedLocators = list ?? ArraySegment<BuildConfig>.Empty;
+    private void SetSelectedLocators(IList<BuildConfigModel>? list) {
+        _selectedLocators = list ?? ArraySegment<BuildConfigModel>.Empty;
     }
 
     protected override async Task OnInitializedAsync() {
@@ -103,15 +103,5 @@
         SetSelectedLocators(args ? _buildConfigs.Value?.ToList() : null);
     }
 
-    private readonly ConcurrentDictionary<CISystem, bool> _refreshingCiSystems = new ();
-    private async Task RefreshAvailableBuilds(CISystem ciSystem) {
-        _refreshingCiSystems[ciSystem] = true;
-        StateHasChanged();
-        await BuildConfigService.RefreshBuildConfigs(ciSystem);
-        _refreshingCiSystems.TryRemove(ciSystem, out _);
-        StateHasChanged();
-    }
-
-    private bool GetIsCiSystemRefreshing(CISystem system) => _refreshingCiSystems.ContainsKey(system);
 
 }

@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Akka.Actor;
 using Akka.DependencyInjection;
+using Cimon.Contracts.CI;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
@@ -52,4 +53,4 @@ public class AppActors
 	}
 }
 
-public record MentionInBuildConfig(MentionInfo Mention, Option<BuildConfig> BuildConfig);
+public record MentionInBuildConfig(MentionInfo Mention, Option<BuildConfigModel> BuildConfig);

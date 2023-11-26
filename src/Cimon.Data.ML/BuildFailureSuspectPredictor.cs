@@ -1,7 +1,7 @@
 ﻿namespace Cimon.Data.ML;
 
 using System.Text;
-using Cimon.Contracts.CI;
+using Contracts.CI;
 using Microsoft.ML;
 using Microsoft.ML.Transforms.Text;
 

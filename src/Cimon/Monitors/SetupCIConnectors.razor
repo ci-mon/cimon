@@ -6,7 +6,6 @@
 @using Cimon.DB.Models
 @using Cimon.Contracts.CI
 @using Cimon.Data.CIConnectors
-@using Cimon.DB
 @using MediatR
 
 
@@ -67,7 +66,6 @@
             </RadzenDataGrid>
             <RadzenStack Orientation="Orientation.Vertical" class="col-md-6"
                          Visible="@(SelectedConnector is not null)">
-                <RadzenLabel>Settings</RadzenLabel>
                 <CIConnectorSettingsGrid Connector="SelectedConnector"></CIConnectorSettingsGrid>
             </RadzenStack>
         </RadzenStack>
@@ -110,5 +108,6 @@
         await Mediator.Publish(new RefreshCIConnectorSettings(entry));
         StateHasChanged();
     }
+    
 
 }

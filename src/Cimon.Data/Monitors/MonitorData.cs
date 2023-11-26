@@ -11,6 +11,6 @@ public class MonitorData
 
 public interface IBuildInfoStream
 {
-	public BuildConfig BuildConfig { get;}
+	public BuildConfigModel BuildConfig { get;}
 	public IObservable<BuildInfo> BuildInfo { get; }
 }

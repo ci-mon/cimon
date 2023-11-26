@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
+using Cimon.Contracts.CI;
 using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
@@ -38,7 +39,7 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			: GetMonitors().SelectMany(x => x).Where(x => x.Key == monitorId);
 	}
 
-	public async Task Save(Monitor monitor, IList<BuildConfig> builds) {
+	public async Task Save(Monitor monitor, IList<BuildConfigModel> builds) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		ctx.Monitors.Update(monitor);
 		var existing = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id).ToListAsync();

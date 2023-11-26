@@ -2,7 +2,7 @@
 
 namespace Cimon.Data.Jenkins;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public class JenkinsBuildConfigProvider : IBuildConfigProvider
 {
@@ -11,15 +11,16 @@ public class JenkinsBuildConfigProvider : IBuildConfigProvider
 		_clientFactory = clientFactory;
 	}
 
-	public async Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
+	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
 		using var client = _clientFactory.Create();
-		var result = new List<BuildConfigInfo>();
+		var result = new List<BuildConfig>();
 		var master = await client.GetMaster(default);
 		foreach (var job in master.Jobs) {
 			var jobInfo = await client.GetJob(job.Name, default);
 			if (!jobInfo.Jobs.Any()) {
 				if (jobInfo.Buildable) {
-					result.Add(new BuildConfigInfo(job.Name) {
+					result.Add(new BuildConfig {
+						Key = job.Name,
 						Props = {
 							{nameof(job.Url), job.Url.ToString()}
 						}
@@ -29,14 +30,15 @@ public class JenkinsBuildConfigProvider : IBuildConfigProvider
 			}
 			foreach (var infoJob in jobInfo.Jobs) {
 				var isDefault = infoJob.Name == "master";
-				result.Add(new BuildConfigInfo(job.Name, infoJob.Name, isDefault) {
+				result.Add(new BuildConfig() {
+					Key = job.Name,
+					Branch = infoJob.Name,
+					IsDefaultBranch = isDefault,
 					Props = {
 						{nameof(job.Url), infoJob.Url.ToString()}
 					}
 				});
 			}
-
-
 		}
 		return result;
 	}

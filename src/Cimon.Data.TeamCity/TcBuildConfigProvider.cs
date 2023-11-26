@@ -6,7 +6,7 @@ using TeamCityAPI.Queries.Common;
 
 namespace Cimon.Data.TeamCity;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public class TcBuildConfigProvider : IBuildConfigProvider
 {
@@ -16,11 +16,12 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		_clientFactory = clientFactory;
 	}
 
-	public async Task<IReadOnlyCollection<BuildConfigInfo>> GetAll() {
-		var results = new List<BuildConfigInfo>();
-		await foreach (var (buildConfig, branches) in GetBuildConfigs()) {
+	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
+		var results = new List<BuildConfig>();
+		await foreach (var (buildConfig, branches) in GetBuildConfigs(info.Settings)) {
 			if (!branches.Any()) {
-				var item = new BuildConfigInfo(buildConfig.Id, null, true) {
+				var item = new BuildConfig {
+					Key = buildConfig.Id,
 					Props = new Dictionary<string, string> {
 						{"ProjectId", buildConfig.ProjectId}
 					}
@@ -35,7 +36,10 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 				if (branchName?.Equals("<default>", StringComparison.OrdinalIgnoreCase) == true) {
 					branchName = null;
 				}
-				var item = new BuildConfigInfo(buildConfig.Id, branchName, branch.Default ?? false) {
+				var item = new BuildConfig {
+					Key = buildConfig.Id,
+					Branch = branchName,
+					IsDefaultBranch = branch.Default ?? false,
 					Props = new Dictionary<string, string> {
 						{"ProjectId", buildConfig.ProjectId}
 					}
@@ -46,7 +50,8 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		return results;
 	}
 
-	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs() {
+	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs(
+			IReadOnlyDictionary<string, string> settings) {
 		using var client = _clientFactory.GetClient();
 		var configs = client.Client
 			.BuildTypes

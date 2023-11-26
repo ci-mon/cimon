@@ -2,10 +2,10 @@
 using System.Reactive.Linq;
 using Akka.Actor;
 using Cimon.Contracts.CI;
+using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
-using Cimon.DB.Models;
 using Optional.Collections;
 
 namespace Cimon.Data;
@@ -44,7 +44,7 @@ public static class ActorsApi
 	
 	
 	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
-			this BuildConfigService buildConfigService, Cimon.Contracts.User user) {
+			this BuildConfigService buildConfigService, Contracts.User user) {
 		var mentionsObservable = await AppActors.Instance.UserSupervisor.Ask(new GetUserMentions(user.Name.Name));
 		return mentionsObservable.CombineLatest(buildConfigService.BuildConfigs, (mentions, configs) => {
 			return mentions.Select(m => new MentionInBuildConfig(m, configs.FirstOrNone(c => c.Id == m.BuildConfigId)))

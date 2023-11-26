@@ -8,7 +8,7 @@ using TeamCityAPI.Queries.Common;
 
 namespace Cimon.Data.TeamCity;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 using TeamCityAPI.Locators.Enums;
 
 public class TcBuildInfoProvider : IBuildInfoProvider
@@ -172,7 +172,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return res;
 	}
 
-	private static async Task<Build?> GetBuild(BuildConfigInfo buildConfig, TeamCityClientTicket clientTicket) {
+	private static async Task<Build?> GetBuild(Contracts.CI.BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
 		var buildLocator = new BuildLocator {
 			Count = 1,
 			Canceled = false,

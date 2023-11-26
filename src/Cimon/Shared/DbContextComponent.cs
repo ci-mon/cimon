@@ -5,7 +5,7 @@ using Radzen.Blazor;
 
 namespace Cimon.Shared;
 
-public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEntityCreator<TItem>
+public class DbContextComponent<TItem> : ReactiveComponent where TItem : class, IEntityCreator<TItem>
 {
 	[Inject] protected CimonDbContext DbContext { get; set; } = null!;
 
@@ -25,7 +25,7 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 		RefreshItems();
 	}
 
-	protected void RefreshItems() {
+	protected virtual void RefreshItems() {
 		Items = GetItems();
 	}
 

@@ -25,10 +25,10 @@ public static class ValueConversionExtensions
 		);
 
 		propertyBuilder.HasConversion(converter!);
+		propertyBuilder.Metadata.IsNullable = true;
 		propertyBuilder.Metadata.SetValueConverter(converter);
 		propertyBuilder.Metadata.SetValueComparer(comparer);
 		propertyBuilder.HasColumnType("jsonb");
-
 		return propertyBuilder;
 	}
 }

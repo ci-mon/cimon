@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.TeamCity.Tests;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 [TestFixture]
 public class BuildConfigProviderTests : BaseTeamCityTest
@@ -27,19 +27,19 @@ public class BuildConfigProviderTests : BaseTeamCityTest
 	public async Task GetAll() {
 		var res = await _buildConfigProvider.GetAll();
 		using var scope = new AssertionScope();
-		res.Should().ContainEquivalentOf(new BuildConfigInfo("Test1_BuildTest1", "master", true) {
+		res.Should().ContainEquivalentOf(new BuildConfig("Test1_BuildTest1", "master", true) {
 				Props = {
 					{"ProjectId", "gogs_Test1"}
 				}
 			}, 
 			options => options.ComparingRecordsByMembers());
-		res.Should().ContainEquivalentOf(new BuildConfigInfo("Test1_BuildTest1", "test2"){
+		res.Should().ContainEquivalentOf(new BuildConfig("Test1_BuildTest1", "test2"){
 				Props = {
 					{"ProjectId", "gogs_Test1"}
 				}
 			}, 
 			options => options.ComparingRecordsByMembers());
-		res.Should().ContainEquivalentOf(new BuildConfigInfo("TestProject1_IntegrationTests", null, true) {
+		res.Should().ContainEquivalentOf(new IBuildConfig("TestProject1_IntegrationTests", null, true) {
 				Props = {
 					{"ProjectId", "testProject1"}
 				}

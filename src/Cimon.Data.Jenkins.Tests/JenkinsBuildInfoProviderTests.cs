@@ -3,7 +3,7 @@ using FluentAssertions.Execution;
 
 namespace Cimon.Data.Jenkins.Tests;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 [TestFixture]
 public class JenkinsBuildInfoProviderTests : BaseJenkinsTest

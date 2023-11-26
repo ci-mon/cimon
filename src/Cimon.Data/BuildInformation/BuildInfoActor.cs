@@ -21,7 +21,7 @@ class BuildInfoActor : ReceiveActor
 	private readonly GetBuildInfo _getBuildInfo = new();
 	private readonly StopIfIdle _stopIfIdle = new();
 	private readonly List<IActorRef> _subscribers = new();
-	private BuildConfig? _config;
+	private BuildConfigModel? _config;
 	private IBuildInfoProvider? _provider;
 	private ICancelable? _refreshBuildInfoScheduler;
 	private readonly HashSet<string> _systemUserLogins;
@@ -37,7 +37,7 @@ class BuildInfoActor : ReceiveActor
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
 		Receive<StopIfIdle>(OnStopIfIdle);
-		Receive<BuildConfig>(InitBuildConfig);
+		Receive<BuildConfigModel>(InitBuildConfig);
 		Receive<GetBuildInfo>(OnGetBuildInfo);
 		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<Status.Failure>(failure => {
@@ -56,7 +56,7 @@ class BuildInfoActor : ReceiveActor
 		});
 	}
 
-	private void InitBuildConfig(BuildConfig config) {
+	private void InitBuildConfig(BuildConfigModel config) {
 		_subscribers.Add(Sender);
 		if (_config != null) {
 			if (_buildInfos.Last is {} currentInfo) {
@@ -65,7 +65,7 @@ class BuildInfoActor : ReceiveActor
 			return;
 		}
 		_config = config;
-		_provider = _buildInfoProviders.Single(p => p.CiSystem == config.CISystem);
+		_provider = _buildInfoProviders.Single(p => p.CiSystem == config.Connector.CISystem);
 		_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
 			TimeSpan.FromSeconds(Random.Shared.Next(0, 5)), _settings.Delay, Self, _getBuildInfo, Self);
 	}

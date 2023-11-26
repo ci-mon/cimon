@@ -2,7 +2,7 @@
 
 namespace Cimon.Data.TeamCity;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 record TcBuildInfo : BuildInfo, IBuildInfoActionsProvider
 {

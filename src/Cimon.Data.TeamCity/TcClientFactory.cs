@@ -46,5 +46,3 @@ public class TcClientFactory : IPooledObjectPolicy<TeamCityClient>
 		return await httpClient.GetStringAsync(address);
 	}
 }
-
-public record BuildConfig(string Id, string ProjectName, string WebUrl);

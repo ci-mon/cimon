@@ -7,8 +7,8 @@ using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity.Tests;
 
-using Cimon.Contracts.CI;
-using Cimon.Data.ML;
+using Contracts.CI;
+using ML;
 
 [TestFixture]
 public class TcBuildInfoProviderTests : BaseTeamCityTest

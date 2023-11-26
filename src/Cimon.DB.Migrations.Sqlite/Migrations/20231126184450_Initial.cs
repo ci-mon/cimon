@@ -11,22 +11,17 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "BuildConfigurations",
+                name: "CIConnectors",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     CISystem = table.Column<int>(type: "INTEGER", nullable: false),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    DemoState = table.Column<string>(type: "jsonb", nullable: true),
-                    Key = table.Column<string>(type: "TEXT", nullable: false),
-                    Branch = table.Column<string>(type: "TEXT", nullable: true),
-                    IsDefaultBranch = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Props = table.Column<string>(type: "jsonb", nullable: false)
+                    Key = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BuildConfigurations", x => x.Id);
+                    table.PrimaryKey("PK_CIConnectors", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -90,25 +85,53 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MonitorBuilds",
+                name: "BuildConfigurations",
                 columns: table => new
                 {
-                    MonitorId = table.Column<int>(type: "INTEGER", nullable: false),
-                    BuildConfigId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ConnectorId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    DemoState = table.Column<string>(type: "jsonb", nullable: true),
+                    Props = table.Column<string>(type: "jsonb", nullable: true),
+                    CIConnectorId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Branch = table.Column<string>(type: "TEXT", nullable: true),
+                    IsDefaultBranch = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MonitorBuilds", x => new { x.MonitorId, x.BuildConfigId });
+                    table.PrimaryKey("PK_BuildConfigurations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MonitorBuilds_BuildConfigurations_BuildConfigId",
-                        column: x => x.BuildConfigId,
-                        principalTable: "BuildConfigurations",
+                        name: "FK_BuildConfigurations_CIConnectors_CIConnectorId",
+                        column: x => x.CIConnectorId,
+                        principalTable: "CIConnectors",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_BuildConfigurations_CIConnectors_ConnectorId",
+                        column: x => x.ConnectorId,
+                        principalTable: "CIConnectors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CIConnectorSettings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CIConnectorId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CIConnectorSettings", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MonitorBuilds_Monitors_MonitorId",
-                        column: x => x.MonitorId,
-                        principalTable: "Monitors",
+                        name: "FK_CIConnectorSettings_CIConnectors_CIConnectorId",
+                        column: x => x.CIConnectorId,
+                        principalTable: "CIConnectors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -209,11 +232,44 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "MonitorBuilds",
+                columns: table => new
+                {
+                    MonitorId = table.Column<int>(type: "INTEGER", nullable: false),
+                    BuildConfigId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MonitorBuilds", x => new { x.MonitorId, x.BuildConfigId });
+                    table.ForeignKey(
+                        name: "FK_MonitorBuilds_BuildConfigurations_BuildConfigId",
+                        column: x => x.BuildConfigId,
+                        principalTable: "BuildConfigurations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MonitorBuilds_Monitors_MonitorId",
+                        column: x => x.MonitorId,
+                        principalTable: "Monitors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_BuildConfigurations_CISystem_Key_Branch",
+                name: "IX_BuildConfigurations_CIConnectorId",
                 table: "BuildConfigurations",
-                columns: new[] { "CISystem", "Key", "Branch" },
-                unique: true);
+                column: "CIConnectorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BuildConfigurations_ConnectorId",
+                table: "BuildConfigurations",
+                column: "ConnectorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CIConnectorSettings_CIConnectorId",
+                table: "CIConnectorSettings",
+                column: "CIConnectorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MonitorBuilds_BuildConfigId",
@@ -251,6 +307,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CIConnectorSettings");
+
+            migrationBuilder.DropTable(
                 name: "MonitorBuilds");
 
             migrationBuilder.DropTable(
@@ -279,6 +338,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "CIConnectors");
         }
     }
 }

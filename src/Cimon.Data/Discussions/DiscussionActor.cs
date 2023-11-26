@@ -6,7 +6,6 @@ using AngleSharp.Html.Parser;
 using Cimon.Contracts;
 using Cimon.Contracts.CI;
 using Cimon.Data.Users;
-using Cimon.DB.Models;
 
 namespace Cimon.Data.Discussions;
 

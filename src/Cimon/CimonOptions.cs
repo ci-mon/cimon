@@ -2,7 +2,7 @@
 
 namespace Cimon;
 
-using Cimon.Auth;
+using Auth;
 
 public class CimonOptions
 {

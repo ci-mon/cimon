@@ -2,7 +2,7 @@
 
 namespace Cimon.DB.Models;
 
-public class CIConnector : IEntityCreator<CIConnector>
+public record CIConnector : IEntityCreator<CIConnector>
 {
 	public static CIConnector Create() => new(){Key = $"Connector{Guid.NewGuid().ToString()[..4]}"};
 
@@ -10,9 +10,12 @@ public class CIConnector : IEntityCreator<CIConnector>
 	public CISystem CISystem { get; set; }
 	public string Key { get; set; }
 
+	public List<BuildConfigModel> BuildConfigModels { get; set; } = new();
+	
+
 }
 
-public class CIConnectorSetting : IEntityCreator<CIConnectorSetting>
+public record CIConnectorSetting : IEntityCreator<CIConnectorSetting>
 {
 	public static CIConnectorSetting Create() {
 		return new CIConnectorSetting();

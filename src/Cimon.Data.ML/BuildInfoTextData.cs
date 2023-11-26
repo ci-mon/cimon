@@ -1,5 +1,5 @@
 ﻿namespace Cimon.Data.ML;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public record BuildInfoTextData(string BuildStatus, IReadOnlyList<(VcsUser, string)> Changes);

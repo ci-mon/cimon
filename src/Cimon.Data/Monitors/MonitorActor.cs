@@ -15,7 +15,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 {
 	record WatchedBuildInfo(BuildInMonitor Build, ReplaySubject<BuildInfo> Subject) : IBuildInfoStream
 	{
-		public BuildConfig BuildConfig => Build.BuildConfig;
+		public BuildConfigModel BuildConfig => Build.BuildConfig;
 		public IObservable<BuildInfo> BuildInfo => Subject;
 	};
 

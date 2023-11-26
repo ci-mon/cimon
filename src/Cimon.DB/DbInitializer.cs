@@ -8,7 +8,7 @@ using User = Cimon.DB.Models.User;
 namespace Cimon.DB;
 
 using System.Collections.Immutable;
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public class DbSeedOptions
 {
@@ -83,19 +83,19 @@ public class DbInitializer
 			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
 			Teams = { adminTeam.Entity }
 		});
-		await context.AddAsync(new CIConnector {
-			Key = "teamcity_main",
-			CISystem = CISystem.TeamCity
-		});
-		await context.AddAsync(new CIConnector {
-			Key = "jenkins_main",
-			CISystem = CISystem.Jenkins
-		});
 		await InitDemoMonitors(context);
 	}
 
 	private static async Task InitDemoMonitors(CimonDbContext context) {
-		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "BpmsPlatformWorkDiagnostic") {
+		var teamcityConnector = await context.AddAsync(new CIConnector {
+			Key = "teamcity_main",
+			CISystem = CISystem.TeamCity
+		});
+		var jenkinsConnector = await context.AddAsync(new CIConnector {
+			Key = "jenkins_main",
+			CISystem = CISystem.Jenkins
+		});
+		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "BpmsPlatformWorkDiagnostic") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=BpmsPlatformWorkDiagnostic&tab=buildTypeStatusDiv",
 				Group = "Team Diagnostics",
@@ -108,7 +108,7 @@ public class DbInitializer
 				BuildConfigId = 1
 			}
 		});
-		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit") {
+		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
@@ -121,7 +121,7 @@ public class DbInitializer
 				BuildConfigId = 2
 			}
 		});
-		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Unit (.Net 6)") {
+		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit (.Net 6)") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
@@ -134,7 +134,7 @@ public class DbInitializer
 				BuildConfigId = 3
 			}
 		});
-		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (MSSQL)") {
+		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (MSSQL)") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
@@ -151,7 +151,7 @@ public class DbInitializer
 				new VcsChange(new VcsUser($"test{i}", $"Test {i}", $"user{i}@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.ToArray();
-		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (PostgreSQL)") {
+		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (PostgreSQL)") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
@@ -167,7 +167,7 @@ public class DbInitializer
 				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
 			}
 		});
-		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.TeamCity, "Integration (Oracle)") {
+		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (Oracle)") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
@@ -180,7 +180,7 @@ public class DbInitializer
 				BuildConfigId = 6,
 			}
 		});
-		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.shell") {
+		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.shell") {
 			DemoState = new BuildInfo {
 				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.shell/job/master/4850/",
 				Group = "Core",
@@ -193,7 +193,7 @@ public class DbInitializer
 				BuildConfigId = 7,
 			}
 		});
-		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.schema-view") {
+		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.schema-view") {
 			DemoState = new BuildInfo {
 				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
 				Group = "Core",
@@ -208,7 +208,7 @@ public class DbInitializer
 				BuildConfigId = 8,
 			}
 		});
-		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "app.studio-enterprise.process-designer") {
+		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.process-designer") {
 			DemoState = new BuildInfo {
 				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
 				Group = "Core",
@@ -224,7 +224,7 @@ public class DbInitializer
 				BuildConfigId = 9,
 			}
 		});
-		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfig(CISystem.Jenkins, "lib.studio-enterprise.process") {
+		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "lib.studio-enterprise.process") {
 			DemoState = new BuildInfo {
 				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
 				Group = "Core",
@@ -241,7 +241,7 @@ public class DbInitializer
 			}
 		});
 
-		async Task AddBuildsToMonitor(Monitor monitor, params BuildConfig[] buildConfigs) {
+		async Task AddBuildsToMonitor(Monitor monitor, params BuildConfigModel[] buildConfigs) {
 			foreach (var config in buildConfigs) {
 				await context.MonitorBuilds.AddAsync(new BuildInMonitor {
 					Monitor = monitor,

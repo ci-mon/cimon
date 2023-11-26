@@ -2,7 +2,7 @@ using FluentAssertions;
 
 namespace Cimon.Data.Jenkins.Tests;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 {
@@ -16,9 +16,9 @@ public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 	[Test]
 	public async Task GetAll() {
 		var result = await _provider.GetAll();
-		result.Should().Contain(new BuildConfigInfo("app.my.test", null));
-		result.Should().Contain(new BuildConfigInfo("app.my.multibranch", "master"));
-		result.Should().Contain(new BuildConfigInfo("app.my.multibranch", "test2"));
+		result.Should().Contain(new IBuildConfig("app.my.test", null));
+		result.Should().Contain(new IBuildConfig("app.my.multibranch", "master"));
+		result.Should().Contain(new IBuildConfig("app.my.multibranch", "test2"));
 	}
 
 }

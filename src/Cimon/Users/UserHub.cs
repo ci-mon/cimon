@@ -1,5 +1,6 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data;
+using Cimon.Data.CIConnectors;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
 using Cimon.Data.Users;

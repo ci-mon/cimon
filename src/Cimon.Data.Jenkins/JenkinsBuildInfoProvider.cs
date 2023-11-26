@@ -5,7 +5,7 @@ using Narochno.Jenkins.Entities.Builds;
 
 namespace Cimon.Data.Jenkins;
 
-using Cimon.Contracts.CI;
+using Contracts.CI;
 
 public class JenkinsBuildInfoProvider : IBuildInfoProvider
 {
