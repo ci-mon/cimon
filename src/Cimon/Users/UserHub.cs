@@ -1,6 +1,7 @@
 ﻿using System.Reactive.Linq;
 using Cimon.Data;
 using Cimon.Data.Discussions;
+using Cimon.Data.Monitors;
 using Cimon.Data.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,10 +10,12 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Cimon.Users;
 
+public record ExtendedMentionInfo(int BuildConfigId, int CommentsCount, string BuildConfigKey) : MentionInfo(BuildConfigId, CommentsCount);
+
 public interface IUserClientApi
 {
 	Task NotifyWithUrl(string buildConfigId, string url, string header, string message, string authorEmail);
-	Task UpdateMentions(IEnumerable<MentionInfo> mentions);
+	Task UpdateMentions(IEnumerable<ExtendedMentionInfo> mentions);
 	Task CheckForUpdates();
 }
 
@@ -25,15 +28,17 @@ public class UserHub : Hub<IUserClientApi>
 	private readonly ICurrentUserAccessor _userAccessor;
 	private readonly IHubContext<UserHub, IUserClientApi> _hubContext;
 	private const string MentionsSubscriptionKey = "MentionsSubscription";
+	private readonly BuildConfigService _buildConfigService;
 
 	public UserHub(ILogger<UserHub> logger, IMediator mediator, UserManager userManager, 
 			ICurrentUserAccessor userAccessor, 
-			IHubContext<UserHub, IUserClientApi> hubContext) {
+			IHubContext<UserHub, IUserClientApi> hubContext, BuildConfigService buildConfigService) {
 		_logger = logger;
 		_mediator = mediator;
 		_userManager = userManager;
 		_userAccessor = userAccessor;
 		_hubContext = hubContext;
+		_buildConfigService = buildConfigService;
 	}
 
 	public override async Task OnConnectedAsync() {
@@ -74,9 +79,12 @@ public class UserHub : Hub<IUserClientApi>
 		}
 		var user = await _userAccessor.Current;
 		var connectionId = Context.ConnectionId;
-		var mentions = await AppActors.GetMentions(user);
+		var mentions = await _buildConfigService.GetMentionsWithBuildConfig(user);
+		
 		subscription = mentions
-			.Select(m => _hubContext.Clients.Client(connectionId).UpdateMentions(m))
+			.Select(m => _hubContext.Clients.Client(connectionId).UpdateMentions(
+				m.Select(x=> 
+					new ExtendedMentionInfo(x.Mention.BuildConfigId, x.Mention.CommentsCount, x.BuildConfig.Map(c=>c.Key).ValueOr(string.Empty)))))
 			.Subscribe();
 		Context.Items[MentionsSubscriptionKey] = subscription;
 	}

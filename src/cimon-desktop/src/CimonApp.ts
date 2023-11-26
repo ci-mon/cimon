@@ -26,8 +26,9 @@ declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
 interface MentionInfo {
-    buildId: string;
+    buildConfigId: number;
     commentsCount: number;
+    buildConfigKey: string;
 }
 
 type TokenInfo = {
@@ -376,9 +377,9 @@ export class CimonApp {
         ];
         if (this._mentions.length > 0) {
             const submenu: MenuItemConstructorOptions[] = this._mentions.map(mi => ({
-                id: `mention_${mi.buildId}`,
-                label: `${mi.buildId} (${mi.commentsCount})`,
-                click: () => this._onOpenDiscussionWindow(`/buildDiscussion/${mi.buildId}`)
+                id: `mention_${mi.buildConfigId}`,
+                label: `${mi.buildConfigKey} (${mi.commentsCount})`,
+                click: () => this._onOpenDiscussionWindow(`/buildDiscussion/${mi.buildConfigId}`)
             }));
             template.splice(1, 0, {
                 id: "mentions",

@@ -6,6 +6,7 @@ using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
 using Cimon.DB.Models;
+using Optional.Collections;
 
 namespace Cimon.Data;
 
@@ -40,4 +41,14 @@ public static class ActorsApi
 	public record GetMentions;
 	public record GetUserMentions(string UserName) : UserMessage<GetMentions>(UserName, new GetMentions()),
 		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
+	
+	
+	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
+			this BuildConfigService buildConfigService, Cimon.Contracts.User user) {
+		var mentionsObservable = await AppActors.Instance.UserSupervisor.Ask(new GetUserMentions(user.Name.Name));
+		return mentionsObservable.CombineLatest(buildConfigService.BuildConfigs, (mentions, configs) => {
+			return mentions.Select(m => new MentionInBuildConfig(m, configs.FirstOrNone(c => c.Id == m.BuildConfigId)))
+				.ToImmutableList();
+		});
+	}
 }

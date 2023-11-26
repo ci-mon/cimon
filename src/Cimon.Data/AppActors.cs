@@ -1,12 +1,16 @@
 ﻿using System.Collections.Immutable;
+using System.Reactive.Linq;
 using Akka.Actor;
 using Akka.DependencyInjection;
-using Cimon.Contracts;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
 using Cimon.Data.Users;
+using Cimon.DB.Models;
+using Optional;
+using Optional.Collections;
+using User = Cimon.Contracts.User;
 
 namespace Cimon.Data;
 
@@ -47,3 +51,5 @@ public class AppActors
 		return Instance.UserSupervisor.Ask(new ActorsApi.GetUserMentions(user.Name.Name));
 	}
 }
+
+public record MentionInBuildConfig(MentionInfo Mention, Option<BuildConfig> BuildConfig);

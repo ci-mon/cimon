@@ -1,13 +1,6 @@
 ﻿@page "/mentions"
-@using Cimon.Data.Discussions
 @using Cimon.Data.Users
-@using System.Collections.Immutable
-@using System.Reactive.Linq
 @using Cimon.Data.Monitors
-@using Cimon.DB.Models
-@using Narochno.Primitives
-@using Optional
-@using Optional.Collections
 @inherits ReactiveComponent
 @inject ICurrentUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
@@ -23,24 +16,20 @@
             <RadzenText Text="@StatusText" />
             @foreach (var mention in _mentions.Value) {
                 <RadzenStack Orientation="Orientation.Horizontal">
-                    <RadzenButton Text="@mention.BuildConfig.Map(x=>x.Key).ValueOr(mention.Mention.BuildConfigId.ToString)" Click="() => GoToDiscussion(mention.Item1.BuildConfigId)"/>
-                    <RadzenText>@mention.Mention.Count times</RadzenText>
+                    <RadzenButton Text="@mention.BuildConfig.Map(x=>x.Key).ValueOr(mention.Mention.BuildConfigId.ToString)" Click="() => GoToDiscussion(mention.Mention.BuildConfigId)"/>
+                    <RadzenText>@mention.Mention.CommentsCount times</RadzenText>
                 </RadzenStack>
             }
         </RadzenStack>
     }
 </RadzenCard>
 @code {
-    private ReactiveValue<List<(MentionInfo Mention, Option<BuildConfig> BuildConfig)>>? _mentions;
+    private ReactiveValue<IReadOnlyCollection<MentionInBuildConfig>>? _mentions;
     private string StatusText => $"You was mentioned in {_mentions?.Value?.Count ?? 0} builds";
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        var mentionsObservable = await AppActors.GetMentions(user);
-        var forkJoin = mentionsObservable.CombineLatest(BuildConfigService.BuildConfigs, (mentions, configs) => {
-            return mentions.Select(m => (m, configs.FirstOrNone(c => c.Id == m.BuildConfigId))).ToList();
-        });
-        _mentions = Subscribe(forkJoin);
+        _mentions = Subscribe(await BuildConfigService.GetMentionsWithBuildConfig(user));
     }
 
     private void GoToDiscussion(int discussionId) {

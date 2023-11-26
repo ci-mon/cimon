@@ -21,7 +21,7 @@ public class MentionsMonitorActor : ReceiveActor
                 };
                 var msg = new ActorsApi.UserMessage<MentionInfo>(entityId.Name, new MentionInfo(state.BuildConfigId, countDelta));
                 userServiceActor.Tell(msg);
-                compensation.Add(msg with { Payload = msg.Payload  with { Count = -1 * countDelta } });
+                compensation.Add(msg with { Payload = msg.Payload  with { CommentsCount = -1 * countDelta } });
             }
         });
         Receive<Terminated>(terminated => {
