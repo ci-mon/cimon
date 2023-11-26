@@ -2,6 +2,7 @@
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
+using Cimon.Data.Secrets;
 using Cimon.Data.Users;
 
 // ReSharper disable once CheckNamespace

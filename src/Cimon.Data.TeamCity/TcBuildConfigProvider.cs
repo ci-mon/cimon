@@ -17,8 +17,9 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 	}
 
 	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
+		using var client = _clientFactory.Create(info.ConnectorKey);
 		var results = new List<BuildConfig>();
-		await foreach (var (buildConfig, branches) in GetBuildConfigs(info.Settings)) {
+		await foreach (var (buildConfig, branches) in GetBuildConfigs(client, info.Settings)) {
 			if (!branches.Any()) {
 				var item = new BuildConfig {
 					Key = buildConfig.Id,
@@ -51,8 +52,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 	}
 
 	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs(
-			IReadOnlyDictionary<string, string> settings) {
-		using var client = _clientFactory.GetClient();
+		TeamCityClientTicket client, IReadOnlyDictionary<string, string> settings) {
 		var configs = client.Client
 			.BuildTypes
 			.Include(x => x.BuildType).ThenInclude(x=>x.Branches, IncludeType.Long)
@@ -76,7 +76,6 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		}
 	}
 
-	public CISystem CISystem => CISystem.TeamCity;
 	public Dictionary<string, string> GetSettings() {
 		return new() {
 			{"searched_projects", "*"}

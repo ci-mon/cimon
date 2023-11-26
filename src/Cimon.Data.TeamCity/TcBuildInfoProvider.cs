@@ -1,6 +1,8 @@
 ﻿using System.Collections.Immutable;
+using System.Reflection;
 using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
+using TeamCityAPI;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
 using TeamCityAPI.Queries;
@@ -34,7 +36,6 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	}
 
 	public async Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildInfoQuery> infoQueries) {
-		using var clientTicket = _clientFactory.GetClient();
 		List<BuildInfo?> list = new List<BuildInfo?>();
 		foreach (var buildInfoQuery in infoQueries) {
 			var info = await FindInfo(buildInfoQuery);
@@ -45,7 +46,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	}
 
 	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
-		using var clientTicket = _clientFactory.GetClient();
+		using var clientTicket = _clientFactory.Create(infoQuery.ConnectorInfo.ConnectorKey);
 		var buildConfig = infoQuery.BuildConfig;
 		var build = await GetBuild(buildConfig, clientTicket);
 		if (build is null)
@@ -54,14 +55,23 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		string? lastBuildNumber = infoQuery.Options?.LastBuildNumber;
 		if (!string.IsNullOrWhiteSpace(lastBuildNumber) && info.Status == BuildStatus.Failed &&
 			build.Id is { } buildId) {
-			info.Log = await _clientFactory.GetLogsAsync(buildId);
+			info.Log = await GetLogsAsync(buildId, clientTicket);
 		}
 		info.AddInvestigationActions(build);
 		return info;
 	}
 
-	public async Task<BuildInfo> GetSingleBuildInfo(string buildConfigId, int buildId) {
-		using var clientTicket = _clientFactory.GetClient();
+	
+	public async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket) {
+		var client = clientTicket.Client;
+		var type = typeof(TeamCityClient);
+		var httpClient = (HttpClient)type.GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(client)!;
+		var address = clientTicket.Secrets.Uri + $"/httpAuth/downloadBuildLog.html?buildId={buildId}";
+		return await httpClient.GetStringAsync(address);
+	}
+
+	public async Task<BuildInfo> GetSingleBuildInfo(string buildConfigId, int buildId, string connectorKey) {
+		using var clientTicket = _clientFactory.Create(connectorKey);
 		var locator = new BuildLocator {
 			BuildType = new BuildTypeLocator {
 				Id = buildConfigId
@@ -172,7 +182,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return res;
 	}
 
-	private static async Task<Build?> GetBuild(Contracts.CI.BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
+	private static async Task<Build?> GetBuild(BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
 		var buildLocator = new BuildLocator {
 			Count = 1,
 			Canceled = false,

@@ -18,45 +18,39 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 
 	public CISystem CiSystem => CISystem.Jenkins;
 
-	public async Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildInfoQuery> infoQueries) {
-		var builds = await Task.WhenAll(infoQueries.Select(GetBuildInfo));
-		var results = new List<BuildInfo>();
-		foreach (var (buildInfo, (buildConfig, options), jobName) in builds) {
-			if (buildInfo == null) {
-				continue;
-			}
-			var changes = await GetChanges(buildInfo);
-			var name = buildInfo.FullDisplayName.Substring(0,
-				buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal));
-			var info = new BuildInfo {
-				Name = name,
-				Url = buildInfo.Url.ToString(),
-				Group = null,
-				BranchName = buildConfig.Branch,
-				Number = buildInfo.Number.ToString(),
-				BuildConfigId = buildConfig.Id,
-				StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
-				Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
-				Status = GetStatus(buildInfo.Result),
-				Changes = changes
-			};
-			var lastBuildNumber = options?.LastBuildNumber;
-			if (info.Status ==  BuildStatus.Failed && !string.IsNullOrWhiteSpace(lastBuildNumber) &&
-				!lastBuildNumber.Equals(info.Number, StringComparison.OrdinalIgnoreCase)) {
-				using var client = _factory.Create();
-				info.Log = await client.GetBuildConsole(jobName, buildInfo.Id, default);
-			}
-			results.Add(info);
+	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
+		var build = await GetBuildInfo(infoQuery);
+		if (build == null) {
+			return null;
 		}
-		return results;
-	}
-
-	public Task<BuildInfo> FindInfo(BuildInfoQuery infoQuery) {
-		throw new NotImplementedException();
+		var buildInfo = build.BuildInfo;
+		var buildConfig = infoQuery.BuildConfig;
+		var changes = await GetChanges(buildInfo);
+		var name = buildInfo.FullDisplayName.Substring(0,
+			buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal));
+		var info = new BuildInfo {
+			Name = name,
+			Url = buildInfo.Url.ToString(),
+			Group = null,
+			BranchName = buildConfig.Branch,
+			Number = buildInfo.Number.ToString(),
+			BuildConfigId = buildConfig.Id,
+			StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
+			Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
+			Status = GetStatus(buildInfo.Result),
+			Changes = changes
+		};
+		var lastBuildNumber = infoQuery.Options?.LastBuildNumber;
+		if (info.Status ==  BuildStatus.Failed && !string.IsNullOrWhiteSpace(lastBuildNumber) &&
+				!lastBuildNumber.Equals(info.Number, StringComparison.OrdinalIgnoreCase)) {
+			using var client = _factory.Create();
+			info.Log = await client.GetBuildConsole(build.JobName, buildInfo.Id, default);
+		}
+		return info;
 	}
 
 	record InternalBuildInfo(Narochno.Jenkins.Entities.Builds.BuildInfo? BuildInfo, BuildInfoQuery Query, string? JobName);
-	private async Task<InternalBuildInfo> GetBuildInfo(BuildInfoQuery buildInfoQuery) {
+	private async Task<InternalBuildInfo?> GetBuildInfo(BuildInfoQuery buildInfoQuery) {
 		using var client = _factory.Create();
 		var buildConfig = buildInfoQuery.BuildConfig;
 		var job = await client.GetJob(buildConfig.Key, default);
@@ -67,7 +61,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		}
 		var branchJobId = job.Jobs.FirstOrDefault(x => x.Name == buildConfig.Branch);
 		if (branchJobId == null) {
-			return new InternalBuildInfo(null, buildInfoQuery, null);
+			return null;
 		}
 		var branchJobFullName = $"{job.Name}/job/{branchJobId.Name}";
 		var branchJob = await client.GetJob(branchJobFullName, default);

@@ -1,4 +1,6 @@
-﻿namespace Cimon.Contracts.CI;
+﻿using Cimon.Contracts.Services;
+
+namespace Cimon.Contracts.CI;
 
 public record BuildConfig
 {
@@ -10,4 +12,5 @@ public record BuildConfig
 }
 
 public record BuildInfoQueryOptions(string? LastBuildNumber = null);
-public record BuildInfoQuery(BuildConfig BuildConfig, BuildInfoQueryOptions? Options = null);
+public record BuildInfoQuery(CIConnectorInfo ConnectorInfo, BuildConfig BuildConfig,
+	BuildInfoQueryOptions? Options = null);

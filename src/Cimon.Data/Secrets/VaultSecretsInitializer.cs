@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VaultSharp;
@@ -9,16 +10,18 @@ namespace Cimon.Data.Secrets;
 
 using System.Reflection;
 
-public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> where TSecrets : class
+public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecrets> where TSecrets : class
 {
 	private readonly string _prefix = ToVaultName(typeof(TSecrets).Name.Replace("Secrets", string.Empty));
 	private readonly VaultSettings _vaultSettings;
 	private readonly ILogger _log;
 
-	public void Configure(TSecrets options) {
+	public void Configure(TSecrets options) => Configure(null, options);
+
+	public void Configure(string? key, TSecrets options) {
 		if (_vaultSettings.Disabled) return;
 		try {
-			ConfigureAsync(options).ConfigureAwait(false).GetAwaiter().GetResult();
+			ConfigureAsync(options, key).ConfigureAwait(false).GetAwaiter().GetResult();
 		} catch (Exception e) {
 			_log.LogError(e, "Failed to init secrets {SecretType}", typeof(TSecrets).Name);
 		}
@@ -30,7 +33,13 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 		_vaultSettings = vaultSettings.Value;
 	}
 
-	private async Task ConfigureAsync(TSecrets options) {
+	public TSecrets Get(string key) {
+		var secrets = Activator.CreateInstance<TSecrets>();
+		Configure(key, secrets);
+		return secrets;
+	}
+
+	private async Task ConfigureAsync(TSecrets options, string? key) {
 		IAuthMethodInfo authMethod = new TokenAuthMethodInfo(_vaultSettings.Token);
 		var vaultClientSettings = new VaultClientSettings(_vaultSettings.Url, authMethod) {
 			VaultServiceTimeout = TimeSpan.FromSeconds(30)
@@ -38,13 +47,14 @@ public class VaultSecretsInitializer<TSecrets> : IConfigureOptions<TSecrets> whe
 		IVaultClient vaultClient = new VaultClient(vaultClientSettings);
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
 			.ReadSecretAsync(path: _vaultSettings.Path, mountPoint: _vaultSettings.MountPoint).ConfigureAwait(false);
+		var prefix = string.IsNullOrWhiteSpace(key) ? _prefix : $"{_prefix}.{key}";
 		foreach (var property in typeof(TSecrets).GetProperties()) {
-			var key = $"{_prefix}.{ToVaultName(property.Name)}";
-			if (!secrets.Data.Data.TryGetValue(key, out var value)) continue;
+			var propertyKey = $"{prefix}.{ToVaultName(property.Name)}";
+			if (!secrets.Data.Data.TryGetValue(propertyKey, out var value)) continue;
 			if (value is not JsonElement jsonElement) continue;
 			var propertyValue = jsonElement.Deserialize(property.PropertyType);
 			if (propertyValue is null) {
-				_log.LogWarning("Value with {Key} deserialized to null", key);
+				_log.LogWarning("Value with {Key} deserialized to null", propertyKey);
 				continue;
 			}
 			property.SetValue(options, propertyValue);

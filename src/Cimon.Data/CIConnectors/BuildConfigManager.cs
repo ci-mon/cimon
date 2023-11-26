@@ -7,6 +7,7 @@ using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Optional;
 
 namespace Cimon.Data.CIConnectors;
@@ -14,13 +15,13 @@ namespace Cimon.Data.CIConnectors;
 public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildConfigModel>>
 {
 	private readonly IDbContextFactory<CimonDbContext> _contextFactory;
+	private readonly IServiceProvider _serviceProvider;
 	private readonly ReactiveRepository<IImmutableList<BuildConfigModel>> _state;
-	private readonly IEnumerable<IBuildConfigProvider> _configProviders;
 	
 	public BuildConfigService(IDbContextFactory<CimonDbContext> contextFactory,
-			IEnumerable<IBuildConfigProvider> configProviders) {
+			IServiceProvider serviceProvider) {
 		_contextFactory = contextFactory;
-		_configProviders = configProviders;
+		_serviceProvider = serviceProvider;
 		_state = new ReactiveRepository<IImmutableList<BuildConfigModel>>(this);
 	}
 
@@ -41,15 +42,20 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		return _refreshProgress.GetOrAdd(connector.Id, _ => new ReplaySubject<Option<int>>(1));
 	}
 
+	public async Task<CIConnectorInfo> GetConnectorInfo(CIConnector connector) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		return await GetConnectorInfo(connector, ctx);
+	}
+
 	public async Task RefreshBuildConfigs(CIConnector connector) {
 		var progress = GetProgressPublisher(connector);
 		progress.OnNext(0.Some());
+		await using var scope = _serviceProvider.CreateAsyncScope();
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		var providers = _configProviders.Single(x => x.CISystem == connector.CISystem);
-		var settingsInDb = await ctx.CIConnectorSettings.Where(x => x.CIConnector.Id == connector.Id).ToListAsync();
-		var settings = settingsInDb.ToDictionary(x => x.Key, x => x.Value);
+		var ciConnectorInfo = await GetConnectorInfo(connector, ctx);
+		var provider = scope.ServiceProvider.GetKeyedService<IBuildConfigProvider>(connector.CISystem);
 		try {
-			var newItems = await providers.GetAll(new CIConnectorInfo(settings));
+			var newItems = await provider.GetAll(ciConnectorInfo);
 			var existingItems = await ctx.BuildConfigurations.Include(x=>x.Connector).Include(x => x.Monitors)
 				.Where(x => x.Connector.Id == connector.Id).ToListAsync();
 			var toRemove = existingItems.ToHashSet();
@@ -59,6 +65,13 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		} finally {
 			progress.OnNext(Option.None<int>());
 		}
+	}
+
+	private static async Task<CIConnectorInfo> GetConnectorInfo(CIConnector connector, CimonDbContext ctx) {
+		var settingsInDb = await ctx.CIConnectorSettings.Where(x => x.CIConnector.Id == connector.Id).ToListAsync();
+		var settings = settingsInDb.ToDictionary(x => x.Key, x => x.Value);
+		var ciConnectorInfo = new CIConnectorInfo(connector.Key, settings);
+		return ciConnectorInfo;
 	}
 
 	private static async Task Synchronize(CIConnector connector, IReadOnlyCollection<BuildConfig> newItems, ReplaySubject<Option<int>> progress,

@@ -2,6 +2,7 @@
 using Akka.Event;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
+using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.ML;
@@ -12,6 +13,7 @@ namespace Cimon.Data.BuildInformation;
 class BuildInfoActor : ReceiveActor
 {
 	private readonly IEnumerable<IBuildInfoProvider> _buildInfoProviders;
+	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
 	private readonly IBuildFailurePredictor _buildFailurePredictor;
 
@@ -28,21 +30,21 @@ class BuildInfoActor : ReceiveActor
 	private readonly RingBuffer<BuildInfo> _buildInfos = new(50);
 	private int _commentsCount;
 	private bool _discussionWatched;
+	private bool _discussionOpen;
+	private readonly ILoggingAdapter _log = Context.GetLogger();
 
-	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders,
+	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders, BuildConfigService buildConfigService,
 			BuildInfoMonitoringSettings settings, IBuildFailurePredictor buildFailurePredictor) {
 		_buildInfoProviders = buildInfoProviders;
+		_buildConfigService = buildConfigService;
 		_settings = settings;
 		_buildFailurePredictor = buildFailurePredictor;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
 		Receive<StopIfIdle>(OnStopIfIdle);
 		Receive<BuildConfigModel>(InitBuildConfig);
-		Receive<GetBuildInfo>(OnGetBuildInfo);
+		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<BuildInfo>(HandleBuildInfo);
-		Receive<Status.Failure>(failure => {
-			Context.GetLogger().Error(failure.Cause, failure.Cause.Message);
-		});
 		Receive<Terminated>(_ => {
 			_discussionOpen = false;
 		});
@@ -70,7 +72,7 @@ class BuildInfoActor : ReceiveActor
 			TimeSpan.FromSeconds(Random.Shared.Next(0, 5)), _settings.Delay, Self, _getBuildInfo, Self);
 	}
 
-	private bool _discussionOpen;
+
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
 		if (_buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
@@ -100,16 +102,22 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
-	private void OnGetBuildInfo(GetBuildInfo _) {
+	private async Task OnGetBuildInfo(GetBuildInfo _) {
 		var options = new BuildInfoQueryOptions();
-		var query = new BuildInfoQuery(_config!, options);
+		var connectorInfo = await _buildConfigService.GetConnectorInfo(_config!.Connector);
+		var query = new BuildInfoQuery(connectorInfo, _config!, options);
 		if (_config!.DemoState is not null) {
 			_config.DemoState.BuildConfigId = _config.Id;
 			_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
 			Self.Tell(_config.DemoState);
 			return;
 		}
-		_provider!.FindInfo(query).PipeTo(Self);
+		try {
+			var info = _provider!.FindInfo(query);
+			Self.Tell(info);
+		} catch (Exception e) {
+			_log.Error(e, e.Message);
+		}
 	}
 
 	private void OnStopIfIdle(StopIfIdle _) {

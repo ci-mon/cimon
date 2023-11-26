@@ -4,12 +4,13 @@ using Cimon.DB.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.CIConnectors;
 
 public record RefreshCIConnectorSettings(EntityEntry<CIConnector> Connector): INotification;
 
-public class CIConnectorCreatedHandler(IEnumerable<IBuildConfigProvider> configProviders)
+public class CIConnectorCreatedHandler(IServiceProvider serviceProvider)
 	: INotificationHandler<EntityCreatedNotification<CIConnector>>, INotificationHandler<RefreshCIConnectorSettings>
 {
 	public async Task Handle(EntityCreatedNotification<CIConnector> notification, CancellationToken cancellationToken) {
@@ -20,7 +21,7 @@ public class CIConnectorCreatedHandler(IEnumerable<IBuildConfigProvider> configP
 	private async Task AddSettings(CancellationToken cancellationToken, EntityEntry<CIConnector> entry, bool sync) {
 		var connector = entry.Entity;
 		var ciSystem = connector.CISystem;
-		var provider = configProviders.Single(x => x.CISystem == ciSystem);
+		var provider = serviceProvider.GetKeyedService<IBuildConfigProvider>(ciSystem);
 		var settings = provider.GetSettings();
 		var existing = new HashSet<string>();
 		if (sync) {
