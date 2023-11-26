@@ -72,4 +72,9 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 	}
 
 	public CISystem CISystem => CISystem.TeamCity;
+	public Dictionary<string, string> GetSettings() {
+		return new() {
+			{"searched_projects", "*"}
+		};
+	}
 }

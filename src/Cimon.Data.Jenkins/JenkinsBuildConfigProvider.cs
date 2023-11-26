@@ -42,4 +42,5 @@ public class JenkinsBuildConfigProvider : IBuildConfigProvider
 	}
 
 	public CISystem CISystem => CISystem.Jenkins;
+	public Dictionary<string, string> GetSettings() => new();
 }

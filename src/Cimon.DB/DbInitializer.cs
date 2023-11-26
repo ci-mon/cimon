@@ -83,6 +83,14 @@ public class DbInitializer
 			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
 			Teams = { adminTeam.Entity }
 		});
+		await context.AddAsync(new CIConnector {
+			Key = "teamcity_main",
+			CISystem = CISystem.TeamCity
+		});
+		await context.AddAsync(new CIConnector {
+			Key = "jenkins_main",
+			CISystem = CISystem.Jenkins
+		});
 		await InitDemoMonitors(context);
 	}
 

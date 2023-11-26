@@ -70,7 +70,7 @@
 
 @code {
 
-    protected override IQueryable<User> InitItems() {
+    protected override IQueryable<User> GetItems() {
         return DbContext.Users.Include(x => x.Teams).Include(x => x.Roles);
     }
 

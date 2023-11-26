@@ -1,0 +1,114 @@
+﻿@page "/SetupCIConnectors"
+@inherits DbContextComponent<Cimon.DB.Models.CIConnector>;
+@attribute [Authorize(Roles = "monitor-editor")]
+@inject IMediator Mediator
+
+@using Cimon.DB.Models
+@using Cimon.Contracts.CI
+@using Cimon.Data.CIConnectors
+@using Cimon.DB
+@using MediatR
+
+
+<RadzenPanel Style="padding: 1em">
+    <RadzenStack Orientation="Orientation.Vertical">
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle_outline" class="mt-2 mb-4" Text="Add" Click="@InsertRow" Disabled=@(ItemToInsert != null || ItemToUpdate != null)/>
+        </RadzenStack>
+        <RadzenLabel>Connectors</RadzenLabel>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false"
+                            AllowFiltering="true" AllowPaging="true" AllowRowSelectOnRowClick="@true"
+                            PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                            Data="@Items" TItem="CIConnector" @bind-Value="@SelectedConnectors"
+                            RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow"
+                            Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="CIConnector" Property="Id" Title="Id" Width="80px">
+                        <Template Context="connector">
+                            @connector.Id
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CIConnector" Property="CISystem" Title="CI system" Width="120px">
+                        <Template Context="connector">
+                            @connector.CISystem
+                        </Template>
+                        <EditTemplate Context="connector">
+                            <RadzenDropDown @bind-Value="connector.CISystem" Data=@CISystems Style="width:100%"/>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CIConnector" Property="Key" Title="Key">
+                        <Template Context="connector">
+                            @connector.Key
+                        </Template>
+                        <EditTemplate Context="connector">
+                            <RadzenTextBox @bind-Value="connector.Key" Style="width:100%"/>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CIConnector" Context="team" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                        <Template Context="connector">
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(connector))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="refresh" title="Refresh settings" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => RefreshSettings(connector))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(connector))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                        </Template>
+                        <EditTemplate Context="connector">
+                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(connector))">
+                            </RadzenButton>
+                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(connector))">
+                            </RadzenButton>
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(connector))">
+                            </RadzenButton>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+            <RadzenStack Orientation="Orientation.Vertical" class="col-md-6"
+                         Visible="@(SelectedConnector is not null)">
+                <RadzenLabel>Settings</RadzenLabel>
+                <CIConnectorSettingsGrid Connector="SelectedConnector"></CIConnectorSettingsGrid>
+            </RadzenStack>
+        </RadzenStack>
+
+    </RadzenStack>
+
+</RadzenPanel>
+
+@code{
+    private IList<CIConnector> _selectedConnectors = new List<CIConnector>();
+
+    private IList<CIConnector> SelectedConnectors {
+        get => _selectedConnectors;
+        set {
+            _selectedConnectors = value;
+            StateHasChanged();
+        }
+    }
+
+    private CIConnector? SelectedConnector => SelectedConnectors?.FirstOrDefault();
+    private IEnumerable<CISystem> CISystems => Enum.GetValues<CISystem>();
+
+    protected override Task OnCreateRow(CIConnector team) {
+        SelectedConnectors = null;
+        return base.OnCreateRow(team);
+    }
+
+    protected override Task EditRow(CIConnector item) {
+        SelectedConnectors = null;
+        return base.EditRow(item);
+    }
+
+    protected override Task InsertRow() {
+        SelectedConnectors = null;
+        return base.InsertRow();
+    }
+
+    private async Task RefreshSettings(CIConnector connector) {
+        var entry = DbContext.CIConnectors.Entry(connector);
+        await Mediator.Publish(new RefreshCIConnectorSettings(entry));
+        StateHasChanged();
+    }
+
+}

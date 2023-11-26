@@ -22,16 +22,20 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 
 	protected override async Task OnInitializedAsync() {
 		await base.OnInitializedAsync();
-		Items = InitItems();
+		RefreshItems();
 	}
 
-	protected virtual IQueryable<TItem> InitItems() {
+	protected void RefreshItems() {
+		Items = GetItems();
+	}
+
+	protected virtual IQueryable<TItem> GetItems() {
 		return DbContext.Set<TItem>();
 	}
 
-	protected async Task EditRow(TItem team) {
-		ItemToUpdate = team;
-		await Grid.EditRow(team);
+	protected virtual async Task EditRow(TItem item) {
+		ItemToUpdate = item;
+		await Grid.EditRow(item);
 	}
 
 	protected void OnUpdateRow(TItem team) {
@@ -43,7 +47,7 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 		DbContext.SaveChanges();
 	}
 
-	protected async Task SaveRow(TItem item) {
+	protected virtual async Task SaveRow(TItem item) {
 		await Grid.UpdateRow(item);
 	}
 
@@ -63,7 +67,7 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 		}
 	}
 
-	protected async Task DeleteRow(TItem? item) {
+	protected virtual async Task DeleteRow(TItem? item) {
 		if (item == null) {
 			return;
 		}
@@ -83,14 +87,14 @@ public class DbContextComponent<TItem> : ComponentBase where TItem : class, IEnt
 		}
 	}
 
-	protected async Task InsertRow() {
+	protected virtual async Task InsertRow() {
 		ItemToInsert = TItem.Create();
 		await Grid.InsertRow(ItemToInsert);
 	}
 
-	protected void OnCreateRow(TItem team) {
-		DbContext.Add(team);
-		DbContext.SaveChanges();
+	protected virtual async Task OnCreateRow(TItem team) {
+		await DbContext.AddAsync(team);
+		await DbContext.SaveChangesAsync();
 		ItemToInsert = null;
 	}
 }

@@ -1,0 +1,65 @@
+﻿@using Cimon.DB.Models
+@inherits DbContextComponent<Cimon.DB.Models.CIConnectorSetting>;
+<RadzenDataGrid @ref="Grid" AllowAlternatingRows="false"
+                            AllowFiltering="true" AllowPaging="true"
+                            PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                            Data="@Items" TItem="CIConnectorSetting"
+                            RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow"
+                            Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="CIConnectorSetting" Property="Key" Title="Key" Width="120px">
+                        <Template Context="setting">
+                            @setting.Key
+                        </Template>
+                        <EditTemplate Context="setting">
+                            <RadzenTextBox @bind-Value="setting.Key" Style="width:100%"/>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CIConnectorSetting" Property="Value" Title="Value" Width="120px">
+                        <Template Context="setting">
+                            @setting.Value
+                        </Template>
+                        <EditTemplate Context="setting">
+                            <RadzenTextBox @bind-Value="setting.Value" Style="width:100%"/>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    
+                    <RadzenDataGridColumn TItem="CIConnectorSetting" Context="team" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                        <Template Context="setting">
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(setting))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(setting))" @onclick:stopPropagation="true">
+                            </RadzenButton>
+                        </Template>
+                        <EditTemplate Context="setting">
+                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(setting))">
+                            </RadzenButton>
+                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(setting))">
+                            </RadzenButton>
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(setting))">
+                            </RadzenButton>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+@code {
+    private CIConnector _connector;
+
+    [Parameter]
+    public CIConnector Connector {
+        get => _connector;
+        set {
+            var firstInit = _connector is null;
+            _connector = value;
+            if (!firstInit) {
+                RefreshItems();
+                StateHasChanged();
+            }
+        }
+    }
+
+    protected override IQueryable<CIConnectorSetting> GetItems() {
+        return base.GetItems().Where(i=>i.CIConnector.Id == Connector.Id);
+    }
+
+}
