@@ -15,7 +15,7 @@ public record ExtendedMentionInfo(int BuildConfigId, int CommentsCount, string B
 
 public interface IUserClientApi
 {
-	Task NotifyWithUrl(string buildConfigId, string url, string header, string message, string authorEmail);
+	Task NotifyWithUrl(int buildConfigId, string url, string header, string message, string authorEmail);
 	Task UpdateMentions(IEnumerable<ExtendedMentionInfo> mentions);
 	Task CheckForUpdates();
 }

@@ -87,8 +87,7 @@ public class DiscussionActor : ReceiveActor
 		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
 		var commentSimpleText = ExtractText(comment);
 		StateHasChanged(state);
-		// TODO _buildConfigId
-		await _notificationService.Notify(_buildConfig.Id.ToString(), comment.Id, data.Author, comment.Mentions,
+		await _notificationService.Notify(_buildConfig.Id, comment.Id, data.Author, comment.Mentions,
 			commentSimpleText);
 	}
 	
