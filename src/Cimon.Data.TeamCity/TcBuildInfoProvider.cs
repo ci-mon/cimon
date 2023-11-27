@@ -53,8 +53,9 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			return null;
 		TcBuildInfo info = await GetBuildInfo(build, buildConfig.Id, clientTicket);
 		string? lastBuildNumber = infoQuery.Options?.LastBuildNumber;
-		if (!string.IsNullOrWhiteSpace(lastBuildNumber) && info.Status == BuildStatus.Failed &&
-			build.Id is { } buildId) {
+		var newBuildFailed = string.IsNullOrWhiteSpace(lastBuildNumber) || !string.Equals(build.Number, 
+			lastBuildNumber, StringComparison.OrdinalIgnoreCase);
+		if (info.Status == BuildStatus.Failed && build.Id is { } buildId && newBuildFailed) {
 			info.Log = await GetLogsAsync(buildId, clientTicket);
 		}
 		info.AddInvestigationActions(build);
@@ -92,7 +93,6 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			StartDate = startDate ?? DateTimeOffset.Now,
 			Duration = endDate - startDate,
 			Name = build.BuildType.Name,
-			BuildConfigId = buildConfigId,
 			Url = build.WebUrl,
 			Group = build.BuildType.ProjectName,
 			BranchName = build.BranchName,

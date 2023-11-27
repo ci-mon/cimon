@@ -45,7 +45,7 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		var existing = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id).ToListAsync();
 		ctx.MonitorBuilds.RemoveRange(existing);
 		foreach (var buildConfig in builds) {
-			await ctx.MonitorBuilds.AddAsync(new BuildInMonitor() {
+			await ctx.MonitorBuilds.AddAsync(new BuildInMonitor {
 				MonitorId = monitor.Id,
 				BuildConfigId = buildConfig.Id
 			});
@@ -56,7 +56,10 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public async Task<IImmutableList<Monitor>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
-		var result = await ctx.Monitors.Include(x => x.Builds).ThenInclude(x=>x.BuildConfig)
+		var result = await ctx.Monitors
+			.Include(x => x.Builds)
+			.ThenInclude(x => x.BuildConfig)
+			.ThenInclude(x => x.Connector)
 			.ToListAsync(cancellationToken: token);
 		return result.ToImmutableList();
 	}

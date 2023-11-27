@@ -85,9 +85,9 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private void Ready() {
 		Receive<MonitorModel>(OnMonitorChange);
 		Receive<ActorsApi.WatchMonitor>(_ => Sender.Tell(_dataObservable));
-		Receive<BuildInfo>(info => {
+		Receive<BuildInfoServiceActorApi.BuildInfoItem>(info => {
 			if (_buildInfos.TryGetValue(info.BuildConfigId, out var bucket)) {
-				bucket.Subject.OnNext(info);
+				bucket.Subject.OnNext(info.BuildInfo);
 			}
 		});
 		Stash.UnstashAll();

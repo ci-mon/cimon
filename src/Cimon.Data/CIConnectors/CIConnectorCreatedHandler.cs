@@ -21,7 +21,7 @@ public class CIConnectorCreatedHandler(IServiceProvider serviceProvider)
 	private async Task AddSettings(CancellationToken cancellationToken, EntityEntry<CIConnector> entry, bool sync) {
 		var connector = entry.Entity;
 		var ciSystem = connector.CISystem;
-		var provider = serviceProvider.GetKeyedService<IBuildConfigProvider>(ciSystem);
+		var provider = serviceProvider.GetRequiredKeyedService<IBuildConfigProvider>(ciSystem);
 		var settings = provider.GetSettings();
 		var existing = new HashSet<string>();
 		if (sync) {

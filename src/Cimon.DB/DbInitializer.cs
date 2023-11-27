@@ -105,7 +105,6 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = 1
 			}
 		});
 		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit") {
@@ -118,7 +117,6 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = 2
 			}
 		});
 		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit (.Net 6)") {
@@ -131,7 +129,6 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = 3
 			}
 		});
 		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (MSSQL)") {
@@ -144,7 +141,6 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = 4
 			}
 		});
 		var manyChanges = Enumerable.Range(0, 10).Select(i => 
@@ -162,7 +158,6 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				Duration = TimeSpan.FromSeconds(1234),
 				BranchName = "trunk",
-				BuildConfigId = 5,
 				Changes = manyChanges,
 				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
 			}
@@ -177,7 +172,6 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-				BuildConfigId = 6,
 			}
 		});
 		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.shell") {
@@ -190,7 +184,6 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				Changes = manyChanges,
-				BuildConfigId = 7,
 			}
 		});
 		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.schema-view") {
@@ -205,7 +198,6 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = 8,
 			}
 		});
 		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.process-designer") {
@@ -221,7 +213,6 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = 9,
 			}
 		});
 		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "lib.studio-enterprise.process") {
@@ -237,7 +228,6 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-				BuildConfigId = 10,
 			}
 		});
 

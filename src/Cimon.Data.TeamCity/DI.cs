@@ -8,7 +8,7 @@ public static class DI
 {
 	public static IServiceCollection AddCimonDataTeamCity(this IServiceCollection collection) {
 		return collection.AddTransient<TcClientFactory, TcClientFactory>()
-			.AddTransient<IBuildInfoProvider, TcBuildInfoProvider>()
+			.AddKeyedTransient<IBuildInfoProvider, TcBuildInfoProvider>(CISystem.TeamCity)
 			.AddKeyedTransient<IBuildConfigProvider, TcBuildConfigProvider>(CISystem.TeamCity);
 	}
 }

@@ -2,7 +2,7 @@
 
 namespace Cimon.DB.Models;
 
-public record CIConnector : IEntityCreator<CIConnector>
+public record CIConnector : IEntityCreator<CIConnector>, IComparable<CIConnector>
 {
 	public static CIConnector Create() => new(){Key = $"Connector{Guid.NewGuid().ToString()[..4]}"};
 
@@ -11,8 +11,13 @@ public record CIConnector : IEntityCreator<CIConnector>
 	public string Key { get; set; }
 
 	public List<BuildConfigModel> BuildConfigModels { get; set; } = new();
-	
 
+
+	public int CompareTo(CIConnector? other) {
+		if (ReferenceEquals(this, other)) return 0;
+		if (ReferenceEquals(null, other)) return 1;
+		return Id.CompareTo(other.Id);
+	}
 }
 
 public record CIConnectorSetting : IEntityCreator<CIConnectorSetting>

@@ -52,9 +52,11 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		progress.OnNext(0.Some());
 		await using var scope = _serviceProvider.CreateAsyncScope();
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		connector = await ctx.CIConnectors.FindAsync(connector.Id) ??
+			throw new InvalidOperationException($"Connector {connector.Id} not found in db");
 		var ciConnectorInfo = await GetConnectorInfo(connector, ctx);
-		var provider = scope.ServiceProvider.GetKeyedService<IBuildConfigProvider>(connector.CISystem);
 		try {
+			var provider = scope.ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(connector.CISystem);
 			var newItems = await provider.GetAll(ciConnectorInfo);
 			var existingItems = await ctx.BuildConfigurations.Include(x=>x.Connector).Include(x => x.Monitors)
 				.Where(x => x.Connector.Id == connector.Id).ToListAsync();
@@ -82,7 +84,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 			current++;
 			var progressPercents = Convert.ToInt32(current * 1d / totalCount * 100d);
 			progress.OnNext(progressPercents.Some());
-			var existing = existingItems.Find(x => newItem.Equals(x));
+			var existing = existingItems.Find(x => newItem.IsSame(x));
 			if (existing == null) {
 				existing = new BuildConfigModel(connector, newItem.Key, newItem.Branch, newItem.IsDefaultBranch);
 				await ctx.BuildConfigurations.AddAsync(existing);

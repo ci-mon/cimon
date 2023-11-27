@@ -7,7 +7,8 @@ version: '3.1'
 # ./teamcity-server-logs - logs of primary TeamCity server
 # ./agents/agent-1/conf - configuration directory for the first build agent
 # ./agents/agent-1/conf - configuration directory for the second build agent
-
+volumes:
+  buildserver_pgdata:
 services:
   db:
     profiles:
@@ -19,7 +20,7 @@ services:
       - POSTGRES_DB=teamcity_db
       - PG_DATA=/var/lib/postgresql/data
     volumes:
-      - ./buildserver_pgdata:/var/lib/postgresql/data
+      - buildserver_pgdata:/var/lib/postgresql/data
     ports:
       - 5433:5432
 

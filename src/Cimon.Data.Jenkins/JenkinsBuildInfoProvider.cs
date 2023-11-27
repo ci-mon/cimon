@@ -15,9 +15,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 	public JenkinsBuildInfoProvider(ClientFactory factory) {
 		_factory = factory;
 	}
-
-	public CISystem CiSystem => CISystem.Jenkins;
-
+	
 	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
 		var build = await GetBuildInfo(infoQuery);
 		if (build == null) {
@@ -34,7 +32,6 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 			Group = null,
 			BranchName = buildConfig.Branch,
 			Number = buildInfo.Number.ToString(),
-			BuildConfigId = buildConfig.Id,
 			StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
 			Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
 			Status = GetStatus(buildInfo.Result),

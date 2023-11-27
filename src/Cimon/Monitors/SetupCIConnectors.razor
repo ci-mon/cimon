@@ -88,6 +88,13 @@
     private CIConnector? SelectedConnector => SelectedConnectors?.FirstOrDefault();
     private IEnumerable<CISystem> CISystems => Enum.GetValues<CISystem>();
 
+    protected override void RefreshItems() {
+        base.RefreshItems();
+        if (SelectedConnector is null) {
+            SelectedConnectors = Items?.Take(1).ToList();
+        }
+    }
+
     protected override Task OnCreateRow(CIConnector team) {
         SelectedConnectors = null;
         return base.OnCreateRow(team);

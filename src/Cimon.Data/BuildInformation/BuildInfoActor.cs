@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using System.Reactive.Linq;
+using Akka.Actor;
 using Akka.Event;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
@@ -7,12 +8,13 @@ using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.ML;
 using Cimon.DB.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.BuildInformation;
 
 class BuildInfoActor : ReceiveActor
 {
-	private readonly IEnumerable<IBuildInfoProvider> _buildInfoProviders;
+	private readonly int _buildConfigId;
 	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
 	private readonly IBuildFailurePredictor _buildFailurePredictor;
@@ -32,17 +34,21 @@ class BuildInfoActor : ReceiveActor
 	private bool _discussionWatched;
 	private bool _discussionOpen;
 	private readonly ILoggingAdapter _log = Context.GetLogger();
+	private readonly IServiceScope _scope;
+	private CIConnectorInfo _connectorInfo;
 
-	public BuildInfoActor(IEnumerable<IBuildInfoProvider> buildInfoProviders, BuildConfigService buildConfigService,
+	public BuildInfoActor(int buildConfigId, IServiceProvider serviceProvider, BuildConfigService buildConfigService,
 			BuildInfoMonitoringSettings settings, IBuildFailurePredictor buildFailurePredictor) {
-		_buildInfoProviders = buildInfoProviders;
+		_scope = serviceProvider.CreateScope();
+		_buildConfigId = buildConfigId;
 		_buildConfigService = buildConfigService;
 		_settings = settings;
 		_buildFailurePredictor = buildFailurePredictor;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
+		Receive<BuildInfoServiceActorApi.Subscribe>(OnSubscribe);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
 		Receive<StopIfIdle>(OnStopIfIdle);
-		Receive<BuildConfigModel>(InitBuildConfig);
+		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<Terminated>(_ => {
@@ -56,22 +62,34 @@ class BuildInfoActor : ReceiveActor
 			_commentsCount = state.Comments.Count;
 			NotifySubscribers(_buildInfos.Last);
 		});
+		var buildConfigStream =
+			buildConfigService.BuildConfigs.Select(x => x.FirstOrDefault(c => c.Id == _buildConfigId));
+		Context.Observe(buildConfigStream);
 	}
 
-	private void InitBuildConfig(BuildConfigModel config) {
+	protected override void PostStop() {
+		base.PostStop();
+		_scope?.Dispose();
+	}
+
+	private void OnSubscribe(BuildInfoServiceActorApi.Subscribe msg) {
 		_subscribers.Add(Sender);
-		if (_config != null) {
-			if (_buildInfos.Last is {} currentInfo) {
-				Sender.Tell(currentInfo);
-			}
-			return;
+		if (_buildInfos.Last is {} current) {
+			Sender.Tell(CreateNotification(current));
 		}
+	}
+
+	private BuildInfoServiceActorApi.BuildInfoItem CreateNotification(BuildInfo current) {
+		return new BuildInfoServiceActorApi.BuildInfoItem(current, _config!.Id);
+	}
+
+	private async Task InitBuildConfig(BuildConfigModel config) {
 		_config = config;
-		_provider = _buildInfoProviders.Single(p => p.CiSystem == config.Connector.CISystem);
-		_refreshBuildInfoScheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+		_provider = _scope.ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(config.Connector.CISystem);
+		_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
+		_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
 			TimeSpan.FromSeconds(Random.Shared.Next(0, 5)), _settings.Delay, Self, _getBuildInfo, Self);
 	}
-
 
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
@@ -88,7 +106,8 @@ class BuildInfoActor : ReceiveActor
 	private void NotifySubscribers(BuildInfo? current) {
 		if (current is null) return;
 		current.CommentsCount = _commentsCount;
-		_subscribers.ForEach(s => s.Tell(current));
+		var buildInfoItem = CreateNotification(current);
+		_subscribers.ForEach(s => s.Tell(buildInfoItem));
 	}
 
 	private void HandleDiscussion(BuildInfo current) {
@@ -103,18 +122,18 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private async Task OnGetBuildInfo(GetBuildInfo _) {
-		var options = new BuildInfoQueryOptions();
-		var connectorInfo = await _buildConfigService.GetConnectorInfo(_config!.Connector);
-		var query = new BuildInfoQuery(connectorInfo, _config!, options);
 		if (_config!.DemoState is not null) {
-			_config.DemoState.BuildConfigId = _config.Id;
 			_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
 			Self.Tell(_config.DemoState);
 			return;
 		}
 		try {
-			var info = _provider!.FindInfo(query);
-			Self.Tell(info);
+			var options = new BuildInfoQueryOptions {
+				LastBuildNumber = _buildInfos.Last?.Number
+			};
+			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
+			var info = await _provider!.FindInfo(query);
+			Self.Tell(info ?? BuildInfo.NoData);
 		} catch (Exception e) {
 			_log.Error(e, e.Message);
 		}

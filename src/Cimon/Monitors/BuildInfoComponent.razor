@@ -128,7 +128,7 @@
 
     private void Discuss() {
         var isElectron = AppClientType == AppClientType.Electron;
-        NavigationManager.NavigateTo($"/buildDiscussion/{BuildInfo.BuildConfigId}", isElectron, isElectron);
+        NavigationManager.NavigateTo($"/buildDiscussion/{BuildConfig.Id}", isElectron, isElectron);
     }
 
     void ShowStatusTooltip(ElementReference elementReference) {

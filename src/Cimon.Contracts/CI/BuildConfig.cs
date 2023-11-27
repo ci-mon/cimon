@@ -9,6 +9,10 @@ public record BuildConfig
 	public string Key { get; init; }
 	public string? Branch { get; init; }
 	public bool IsDefaultBranch { get; init; }
+
+	public bool IsSame(BuildConfig? other) {
+		return Key == other?.Key && Branch == other.Branch;
+	}
 }
 
 public record BuildInfoQueryOptions(string? LastBuildNumber = null);

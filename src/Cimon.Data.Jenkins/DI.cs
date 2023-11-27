@@ -9,6 +9,6 @@ public static class DI
 	public static IServiceCollection AddCimonDataJenkins(this IServiceCollection collection) {
 		return collection.AddTransient<ClientFactory>()
 			.AddKeyedTransient<IBuildConfigProvider, JenkinsBuildConfigProvider>(CISystem.Jenkins)
-			.AddTransient<IBuildInfoProvider, JenkinsBuildInfoProvider>();
+			.AddKeyedTransient<IBuildInfoProvider, JenkinsBuildInfoProvider>(CISystem.Jenkins);
 	}
 }

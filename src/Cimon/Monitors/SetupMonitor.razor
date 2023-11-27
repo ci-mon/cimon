@@ -15,17 +15,13 @@
 <PageTitle>Setup monitor @MonitorId</PageTitle>
 <RadzenCard Visible="_monitor.HasValue">
     <RadzenButton Text="Save" Icon="save" Click="Save"/>
+    <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
     <RadzenCard class="rz-mb-4 rz-mt-4">
         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
         <RadzenTextBox @bind-Value=@Monitor.Title class="w-100"/>
     </RadzenCard>
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-            <RadzenButton>
-                <RadzenLink Path="/SetupCIConnectors">Setup connectors</RadzenLink>
-            </RadzenButton>
-        </RadzenStack>
         <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
@@ -33,7 +29,7 @@
                         Data="@_buildConfigs.Value" TItem="BuildConfigModel" ColumnWidth="200px"
                         SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
             <Columns>
-                <RadzenDataGridColumn TItem="BuildConfig" Width="60px" Sortable="false" Filterable="false">
+                <RadzenDataGridColumn TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
                     <HeaderTemplate>
                         <RadzenCheckBox TriState="false" TValue="bool" Value="@(_buildConfigs.Value?.Any(i => _selectedLocators?.Contains(i) ?? false) ?? false)"
                                         Change="@(OnSelectAllChanged)"/>
@@ -43,13 +39,14 @@
                                         TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="Id" Title="Id"/>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="CISystem" Title="CISystem"/>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="Key" Title="Key"/>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="Status" Title="Status"/>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="Branch" Title="Branch"/>
-                <RadzenDataGridColumn TItem="BuildConfig" Property="IsDefaultBranch" Title="IsDefaultBranch" />
-                <RadzenDataGridColumn TItem="BuildConfig" Title="Props">
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Id" Title="Id"/>
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.Key" Title="CI Key" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.CISystem" Title="CI type" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status"/>
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
                     <Template Context="item">
                         <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
                     </Template>
@@ -74,7 +71,8 @@
         if (!args.FirstRender)
             return;
         args.Grid.Groups.Add(new GroupDescriptor {
-            Property = nameof(BuildConfigModel.Connector),
+            Title = "CI type",
+            Property = "Connector.CISystem",
             SortOrder = SortOrder.Ascending
         });
         StateHasChanged();
@@ -89,14 +87,18 @@
         _buildConfigs = Subscribe(BuildConfigService.BuildConfigs);
         // todo combine build configs and monitor
         _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var descriptors = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Equals(b.BuildConfig))).ToList();
-            SetSelectedLocators(descriptors);
+            var buildConfigs = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Id.Equals(b.BuildConfigId))).ToList();
+            SetSelectedLocators(buildConfigs);
         });
     }
 
     private async Task Save() {
         await MonitorService.Save(Monitor, _selectedLocators);
         NavigationManager.NavigateTo("/monitorList");
+    }
+
+    private void SetupCIConnectors() {
+        NavigationManager.NavigateTo("/SetupCIConnectors");
     }
 
     private void OnSelectAllChanged(bool args) {

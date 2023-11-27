@@ -1,4 +1,5 @@
-﻿using Cimon.Contracts.Services;
+﻿using Cimon.Contracts;
+using Cimon.Contracts.Services;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
 using TeamCityAPI.Queries;
@@ -12,6 +13,8 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 {
 
 	private readonly TcClientFactory _clientFactory;
+	private readonly string _searchedProjectsSettingKey = "buildConfigFilter_ProjectId";
+
 	public TcBuildConfigProvider(TcClientFactory clientFactory) {
 		_clientFactory = clientFactory;
 	}
@@ -51,6 +54,13 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		return results;
 	}
 
+	private StringMatcher CreateMatcher(IReadOnlyDictionary<string, string> dictionary, string key, string separator) {
+		if (dictionary.TryGetValue(key, out var value)) {
+			return new StringMatcher(value, separator);
+		}
+		return StringMatcher.AnyString;
+	}
+
 	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs(
 		TeamCityClientTicket client, IReadOnlyDictionary<string, string> settings) {
 		var configs = client.Client
@@ -58,13 +68,9 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 			.Include(x => x.BuildType).ThenInclude(x=>x.Branches, IncludeType.Long)
 			.GetAsyncEnumerable<BuildTypes, BuildType>()
 			.Select(buildType => buildType);
-		// TODO filter projects, user project key
-		var allowedProjects = new List<string> {
-			"ContinuousIntegration_ProductsDiagnostics",
-			"ContinuousIntegration_UnitTest_C"
-		};
+		var projectNameMatcher = CreateMatcher(settings, _searchedProjectsSettingKey, ";");
 		await foreach (var buildType in configs) {
-			if (!allowedProjects.Any(x => buildType.ProjectId.StartsWith(x, StringComparison.OrdinalIgnoreCase))) {
+			if (!projectNameMatcher.Check(buildType.ProjectId)) {
 				continue;
 			}
 			var locator = new BuildTypeLocator {
@@ -78,7 +84,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 
 	public Dictionary<string, string> GetSettings() {
 		return new() {
-			{"searched_projects", "*"}
+			{_searchedProjectsSettingKey, "*"}
 		};
 	}
 }
