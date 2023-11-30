@@ -9,6 +9,7 @@ namespace Cimon.DB;
 
 using System.Collections.Immutable;
 using Contracts.CI;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 public class DbSeedOptions
 {
@@ -34,13 +35,11 @@ public class DbInitializer
 
 	public async Task Init() {
 		await _dbContext.Database.EnsureCreatedAsync();
-		if (_options.UseTestData) {
-			await AddTestData(_dbContext);
-		}
+		await AddTestData(_dbContext);
 		await _dbContext.SaveChangesAsync();
 	}
 
-	private static async Task AddTestData(CimonDbContext context) {
+	private async Task AddTestData(CimonDbContext context) {
 		if (await context.Users.AnyAsync()) {
 			return;
 		}
@@ -75,18 +74,6 @@ public class DbInitializer
 				allEditorRole.Entity
 			}
 		});
-		// https://vinicius73.github.io/gravatar-url-generator/#/
-		await context.Users.AddAsync(new User
-			{ Name = "test", FullName = "Test User", Email = "milton.soto@example.com", AllowLocalLogin = true,
-				Teams = { usersTeam.Entity, allTeam.Entity } });
-		await context.Users.AddAsync(new User {
-			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
-			Teams = { adminTeam.Entity }
-		});
-		await InitDemoMonitors(context);
-	}
-
-	private static async Task InitDemoMonitors(CimonDbContext context) {
 		var teamcityConnector = await context.AddAsync(new CIConnector {
 			Key = "teamcity_main",
 			CISystem = CISystem.TeamCity
@@ -95,6 +82,21 @@ public class DbInitializer
 			Key = "jenkins_main",
 			CISystem = CISystem.Jenkins
 		});
+		if (!_options.UseTestData) {
+			return;
+		}
+		await context.Users.AddAsync(new User
+			{ Name = "test", FullName = "Test User", Email = "milton.soto@example.com", AllowLocalLogin = true,
+				Teams = { usersTeam.Entity, allTeam.Entity } });
+		await context.Users.AddAsync(new User {
+			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
+			Teams = { adminTeam.Entity }
+		});
+		await InitDemoMonitors(context, teamcityConnector, jenkinsConnector);
+	}
+
+	private static async Task InitDemoMonitors(CimonDbContext context, EntityEntry<CIConnector> teamcityConnector,
+			EntityEntry<CIConnector> jenkinsConnector) {
 		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "BpmsPlatformWorkDiagnostic") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=BpmsPlatformWorkDiagnostic&tab=buildTypeStatusDiv",
