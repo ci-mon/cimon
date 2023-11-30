@@ -42,6 +42,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Props")
                         .HasColumnType("jsonb");
 

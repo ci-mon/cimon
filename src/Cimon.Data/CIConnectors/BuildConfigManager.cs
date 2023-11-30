@@ -86,7 +86,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 			progress.OnNext(progressPercents.Some());
 			var existing = existingItems.Find(x => newItem.IsSame(x));
 			if (existing == null) {
-				existing = new BuildConfigModel(connector, newItem.Key, newItem.Branch, newItem.IsDefaultBranch);
+				existing = new BuildConfigModel(connector, newItem.Key, newItem.Name, newItem.Branch, newItem.IsDefaultBranch);
 				await ctx.BuildConfigurations.AddAsync(existing);
 			} else {
 				toRemove.Remove(existing);

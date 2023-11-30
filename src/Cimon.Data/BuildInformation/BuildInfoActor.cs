@@ -88,7 +88,7 @@ class BuildInfoActor : ReceiveActor
 		_provider = _scope.ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(config.Connector.CISystem);
 		_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
 		_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-			TimeSpan.FromSeconds(Random.Shared.Next(0, 5)), _settings.Delay, Self, _getBuildInfo, Self);
+			TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
 	}
 
 	private void HandleBuildInfo(BuildInfo? newInfo) {

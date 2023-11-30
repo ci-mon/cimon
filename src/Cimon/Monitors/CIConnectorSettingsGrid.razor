@@ -18,7 +18,7 @@
     }
 }
 <RadzenLabel>Settings</RadzenLabel>
-<RadzenDataGrid @ref="Grid" AllowAlternatingRows="false"
+<RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" KeyProperty="Id"
                 AllowFiltering="true" AllowPaging="true"
                 PageSize="5" AllowSorting="true" EditMode="DataGridEditMode.Single"
                 Data="@Items" TItem="CIConnectorSetting"

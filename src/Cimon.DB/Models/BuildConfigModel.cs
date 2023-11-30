@@ -9,12 +9,13 @@ public record BuildConfigModel : BuildConfig
 	public BuildConfigModel() {
 	}
 
-	public BuildConfigModel(CIConnector connector, string key, string? branch = null, bool isDefaultBranch = false) 
+	public BuildConfigModel(CIConnector connector, string key, string? name = null, string? branch = null, bool isDefaultBranch = false) 
 		:this(){
 		Connector = connector;
 		Key = key;
 		Branch = branch;
 		IsDefaultBranch = isDefaultBranch;
+		Name = name;
 	}
 	public CIConnector Connector { get; set; }
 	public BuildConfigStatus Status { get; set; }

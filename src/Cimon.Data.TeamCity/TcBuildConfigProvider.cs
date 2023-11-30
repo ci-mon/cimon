@@ -25,6 +25,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		await foreach (var (buildConfig, branches) in GetBuildConfigs(client, info.Settings)) {
 			if (!branches.Any()) {
 				var item = new BuildConfig {
+					Name = buildConfig.Name,
 					Key = buildConfig.Id,
 					Props = new Dictionary<string, string> {
 						{"ProjectId", buildConfig.ProjectId}
@@ -42,6 +43,7 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 				}
 				var item = new BuildConfig {
 					Key = buildConfig.Id,
+					Name = buildConfig.Name,
 					Branch = branchName,
 					IsDefaultBranch = branch.Default ?? false,
 					Props = new Dictionary<string, string> {

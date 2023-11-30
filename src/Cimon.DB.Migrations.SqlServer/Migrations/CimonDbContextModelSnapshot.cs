@@ -49,6 +49,9 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Props")
                         .HasColumnType("jsonb");
 

@@ -190,15 +190,16 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 				Id = buildConfig.Key
 			},
 			Personal = false,
-			Running = false
+			Running = false,
+			DefaultFilter = false
 		};
-		if (!string.IsNullOrWhiteSpace(buildConfig.Branch)) {
+		if (buildConfig.IsDefaultBranch) {
+			/*buildLocator.Branch = new BranchLocator {
+				Default = "true"
+			};*/
+		} else if (!string.IsNullOrWhiteSpace(buildConfig.Branch)) {
 			buildLocator.Branch = new BranchLocator {
 				Name = buildConfig.Branch
-			};
-		} else if (buildConfig.IsDefaultBranch) {
-			buildLocator.Branch = new BranchLocator {
-				Default = "true"
 			};
 		}
 		return await GetBuild(clientTicket, buildLocator);
