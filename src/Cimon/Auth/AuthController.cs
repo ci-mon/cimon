@@ -60,15 +60,17 @@ public class AuthController : Controller
 
 	[Route("autologin")]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
-	public async Task<IActionResult> Autologin(string returnUrl) {
+	public async Task<IActionResult> Autologin(string returnUrl, [FromServices] ICurrentUserAccessor userAccessor) {
 		var userName = User.Identity?.Name?.ToLowerInvariant();
 		if (string.IsNullOrWhiteSpace(userName)) {
 			return LocalRedirect("/Login");
 		}
-		if (User.Identities.Any(i => i.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme)) {
+		var user = await userAccessor.Current;
+		if (!user.IsGuest() && User.Identities.Any(i => i.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme)) {
 			return string.IsNullOrWhiteSpace(returnUrl) ? Ok() : LocalRedirect(returnUrl);
 		}
-		return await SignInUsingCookie(returnUrl, userName);
+		var name = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+		return await SignInUsingCookie(returnUrl, name ?? userName);
 	}
 
 	[HttpPost]
