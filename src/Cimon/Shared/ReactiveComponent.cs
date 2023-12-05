@@ -30,6 +30,8 @@ public record ReactiveValue<T>
 	[MemberNotNullWhen(false, nameof(Value))]
 	public bool IsEmpty => _value is null;
 
+	public event Action OnUnsibscribe;
+
 	public override string ToString() => Value?.ToString() ?? string.Empty;
 
 	private readonly List<Action<T>> _handlers = new();
@@ -46,6 +48,8 @@ public record ReactiveValue<T>
 	public static implicit operator T?(ReactiveValue<T> value) => value.Value;
 
 	public Task WaitForValueAsync() => _initialized.Task;
+
+	public void Unsubscribe() => OnUnsibscribe?.Invoke();
 }
 
 public class ReactiveComponent : ComponentBase, IDisposable
@@ -59,7 +63,7 @@ public class ReactiveComponent : ComponentBase, IDisposable
 			Value = initial,
 			Source = observable
 		};
-		_disposables.Add(observable.TakeUntil(_disposed).Subscribe(value => {
+		IDisposable subscription = observable.TakeUntil(_disposed).Subscribe(value => {
 			_ = InvokeAsync(() => {
 				result.Value = value;
 				if (_initializingReactiveValues) {
@@ -68,7 +72,12 @@ public class ReactiveComponent : ComponentBase, IDisposable
 					StateHasChanged();
 				}
 			});
-		}));
+		});
+		_disposables.Add(subscription);
+		result.OnUnsibscribe += () => {
+			_disposables.Remove(subscription);
+			subscription.Dispose();
+		};
 		return result;
 	}
 

@@ -100,16 +100,16 @@
         await base.OnInitializedAsync();
     }
 
-    protected override Task OnAfterRenderAsync(bool firstRender) {
-        base.OnAfterRenderAsync(firstRender);
-        if (!firstRender) {
-            _infoSubscription = Subscribe(Info).OnChange(value => {
-                Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
-                                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                             (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
-            });
+    protected override async Task OnParametersSetAsync() {
+        await base.OnParametersSetAsync();
+        if (_infoSubscription?.HasValue ?? false) {
+            _infoSubscription.Unsubscribe();
         }
-        return Task.CompletedTask;
+        _infoSubscription = Subscribe(Info).OnChange(value => {
+            Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
+                .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
+                (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+        });
     }
 
     private string GetClasses() {
