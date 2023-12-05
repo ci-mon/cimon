@@ -52,23 +52,23 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		if (build is null)
 			return null;
 		TcBuildInfo info = await GetBuildInfo(build, buildConfig.Id, clientTicket);
-		string? lastBuildNumber = infoQuery.Options?.LastBuildNumber;
-		var newBuildFailed = string.IsNullOrWhiteSpace(lastBuildNumber) || !string.Equals(build.Number, 
-			lastBuildNumber, StringComparison.OrdinalIgnoreCase);
-		if (info.Status == BuildStatus.Failed && build.Id is { } buildId && newBuildFailed) {
-			info.Log = await GetLogsAsync(buildId, clientTicket);
-		}
-		info.AddInvestigationActions(build);
+		//info.AddInvestigationActions(build);
 		return info;
 	}
 
-	
-	public async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket) {
+	public async Task<string> GetLogs(LogsQuery logsQuery) {
+		using var clientTicket = _clientFactory.Create(logsQuery.ConnectorInfo.ConnectorKey);
+		var buildInfo = (TcBuildInfo)logsQuery.BuildInfo;
+		return await GetLogsAsync(buildInfo.Id, clientTicket, logsQuery.CancellationToken);
+	}
+
+	public async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket,
+		CancellationToken cancellationToken) {
 		var client = clientTicket.Client;
 		var type = typeof(TeamCityClient);
 		var httpClient = (HttpClient)type.GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(client)!;
 		var address = clientTicket.Secrets.Uri + $"/httpAuth/downloadBuildLog.html?buildId={buildId}";
-		return await httpClient.GetStringAsync(address);
+		return await httpClient.GetStringAsync(address, cancellationToken);
 	}
 
 	public async Task<BuildInfo> GetSingleBuildInfo(string buildConfigId, int buildId, string connectorKey) {
@@ -90,6 +90,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		var startDate = ParseDate(build.StartDate);
 		var changes = GetChanges(build);
 		var info = new TcBuildInfo(_clientFactory) {
+			Id = build.Id ?? 0,
 			StartDate = startDate ?? DateTimeOffset.Now,
 			Duration = endDate - startDate,
 			Name = build.BuildType.Name,

@@ -2,7 +2,9 @@
 
 using CI;
 
+public record LogsQuery(CIConnectorInfo ConnectorInfo, BuildConfig BuildConfig, BuildInfo BuildInfo, CancellationToken CancellationToken);
 public interface IBuildInfoProvider
 {
 	Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery);
+	Task<string> GetLogs(LogsQuery logsQuery);
 }

@@ -12,6 +12,7 @@ record TcBuildInfo : BuildInfo, IBuildInfoActionsProvider
 		_clientFactory = clientFactory;
 	}
 
+	public long Id { get; set; }
 	public void AddInvestigationActions(Build build) {
 		var committers = build.Changes.Change.Select(x=>x.Username).Distinct().ToList();
 		foreach (var user in committers) {

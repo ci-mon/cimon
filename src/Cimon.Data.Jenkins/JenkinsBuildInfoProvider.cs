@@ -46,6 +46,10 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		return info;
 	}
 
+	public Task<string> GetLogs(LogsQuery logsQuery) {
+		return Task.FromResult(String.Empty);
+	}
+
 	record InternalBuildInfo(Narochno.Jenkins.Entities.Builds.BuildInfo? BuildInfo, BuildInfoQuery Query, string? JobName);
 	private async Task<InternalBuildInfo?> GetBuildInfo(BuildInfoQuery buildInfoQuery) {
 		using var client = _factory.Create();

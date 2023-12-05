@@ -12,12 +12,39 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.BuildInformation;
 
+class BuildMLActor: ReceiveActor
+{
+	private readonly CancellationTokenSource _cts;
+
+	private record LogsResult(string Log, BuildInfo BuildInfo);
+	public BuildMLActor(CIConnectorInfo connectorInfo, BuildConfig buildConfig, IBuildInfoProvider buildInfoProvider, 
+			IBuildFailurePredictor buildFailurePredictor) {
+		_cts = new CancellationTokenSource();
+		Receive<BuildInfo>(info => {
+			buildInfoProvider.GetLogs(new LogsQuery(connectorInfo, buildConfig, info, _cts.Token)).PipeTo(Self, Self,
+				msg => new LogsResult(msg, info), e => new LogsResult(e.Message, info));
+		});
+		Receive<LogsResult>(logs => {
+			var info = logs.BuildInfo;
+			info.Log = logs.Log;
+			var failureSuspect = buildFailurePredictor.FindFailureSuspect(info);
+			if (failureSuspect is not null) {
+				Context.Parent.Tell(failureSuspect);
+			}
+			info.Log = info.Log?.Substring(0, Math.Min(10000, info.Log.Length));
+		});
+	}
+
+	public override void AroundPostStop() {
+		_cts.Cancel();
+		base.AroundPostStop();
+	}
+}
 class BuildInfoActor : ReceiveActor
 {
 	private readonly int _buildConfigId;
 	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
-	private readonly IBuildFailurePredictor _buildFailurePredictor;
 
 	record StopIfIdle;
 	record GetBuildInfo;
@@ -38,12 +65,11 @@ class BuildInfoActor : ReceiveActor
 	private CIConnectorInfo _connectorInfo;
 
 	public BuildInfoActor(int buildConfigId, IServiceProvider serviceProvider, BuildConfigService buildConfigService,
-			BuildInfoMonitoringSettings settings, IBuildFailurePredictor buildFailurePredictor) {
+			BuildInfoMonitoringSettings settings) {
 		_scope = serviceProvider.CreateScope();
 		_buildConfigId = buildConfigId;
 		_buildConfigService = buildConfigService;
 		_settings = settings;
-		_buildFailurePredictor = buildFailurePredictor;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		Receive<BuildInfoServiceActorApi.Subscribe>(OnSubscribe);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
@@ -51,6 +77,13 @@ class BuildInfoActor : ReceiveActor
 		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<BuildInfo>(HandleBuildInfo);
+		Receive<BuildFailureSuspect>(HandleBuildFailureSuspect);
+		Receive<HandleDiscussionMsg>(HandleDiscussion);
+		Receive<NotifySubscribersMsg>(msg => {
+			if (_buildInfos.Last is { } buildInfo) {
+				NotifySubscribers(buildInfo);
+			}
+		});
 		Receive<Terminated>(_ => {
 			_discussionOpen = false;
 		});
@@ -91,26 +124,53 @@ class BuildInfoActor : ReceiveActor
 			TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
 	}
 
+	private void HandleBuildFailureSuspect(BuildFailureSuspect suspect) {
+		var buildInfo = _buildInfos.Last;
+		if (buildInfo != null) {
+			buildInfo.FailureSuspect = suspect;
+			NotifySubscribers(buildInfo);
+		}
+	}
+
+	private record HandleDiscussionMsg(BuildInfo BuildInfo);
+
+	private ICancelable? _discussionCancelable;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
 		if (_buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-		newInfo.FailureSuspect = _buildFailurePredictor.FindFailureSuspect(newInfo);
-		HandleDiscussion(newInfo);
+		Context.Stop(Context.Child("ml"));
+		var mlActor = Context.DIActorOf<BuildMLActor>("ml", _connectorInfo, _config!, _provider!);
+		mlActor.Tell(newInfo);
+		_discussionCancelable?.Cancel();
+		_discussionCancelable = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10), Self, 
+			new HandleDiscussionMsg(newInfo), Self);
 		_buildInfos.Add(newInfo);
-		NotifySubscribers(newInfo);
+		DelayedNotifySubscribers();
+	}
+
+	private ICancelable? _cancelableNotifySubscribers;
+	private record NotifySubscribersMsg;
+	private readonly NotifySubscribersMsg _notifySubscribersMsg = new();
+	private void DelayedNotifySubscribers() {
+		_cancelableNotifySubscribers?.Cancel();
+		_cancelableNotifySubscribers = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10),
+			Self, _notifySubscribersMsg, Self);
 	}
 
 	private void NotifySubscribers(BuildInfo? current) {
+		_cancelableNotifySubscribers = null;
 		if (current is null) return;
 		current.CommentsCount = _commentsCount;
 		var buildInfoItem = CreateNotification(current);
 		_subscribers.ForEach(s => s.Tell(buildInfoItem));
 	}
 
-	private void HandleDiscussion(BuildInfo current) {
+	private void HandleDiscussion(HandleDiscussionMsg msg) {
+		_discussionCancelable = null;
+		var current = msg.BuildInfo;
 		var canHaveDiscussion = current.CanHaveDiscussion();
 		if (_discussionOpen && !canHaveDiscussion) {
 			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
