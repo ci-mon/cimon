@@ -42,7 +42,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			if (info is not null)
 				list.Add(info);
 		}
-		return (IReadOnlyCollection<BuildInfo>)list;
+		return list.AsReadOnly()!;
 	}
 
 	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
