@@ -6,40 +6,11 @@ using Cimon.Contracts.Services;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
-using Cimon.Data.ML;
 using Cimon.DB.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.BuildInformation;
 
-class BuildMLActor: ReceiveActor
-{
-	private readonly CancellationTokenSource _cts;
-
-	private record LogsResult(string Log, BuildInfo BuildInfo);
-	public BuildMLActor(CIConnectorInfo connectorInfo, BuildConfig buildConfig, IBuildInfoProvider buildInfoProvider, 
-			IBuildFailurePredictor buildFailurePredictor) {
-		_cts = new CancellationTokenSource();
-		Receive<BuildInfo>(info => {
-			buildInfoProvider.GetLogs(new LogsQuery(connectorInfo, buildConfig, info, _cts.Token)).PipeTo(Self, Self,
-				msg => new LogsResult(msg, info), e => new LogsResult(e.Message, info));
-		});
-		Receive<LogsResult>(logs => {
-			var info = logs.BuildInfo;
-			info.Log = logs.Log;
-			var failureSuspect = buildFailurePredictor.FindFailureSuspect(info);
-			if (failureSuspect is not null) {
-				Context.Parent.Tell(failureSuspect);
-			}
-			info.Log = info.Log?.Substring(0, Math.Min(10000, info.Log.Length));
-		});
-	}
-
-	public override void AroundPostStop() {
-		_cts.Cancel();
-		base.AroundPostStop();
-	}
-}
 class BuildInfoActor : ReceiveActor
 {
 	private readonly int _buildConfigId;

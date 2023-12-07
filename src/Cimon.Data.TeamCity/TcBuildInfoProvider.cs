@@ -57,9 +57,11 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	}
 
 	public async Task<string> GetLogs(LogsQuery logsQuery) {
+		if (logsQuery.BuildInfo is not TcBuildInfo tcBuildInfo) {
+			return string.Empty;
+		}
 		using var clientTicket = _clientFactory.Create(logsQuery.ConnectorInfo.ConnectorKey);
-		var buildInfo = (TcBuildInfo)logsQuery.BuildInfo;
-		return await GetLogsAsync(buildInfo.Id, clientTicket, logsQuery.CancellationToken);
+		return await GetLogsAsync(tcBuildInfo.Id, clientTicket, logsQuery.CancellationToken);
 	}
 
 	public async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket,
