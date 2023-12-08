@@ -105,6 +105,7 @@ class BuildInfoActor : ReceiveActor
 
 	private record HandleDiscussionMsg(BuildInfo BuildInfo);
 
+	private IActorRef _mlActor = ActorRefs.Nobody;
 	private ICancelable? _discussionCancelable;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
@@ -112,9 +113,9 @@ class BuildInfoActor : ReceiveActor
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-		Context.Stop(Context.Child("ml"));
-		var mlActor = Context.DIActorOf<BuildMLActor>("ml", _connectorInfo, _config!, _provider!);
-		mlActor.Tell(newInfo);
+		Context.Stop(_mlActor);
+		_mlActor = Context.DIActorOf<BuildMLActor>($"ml{Guid.NewGuid()}", _connectorInfo, _config!, _provider!);
+		_mlActor.Tell(newInfo);
 		_discussionCancelable?.Cancel();
 		_discussionCancelable = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10), Self, 
 			new HandleDiscussionMsg(newInfo), Self);
