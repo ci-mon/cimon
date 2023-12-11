@@ -75,6 +75,7 @@ public class UserHub : Hub<IUserClientApi>
 	}
 
 	public async Task SubscribeForMentions() {
+		// todo rewrite to actor
 		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out var subscription)) {
 			return;
 		}
@@ -91,7 +92,7 @@ public class UserHub : Hub<IUserClientApi>
 	}
 
 	public async Task SubscribeForLastMonitor() {
-		
+		// TODO
 	}
 
 }
