@@ -15,6 +15,9 @@ using User = Cimon.Contracts.User;
 
 namespace Cimon.Data;
 
+using System.Diagnostics;
+using System.Reactive.Subjects;
+
 public class AppActors
 {
 	private ActorSystem _actorSystem = null!;
@@ -49,7 +52,13 @@ public class AppActors
 	}
 
 	public static Task<IObservable<IImmutableList<MentionInfo>>> GetMentions(User user) {
-		return Instance.UserSupervisor.Ask(new ActorsApi.GetUserMentions(user.Name.Name));
+		string name = user.Name.Name;
+		bool nameIsEmpty = string.IsNullOrWhiteSpace(name);
+		Debug.Assert(!nameIsEmpty, "nameIsEmpty", user?.ToString());
+		if (nameIsEmpty) {
+			return Task.FromResult(Observable.Empty<IImmutableList<MentionInfo>>());
+		}
+		return Instance.UserSupervisor.Ask(new ActorsApi.GetUserMentions(name));
 	}
 }
 
