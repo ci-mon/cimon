@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Cimon.Contracts.Services;
 using Microsoft.Extensions.Options;
 using TeamCityAPI;
 

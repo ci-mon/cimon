@@ -1,13 +1,11 @@
 ﻿using System.Collections.Immutable;
-using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Cimon.Contracts;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace Cimon.Auth;
-
-using Microsoft.Extensions.Options;
 
 public class TokenService
 {

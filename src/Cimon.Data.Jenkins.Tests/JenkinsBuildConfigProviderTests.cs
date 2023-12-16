@@ -2,8 +2,6 @@ using FluentAssertions;
 
 namespace Cimon.Data.Jenkins.Tests;
 
-using Contracts.CI;
-
 public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 {
 	private JenkinsBuildConfigProvider _provider = null!;

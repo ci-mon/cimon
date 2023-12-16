@@ -3,7 +3,6 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using TeamCityAPI.Locators;
-using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity.Tests;
 

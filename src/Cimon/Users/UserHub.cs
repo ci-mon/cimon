@@ -1,8 +1,6 @@
-﻿using System.Reactive.Linq;
+﻿using Akka.Actor;
 using Cimon.Data;
-using Cimon.Data.CIConnectors;
 using Cimon.Data.Discussions;
-using Cimon.Data.Monitors;
 using Cimon.Data.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,15 +9,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Cimon.Users;
 
-public record ExtendedMentionInfo(int BuildConfigId, int CommentsCount, string BuildConfigKey) : MentionInfo(BuildConfigId, CommentsCount);
-
-public interface IUserClientApi
-{
-	Task NotifyWithUrl(int buildConfigId, string url, string header, string message, string authorEmail);
-	Task UpdateMentions(IEnumerable<ExtendedMentionInfo> mentions);
-	Task CheckForUpdates();
-}
-
 [Authorize(AuthenticationSchemes = $"{JwtBearerDefaults.AuthenticationScheme}")]
 public class UserHub : Hub<IUserClientApi>
 {
@@ -27,19 +16,13 @@ public class UserHub : Hub<IUserClientApi>
 	private readonly IMediator _mediator;
 	private readonly UserManager _userManager;
 	private readonly ICurrentUserAccessor _userAccessor;
-	private readonly IHubContext<UserHub, IUserClientApi> _hubContext;
-	private const string MentionsSubscriptionKey = "MentionsSubscription";
-	private readonly BuildConfigService _buildConfigService;
 
 	public UserHub(ILogger<UserHub> logger, IMediator mediator, UserManager userManager, 
-			ICurrentUserAccessor userAccessor, 
-			IHubContext<UserHub, IUserClientApi> hubContext, BuildConfigService buildConfigService) {
+			ICurrentUserAccessor userAccessor) {
 		_logger = logger;
 		_mediator = mediator;
 		_userManager = userManager;
 		_userAccessor = userAccessor;
-		_hubContext = hubContext;
-		_buildConfigService = buildConfigService;
 	}
 
 	public override async Task OnConnectedAsync() {
@@ -57,8 +40,9 @@ public class UserHub : Hub<IUserClientApi>
 
 	public override async Task OnDisconnectedAsync(Exception? exception) {
 		await base.OnDisconnectedAsync(exception);
-		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out var subscription)) {
-			(subscription as IDisposable)?.Dispose();
+		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out _)) {
+			var user = await _userAccessor.Current;
+			AppActors.Instance.UserSupervisor.Tell(new ActorsApi.UnSubscribeOnMentions(user));
 		}
 		var identity = Context.User?.Identity;
 		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} IsAuthenticated = {IsAuthenticated}) disconnected",
@@ -66,29 +50,20 @@ public class UserHub : Hub<IUserClientApi>
 			Context.UserIdentifier, identity?.Name, identity?.IsAuthenticated);
 	}
 
-	public async Task ReplyToNotification(string buildId, QuickReplyType quickReplyType, string comment) {
+	private string MentionsSubscriptionKey { get; set; } = "MentionsSubscription";
+
+	public async Task ReplyToNotification(int buildId, QuickReplyType quickReplyType, string comment) {
 		await _mediator.Publish(new AddReplyCommentNotification {
-			BuildConfigId = int.Parse(buildId),// TODO change type
+			BuildConfigId = buildId,
 			QuickReplyType = quickReplyType,
 			Comment = comment
 		});
 	}
 
 	public async Task SubscribeForMentions() {
-		// todo rewrite to actor
-		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out var subscription)) {
-			return;
-		}
 		var user = await _userAccessor.Current;
-		var connectionId = Context.ConnectionId;
-		var mentions = await _buildConfigService.GetMentionsWithBuildConfig(user);
-		
-		subscription = mentions
-			.Select(m => _hubContext.Clients.Client(connectionId).UpdateMentions(
-				m.Select(x=> 
-					new ExtendedMentionInfo(x.Mention.BuildConfigId, x.Mention.CommentsCount, x.BuildConfig.Map(c=>c.Key).ValueOr(string.Empty)))))
-			.Subscribe();
-		Context.Items[MentionsSubscriptionKey] = subscription;
+		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMentions(user));
+		Context.Items[MentionsSubscriptionKey] = true;
 	}
 
 	public async Task SubscribeForLastMonitor() {

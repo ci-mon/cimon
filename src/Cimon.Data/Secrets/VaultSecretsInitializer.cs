@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VaultSharp;

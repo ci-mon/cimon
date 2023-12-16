@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Akka.Actor;
+using Cimon.Contracts;
 using Cimon.Contracts.CI;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
@@ -41,10 +42,17 @@ public static class ActorsApi
 	public record GetMentions;
 	public record GetUserMentions(string UserName) : UserMessage<GetMentions>(UserName, new GetMentions()),
 		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
+	public record SubscribeToMentions(User User) : UserMessage<User>(User.Name.Name, User);
+	public record UnSubscribeOnMentions(User User) : UserMessage<User>(User.Name.Name, User);
 
 	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
-			this BuildConfigService buildConfigService, Contracts.User user) {
+			this BuildConfigService buildConfigService, User user) {
 		var mentionsObservable = await AppActors.GetMentions(user);
+		return buildConfigService.GetMentionsWithBuildConfig(mentionsObservable);
+	}
+
+	public static IObservable<IReadOnlyCollection<MentionInBuildConfig>> GetMentionsWithBuildConfig(this BuildConfigService buildConfigService,
+			IObservable<IImmutableList<MentionInfo>> mentionsObservable) {
 		return mentionsObservable.CombineLatest(buildConfigService.BuildConfigs, (mentions, configs) => {
 			return mentions.Select(m => new MentionInBuildConfig(m, configs.FirstOrNone(c => c.Id == m.BuildConfigId)))
 				.ToImmutableList();

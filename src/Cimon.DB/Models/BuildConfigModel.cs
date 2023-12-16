@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
-using Cimon.Contracts.CI;
+﻿using Cimon.Contracts.CI;
 
 namespace Cimon.DB.Models;
 

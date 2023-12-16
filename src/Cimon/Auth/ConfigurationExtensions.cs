@@ -1,9 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Cimon.Data.Users;
-
-namespace Cimon.Auth;
-
 using System.Security.Principal;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,7 +8,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Primitives;
+
+namespace Cimon.Auth;
 
 public static class ConfigurationExtensions
 {
@@ -34,10 +32,10 @@ public static class ConfigurationExtensions
 					}
 				},
 				OnMessageReceived = context => {
-					StringValues accessToken = context.Request.Query["access_token"];
+					var accessToken = context.Request.Query["access_token"].ToString();
 					PathString path = context.HttpContext.Request.Path;
-					if (!string.IsNullOrEmpty(accessToken) &&
-						path.StartsWithSegments("/hubs")) {
+					if (accessToken is {Length:>0} &&
+							path.StartsWithSegments("/hubs")) {
 						context.Token = accessToken;
 					}
 					return Task.CompletedTask;

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
-using Cimon.Contracts.CI;
 using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
