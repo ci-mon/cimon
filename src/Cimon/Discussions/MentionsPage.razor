@@ -8,9 +8,9 @@
 @inject BuildConfigService BuildConfigService 
 <PageTitle>Mentions</PageTitle>
 <RadzenCard>
-    @if (_mentions is null) {
+    @if (!_mentions.HasValue) {
         <RadzenText TextStyle="TextStyle.H2" Text="Loading..." />
-    } else if (_mentions.IsEmpty || !_mentions.Value.Any()) {
+    } else if (!_mentions.Value.Any()) {
         <RadzenText TextStyle="TextStyle.H2" Text="All good..." />
     } else {
         <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start">
@@ -25,12 +25,13 @@
     }
 </RadzenCard>
 @code {
-    private ReactiveValue<IReadOnlyCollection<MentionInBuildConfig>>? _mentions;
-    private string StatusText => $"You was mentioned in {_mentions?.Value?.Count ?? 0} builds";
+    private ReactiveValue<IReadOnlyCollection<MentionInBuildConfig>> _mentions =
+        new(ArraySegment<MentionInBuildConfig>.Empty);
+    private string StatusText => $"You was mentioned in {_mentions.Value?.Count ?? 0} builds";
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        _mentions = Subscribe(await BuildConfigService.GetMentionsWithBuildConfig(user));
+        Subscribe(ref _mentions, await BuildConfigService.GetMentionsWithBuildConfig(user));
     }
 
     private void GoToDiscussion(int discussionId) {

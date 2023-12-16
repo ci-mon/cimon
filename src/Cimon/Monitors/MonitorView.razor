@@ -13,7 +13,7 @@
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
-    } else if (_monitor?.HasValue is true) {
+    } else if (_monitor.HasValue) {
         @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Connector.CISystem)) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig" 
                                 Info="@build.BuildInfo" />
@@ -24,10 +24,10 @@
 
     [Parameter]
     public string? MonitorId { get; set; }
-    private ReactiveValue<MonitorData>? _monitor;
+    private ReactiveValue<MonitorData> _monitor;
 
-    private string GetTitle() => _monitor?.Value?.Monitor.Title ?? MonitorId ?? string.Empty;
-    private string? _errorMessage = "Monitor not found";
+    private string GetTitle() => _monitor.Value?.Monitor.Title ?? MonitorId ?? string.Empty;
+    private string? _errorMessage = "Loading...";
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
@@ -46,7 +46,7 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId));
-        _monitor = Subscribe(subj).OnChange(info => {
+        Subscribe(ref _monitor, subj).OnChange(info => {
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";
             } else if (info.Monitor.Removed) {

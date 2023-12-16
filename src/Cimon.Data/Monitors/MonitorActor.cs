@@ -19,7 +19,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		public IObservable<BuildInfo> BuildInfo => Subject;
 	};
 
-	private readonly ReplaySubject<MonitorData> _monitorSubject = new();
+	private readonly ReplaySubject<MonitorData> _monitorSubject = new(1);
 	private ImmutableDictionary<int, WatchedBuildInfo> _buildInfos =
 		ImmutableDictionary<int, WatchedBuildInfo>.Empty;
 	private IImmutableList<BuildInMonitor>? _builds;

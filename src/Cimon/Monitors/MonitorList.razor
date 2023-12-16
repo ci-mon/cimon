@@ -81,11 +81,11 @@
 
 @code {
 
-    private ReactiveValue<IReadOnlyList<MonitorModel>> _monitors = null!;
+    private ReactiveValue<IReadOnlyList<MonitorModel>> _monitors = new(ArraySegment<MonitorModel>.Empty);
 
-    protected override void OnInitialized() {
-        base.OnInitialized();
-        _monitors = Subscribe(MonitorService.GetMonitors(), ArraySegment<MonitorModel>.Empty);
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        Subscribe(ref _monitors, MonitorService.GetMonitors());
     }
 
     private async Task Add() {

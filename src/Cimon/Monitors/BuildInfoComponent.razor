@@ -84,8 +84,8 @@
 </div>
 
 @code {
-    private ReactiveValue<BuildInfo> _infoSubscription = null!;
-    private BuildInfo? BuildInfo => _infoSubscription?.Value;
+    private ReactiveValue<BuildInfo> _infoSubscription;
+    private BuildInfo? BuildInfo => _infoSubscription.Value;
     private bool IsLoaded => BuildInfo is not null;
     private IReadOnlyCollection<CommitterInfo> Committers { get; set; } = ArraySegment<CommitterInfo>.Empty;
     private AppClientType AppClientType { get; set; }
@@ -100,12 +100,9 @@
         await base.OnInitializedAsync();
     }
 
-    protected override async Task OnParametersSetAsync() {
-        await base.OnParametersSetAsync();
-        if (_infoSubscription?.HasValue ?? false) {
-            _infoSubscription.Unsubscribe();
-        }
-        _infoSubscription = Subscribe(Info).OnChange(value => {
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        Subscribe(ref _infoSubscription, Info).OnChange(value => {
             Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
                 (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();

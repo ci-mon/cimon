@@ -59,10 +59,10 @@
 
 @code {
 
-    private ReactiveValue<MonitorModel> _monitor = null!;
-    private MonitorModel Monitor => _monitor.Value;
-    RadzenDataGrid<BuildConfigModel> grid;
-    private ReactiveValue<IImmutableList<BuildConfigModel>> _buildConfigs;
+    private ReactiveValue<MonitorModel> _monitor;
+    private MonitorModel? Monitor => _monitor.Value;
+    RadzenDataGrid<BuildConfigModel> grid = null!;
+    private ReactiveValue<IImmutableList<BuildConfigModel>> _buildConfigs = new(ImmutableList<BuildConfigModel>.Empty);
     IList<BuildConfigModel> _selectedLocators = new List<BuildConfigModel>();
     
     [Parameter]
@@ -83,18 +83,20 @@
         _selectedLocators = list ?? ArraySegment<BuildConfigModel>.Empty;
     }
 
-    protected override async Task OnInitializedAsync() {
-        await base.OnInitializedAsync();
-        _buildConfigs = Subscribe(BuildConfigService.BuildConfigs);
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        Subscribe(ref _buildConfigs, BuildConfigService.BuildConfigs);
         // todo combine build configs and monitor
-        _monitor = Subscribe(MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var buildConfigs = _buildConfigs.Value?.Where(l => monitor.Builds.Any(b => l.Id.Equals(b.BuildConfigId))).ToList();
+        Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
+            var buildConfigs = _buildConfigs.Value?
+                .Where(l => monitor.Builds.Any(b => l.Id.Equals(b.BuildConfigId)))
+                .ToList();
             SetSelectedLocators(buildConfigs);
         });
     }
 
     private async Task Save() {
-        await MonitorService.Save(Monitor, _selectedLocators);
+        await MonitorService.Save(Monitor!, _selectedLocators);
         NavigationManager.NavigateTo("/monitorList");
     }
 

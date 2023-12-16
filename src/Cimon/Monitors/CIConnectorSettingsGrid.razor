@@ -62,12 +62,12 @@
 </RadzenDataGrid>
 
 @code {
-    private CIConnector _connector;
+    private CIConnector? _connector;
     private ReactiveValue<Option<int>> _progress;
     private ReactiveValue<int> _loadedConfigurationsCount; 
 
     [Parameter]
-    public CIConnector Connector {
+    public CIConnector? Connector {
         get => _connector;
         set {
             var firstInit = _connector is null;
@@ -81,20 +81,21 @@
 
     protected override void RefreshItems() {
         base.RefreshItems();
+        if (Connector == null) return;
         var progress = BuildConfigService.GetRefreshProgress(Connector);
-        _progress = Subscribe(progress);
-        _loadedConfigurationsCount = Subscribe(BuildConfigService.BuildConfigs.Select(x => 
+        Subscribe(ref _progress, progress);
+        Subscribe(ref _loadedConfigurationsCount, BuildConfigService.BuildConfigs.Select(x => 
             x.Count(i => i.Connector.Id == Connector.Id)));
     }
 
     protected override IQueryable<CIConnectorSetting> GetItems() {
-        return base.GetItems().Where(i => i.CIConnector.Id == Connector.Id);
+        return base.GetItems().Where(i => i.CIConnector.Id == Connector!.Id);
     }
 
     private async Task RefreshAvailableBuilds() {
         StateHasChanged();
         try {
-            await BuildConfigService.RefreshBuildConfigs(Connector);
+            await BuildConfigService.RefreshBuildConfigs(Connector!);
         }  catch (Exception e) {
             NotificationService.Notify(new NotificationMessage() {
                 Summary = e.Message,

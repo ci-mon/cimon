@@ -1,71 +1,28 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Cimon.Shared;
+﻿namespace Cimon.Shared;
 
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.AspNetCore.Components;
 
-public record ReactiveValue<T>
-{
-	private readonly TaskCompletionSource _initialized = new();
-	public required IObservable<T> Source { get; init; }
-
-	public required T? Value {
-		get => _value;
-		set {
-			_initialized.TrySetResult();
-			if (Equals(value, _value)) {
-				return;
-			}
-			_value = value;
-			foreach (var handler in _handlers) {
-				handler(value);
-			}
-		}
-	}
-
-	[MemberNotNullWhen(true, nameof(Value))]
-	public bool HasValue => _value is not null;
-	[MemberNotNullWhen(false, nameof(Value))]
-	public bool IsEmpty => _value is null;
-
-	public event Action OnUnsibscribe;
-
-	public override string ToString() => Value?.ToString() ?? string.Empty;
-
-	private readonly List<Action<T>> _handlers = new();
-	private T? _value;
-
-	public ReactiveValue<T> OnChange(Action<T> action) {
-		_handlers.Add(action);
-		if (HasValue) {
-			action(Value);
-		}
-		return this;
-	}
-
-	public static implicit operator T?(ReactiveValue<T> value) => value.Value;
-
-	public Task WaitForValueAsync() => _initialized.Task;
-
-	public void Unsubscribe() => OnUnsibscribe?.Invoke();
-}
-
 public class ReactiveComponent : ComponentBase, IDisposable
 {
-
 	private readonly List<IDisposable> _disposables = new();
 	private volatile bool _initializingReactiveValues; 
-	private volatile bool _triggerStateHasChangedAfterInitializeReactiveValues; 
-	protected ReactiveValue<T> Subscribe<T>(IObservable<T> observable, T initial) {
-		var result = new ReactiveValue<T> {
-			Value = initial,
-			Source = observable
-		};
+	private volatile bool _triggerStateHasChangedAfterInitializeReactiveValues;
+
+	protected ReactiveValue<T> Subscribe<T>(ref ReactiveValue<T> value, IObservable<T> observable, T? def = default) {
+		value.Unsubscribe();
+		var valueHolder = value.SourceValueHolder;
+		if (valueHolder is null) {
+			valueHolder = new ReactiveValueHolder<T> {
+				Source = observable,
+				Value = def ?? value.Value
+			};
+			value.SetHolder(valueHolder);
+		}
 		IDisposable subscription = observable.TakeUntil(_disposed).Subscribe(value => {
 			_ = InvokeAsync(() => {
-				result.Value = value;
+				valueHolder.Value = value;
 				if (_initializingReactiveValues) {
 					_triggerStateHasChangedAfterInitializeReactiveValues = true;
 				} else {
@@ -74,18 +31,18 @@ public class ReactiveComponent : ComponentBase, IDisposable
 			});
 		});
 		_disposables.Add(subscription);
-		result.OnUnsibscribe += () => {
+		valueHolder.OnUnsubscribe += () => {
 			_disposables.Remove(subscription);
 			subscription.Dispose();
 		};
-		return result;
+		return value;
 	}
 
 	protected override bool ShouldRender() => !_initializingReactiveValues && base.ShouldRender();
 
-	protected ReactiveValue<T> Subscribe<T>(IObservable<T> observable) => Subscribe(observable, default)!;
-
 	private readonly Subject<bool> _disposed = new();
+	[Inject] private IHttpContextAccessor? HttpContextAccessor { get; set; }
+
 	protected virtual void Dispose(bool disposing) {
 		_disposed.OnNext(disposing);
 		foreach (var disposable in _disposables) {
@@ -99,12 +56,13 @@ public class ReactiveComponent : ComponentBase, IDisposable
 		return Task.CompletedTask;
 	}
 
-	
-	protected override async Task OnInitializedAsync() {
-		await base.OnInitializedAsync();
+	protected override async Task OnParametersSetAsync() {
+		await base.OnParametersSetAsync();
 		try {
 			_initializingReactiveValues = true;
-			await InitializeReactiveValues();
+			if (HttpContextAccessor?.HttpContext?.Response.HasStarted != false) {
+				await InitializeReactiveValues();
+			}
 		}
 		finally {
 			_initializingReactiveValues = false;

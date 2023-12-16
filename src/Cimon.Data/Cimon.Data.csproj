@@ -10,7 +10,6 @@
       <PackageReference Include="Akka.DependencyInjection" Version="1.5.14" />
       <PackageReference Include="AngleSharp" Version="1.0.7" />
       <PackageReference Include="MediatR" Version="12.2.0" />
-      <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
       <PackageReference Include="Optional" Version="4.0.0" />
       <PackageReference Include="System.DirectoryServices.AccountManagement" Version="8.0.0" />

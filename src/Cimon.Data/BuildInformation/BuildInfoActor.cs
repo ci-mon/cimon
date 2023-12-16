@@ -49,11 +49,9 @@ class BuildInfoActor : ReceiveActor
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<BuildFailureSuspect>(HandleBuildFailureSuspect);
-		Receive<HandleDiscussionMsg>(HandleDiscussion);
-		Receive<NotifySubscribersMsg>(msg => {
-			if (_buildInfos.Last is { } buildInfo) {
-				NotifySubscribers(buildInfo);
-			}
+		Receive<NotifySubscribersMsg>(_ => {
+			if (_buildInfos.Last is not { } buildInfo) return;
+			NotifySubscribers(buildInfo);
 		});
 		Receive<Terminated>(_ => {
 			_discussionOpen = false;
@@ -103,60 +101,28 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
-	private record HandleDiscussionMsg(BuildInfo BuildInfo);
-
 	private IActorRef _mlActor = ActorRefs.Nobody;
-	private ICancelable? _discussionCancelable;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
-		if (_buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
+		if (_config!.DemoState is null && _buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		Context.Stop(_mlActor);
 		_mlActor = Context.DIActorOf<BuildMLActor>($"ml{Guid.NewGuid()}", _connectorInfo, _config!, _provider!);
 		_mlActor.Tell(newInfo);
-		_discussionCancelable?.Cancel();
-		_discussionCancelable = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10), Self, 
-			new HandleDiscussionMsg(newInfo), Self);
+		HandleDiscussion(newInfo);
 		_buildInfos.Add(newInfo);
 		DelayedNotifySubscribers();
 	}
 
-	private ICancelable? _cancelableNotifySubscribers;
-	private record NotifySubscribersMsg;
-	private readonly NotifySubscribersMsg _notifySubscribersMsg = new();
-	private void DelayedNotifySubscribers() {
-		_cancelableNotifySubscribers?.Cancel();
-		_cancelableNotifySubscribers = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(10),
-			Self, _notifySubscribersMsg, Self);
-	}
-
-	private void NotifySubscribers(BuildInfo? current) {
-		_cancelableNotifySubscribers = null;
-		if (current is null) return;
-		current.CommentsCount = _commentsCount;
-		var buildInfoItem = CreateNotification(current);
-		_subscribers.ForEach(s => s.Tell(buildInfoItem));
-	}
-
-	private void HandleDiscussion(HandleDiscussionMsg msg) {
-		_discussionCancelable = null;
-		var current = msg.BuildInfo;
-		var canHaveDiscussion = current.CanHaveDiscussion();
-		if (_discussionOpen && !canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
-			_discussionOpen = false;
-		} else if (!_discussionOpen && canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!, current));
-			_discussionOpen = true;
-		}
-	}
-
 	private async Task OnGetBuildInfo(GetBuildInfo _) {
 		if (_config!.DemoState is not null) {
-			_config.DemoState.Duration = TimeSpan.FromMinutes(Random.Shared.Next(120));
-			Self.Tell(_config.DemoState);
+			var buildInfo = _config.DemoState with {
+				Duration = TimeSpan.FromMinutes(Random.Shared.Next(120)),
+				Number = Random.Shared.Next(1000).ToString()
+			};
+			Self.Tell(buildInfo);
 			return;
 		}
 		try {
@@ -168,6 +134,35 @@ class BuildInfoActor : ReceiveActor
 			Self.Tell(info ?? BuildInfo.NoData);
 		} catch (Exception e) {
 			_log.Error(e, e.Message);
+		}
+	}
+
+	private record NotifySubscribersMsg;
+	private readonly NotifySubscribersMsg _notifySubscribersMsg = new();
+	private void DelayedNotifySubscribers() {
+		var delay = _settings.Delay / 2;
+		var tenSeconds = TimeSpan.FromSeconds(10);
+		if (delay > tenSeconds) {
+			delay = tenSeconds;
+		}
+		Context.System.Scheduler.ScheduleTellOnce(delay, Self, _notifySubscribersMsg, Self);
+	}
+
+	private void NotifySubscribers(BuildInfo? current) {
+		if (current is null) return;
+		current.CommentsCount = _commentsCount;
+		var buildInfoItem = CreateNotification(current);
+		_subscribers.ForEach(s => s.Tell(buildInfoItem));
+	}
+
+	private void HandleDiscussion(BuildInfo current) {
+		var canHaveDiscussion = current.CanHaveDiscussion();
+		if (_discussionOpen && !canHaveDiscussion) {
+			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
+			_discussionOpen = false;
+		} else if (!_discussionOpen && canHaveDiscussion) {
+			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!, current));
+			_discussionOpen = true;
 		}
 	}
 

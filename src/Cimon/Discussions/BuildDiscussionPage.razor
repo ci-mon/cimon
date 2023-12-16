@@ -8,7 +8,7 @@
 @inject ICurrentUserAccessor CurrentUserAccessor;
 @inherits ReactiveComponent
 
-@if (_state?.HasValue ?? false) {
+@if (_state.HasValue) {
     <div class="container">
         <RadzenRow JustifyContent="JustifyContent.Center">
             <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
@@ -101,7 +101,7 @@
     [Parameter]
     public string BuildConfigId { get; set; }
 
-    private ReactiveValue<BuildDiscussionState>? _state;
+    private ReactiveValue<BuildDiscussionState> _state;
     private CommentData _newComment = new();
     private User _user = null!;
     private ActorsApi.DiscussionHandle? _discussionHandle;
@@ -111,11 +111,11 @@
         await JsRuntime.InvokeVoidAsync("interactiveAPI.highlightElementByHash");
     }
 
-    protected override async Task OnInitializedAsync() {
-        await base.OnInitializedAsync();
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
         _user = await CurrentUserAccessor.Current;
         _discussionHandle = await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
-        _state = Subscribe(_discussionHandle.State);
+        Subscribe(ref _state, _discussionHandle.State);
         ClearComment();
         StateHasChanged();
     }
