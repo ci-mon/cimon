@@ -72,6 +72,7 @@ createApp({
             //connection.invoke('ReplyToNotification', "buildId", 1, null);
             window.connection = connection;
             await connection.invoke('SubscribeForMentions');
+            await connection.invoke('SubscribeForLastMonitor');
         }
     }
 }).mount('#app')
