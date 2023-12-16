@@ -23,7 +23,7 @@ public class TokenService
 		var claims = sourceClaims.AddRange(new [] {
 			new Claim(JwtRegisteredClaimNames.Sub, user.Name.Name),
 			new Claim(JwtRegisteredClaimNames.Jti, user.Name),
-			new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
+			new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
 		});
 		JwtSecurityToken token = CreateJwtToken(claims);
 		var tokenHandler = new JwtSecurityTokenHandler();
