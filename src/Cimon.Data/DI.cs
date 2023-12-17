@@ -17,7 +17,8 @@ public static class DI
 			.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>()
 			.AddSingleton<BuildConfigService>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
-			.AddSingleton<MonitorService>();
+			.AddSingleton<MonitorService>()
+			.AddScoped<IUserNameProvider, UserNameProvider>();
 	}
 
 	public static MediatRServiceConfiguration AddCimonData(this MediatRServiceConfiguration configuration) {

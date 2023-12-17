@@ -66,6 +66,7 @@ export class SignalRClient {
         this._connection.onreconnected(async () => {
             this.onConnectionStateChanged(ConnectionState.Connected);
             await this._connection.invoke('SubscribeForMentions');
+            await this._connection.invoke('SubscribeForLastMonitor');
         });
         this._connection.on("NotifyWithUrl", this._onNotifyWithUrl.bind(this));
         this._connection.on("UpdateMentions", mentions => this.onMentionsChanged?.(mentions));
@@ -80,11 +81,12 @@ export class SignalRClient {
         if (this._connection.state === HubConnectionState.Connected) {
             this.onConnectionStateChanged?.(ConnectionState.Connected);
             await this._connection.invoke('SubscribeForMentions');
+            await this._connection.invoke('SubscribeForLastMonitor');
         }
     }
 
     private async _onNotifyWithUrl(
-        buildId: string,
+        buildId: number,
         url: string,
         title: string,
         comment: string,
@@ -151,7 +153,7 @@ export class SignalRClient {
     }
 
     private async _replyToNotification(
-        buildId: string,
+        buildId: number,
         type: NotificationQuickReply,
         customReply: string = null
     ) {

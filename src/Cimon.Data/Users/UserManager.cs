@@ -189,6 +189,10 @@ public class UserManager : ITechnicalUsers
 		if (identity is null || !identity.IsAuthenticated || name is null) {
 			return User.Guest;
 		}
+		return await GetUser(name);
+	}
+
+	public async Task<User> GetUser(string name) {
 		UserCache? userCache = await GetUserCache(name);
 		return userCache?.User ?? User.Guest;
 	}

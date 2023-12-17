@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
+@inject ICurrentUserAccessor CurrentUserAccessor
 
 <PageTitle>CI @GetTitle()</PageTitle>
 <div class="monitor">
@@ -31,12 +32,13 @@
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
+        var user = await CurrentUserAccessor.Current;
         if (!string.IsNullOrWhiteSpace(MonitorId)) {
-            await Mediator.Publish(new MonitorOpenedNotification(MonitorId));
+            await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
         } else {
-            MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest());
+            MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
             if (!string.IsNullOrWhiteSpace(MonitorId)) {
-                NavigationManager.NavigateTo($"monitor/{MonitorId}", new NavigationOptions() {
+                NavigationManager.NavigateTo($"monitor/{MonitorId}", new NavigationOptions {
                     ReplaceHistoryEntry = true
                 });
             }
@@ -45,7 +47,7 @@
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
-        var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId));
+        var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId!));
         Subscribe(ref _monitor, subj).OnChange(info => {
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";

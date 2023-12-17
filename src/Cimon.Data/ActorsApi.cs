@@ -13,7 +13,10 @@ namespace Cimon.Data;
 
 public static class ActorsApi
 {
-	public record WatchMonitor(string Id) : IMessageWithResponse<IObservable<MonitorData>>;
+	public abstract record MonitorMessage(string Id);
+	public record WatchMonitor(string Id) : MonitorMessage(Id), IMessageWithResponse<IObservable<MonitorData>>;
+	public record WatchMonitorByActor(string Id) : MonitorMessage(Id);
+	public record UnWatchMonitorByActor(string Id) : MonitorMessage(Id);
 
 	public abstract record DiscussionAction(int BuildConfigId);
 
@@ -44,6 +47,9 @@ public static class ActorsApi
 		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
 	public record SubscribeToMentions(User User) : UserMessage<User>(User.Name.Name, User);
 	public record UnSubscribeOnMentions(User User) : UserMessage<User>(User.Name.Name, User);
+	public record SubscribeToMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
+	public record UnSubscribeFromMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
+	public record UpdateLastMonitor(User User, string MonitorId) : UserMessage<User>(User.Name.Name, User);
 
 	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
 			this BuildConfigService buildConfigService, User user) {

@@ -10,9 +10,11 @@ public class UsersController : Controller
 {
 	private readonly UserManager _userManager;
 	private readonly IMediator _mediator;
-	public UsersController(UserManager userManager, IMediator mediator) {
+	private readonly ICurrentUserAccessor _currentUserAccessor;
+	public UsersController(UserManager userManager, IMediator mediator, ICurrentUserAccessor currentUserAccessor) {
 		_userManager = userManager;
 		_mediator = mediator;
+		_currentUserAccessor = currentUserAccessor;
 	}
 
 	[Route("search")]
@@ -22,7 +24,8 @@ public class UsersController : Controller
 	[Route("openLastMonitor")]
 	[HttpGet]
 	public async Task<IActionResult> OpenLastMonitor([FromQuery(Name = "full-screen")]bool? fullscreen) {
-		var id = await _mediator.Send<string?>(new GetDefaultMonitorRequest());
+		var user = await _currentUserAccessor.Current;
+		var id = await _mediator.Send<string?>(new GetDefaultMonitorRequest(user));
 		if (string.IsNullOrWhiteSpace(id)) {
 			return Redirect("/monitorList");
 		}

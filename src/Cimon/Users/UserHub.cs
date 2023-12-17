@@ -40,9 +40,13 @@ public class UserHub : Hub<IUserClientApi>
 
 	public override async Task OnDisconnectedAsync(Exception? exception) {
 		await base.OnDisconnectedAsync(exception);
+		var user = await _userAccessor.Current;
+		var appActors = AppActors.Instance;
 		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out _)) {
-			var user = await _userAccessor.Current;
-			AppActors.Instance.UserSupervisor.Tell(new ActorsApi.UnSubscribeOnMentions(user));
+			appActors.UserSupervisor.Tell(new ActorsApi.UnSubscribeOnMentions(user));
+		}
+		if (Context.Items.TryGetValue(LastMonitorSubscriptionKey, out var monitorId)) {
+			appActors.UserSupervisor.Tell(new ActorsApi.UnSubscribeFromMonitor(user, monitorId?.ToString()));
 		}
 		var identity = Context.User?.Identity;
 		_logger.LogInformation("[{HubId}] User {Identifier} ({Name} IsAuthenticated = {IsAuthenticated}) disconnected",
@@ -51,6 +55,7 @@ public class UserHub : Hub<IUserClientApi>
 	}
 
 	private string MentionsSubscriptionKey { get; set; } = "MentionsSubscription";
+	private string LastMonitorSubscriptionKey { get; set; } = "LastMonitorSubscription";
 
 	public async Task ReplyToNotification(int buildId, QuickReplyType quickReplyType, string comment) {
 		await _mediator.Publish(new AddReplyCommentNotification {
@@ -66,8 +71,15 @@ public class UserHub : Hub<IUserClientApi>
 		Context.Items[MentionsSubscriptionKey] = true;
 	}
 
-	public async Task SubscribeForLastMonitor() {
-		// TODO
+	public async Task<bool> SubscribeForLastMonitor() {
+		var user = await _userAccessor.Current;
+		var monitorId = await _mediator.Send<string?>(new GetDefaultMonitorRequest(user));
+		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMonitor(user, monitorId));
+		if (monitorId is not {Length: > 0}) {
+			return false;
+		}
+		Context.Items[LastMonitorSubscriptionKey] = monitorId;
+		return true;
 	}
 
 }

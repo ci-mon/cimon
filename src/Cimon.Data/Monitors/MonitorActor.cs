@@ -36,10 +36,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			_stopCountdown.Cancel();
 			return Disposable.Create(subscription, disposable => {
 				disposable.Dispose();
-				if (Interlocked.Decrement(ref _subscriptionsCount) == 0) {
-					var shutdownDelay = TimeSpan.FromSeconds(30);
-					_stopCountdown = scheduler.ScheduleTellOnceCancelable(shutdownDelay, me, PoisonPill.Instance, me);
-				}
+				OnWatcherRemoved(scheduler, me);
 			});
 		});
 		Receive<IObservable<MonitorModel>>(observable => Context.Observe(observable));
@@ -48,6 +45,13 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			Become(Ready);
 		});
 		ReceiveAny(_ => Stash!.Stash());
+	}
+
+	private void OnWatcherRemoved(IScheduler scheduler, IActorRef me) {
+		if (Interlocked.Decrement(ref _subscriptionsCount) == 0) {
+			var shutdownDelay = TimeSpan.FromSeconds(30);
+			_stopCountdown = scheduler.ScheduleTellOnceCancelable(shutdownDelay, me, PoisonPill.Instance, me);
+		}
 	}
 
 	protected override void PostStop() {
@@ -85,6 +89,13 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private void Ready() {
 		Receive<MonitorModel>(OnMonitorChange);
 		Receive<ActorsApi.WatchMonitor>(_ => Sender.Tell(_dataObservable));
+		Receive<ActorsApi.UnWatchMonitorByActor>(_ => 
+			OnWatcherRemoved(Context.System.Scheduler, Self));
+		Receive<ActorsApi.WatchMonitorByActor>(_ => {
+			Interlocked.Increment(ref _subscriptionsCount);
+			Context.Watch(Sender);
+		});
+		Receive<Terminated>(_ => OnWatcherRemoved(Context.System.Scheduler, Self));
 		Receive<BuildInfoServiceActorApi.BuildInfoItem>(info => {
 			if (_buildInfos.TryGetValue(info.BuildConfigId, out var bucket)) {
 				bucket.Subject.OnNext(info.BuildInfo);
