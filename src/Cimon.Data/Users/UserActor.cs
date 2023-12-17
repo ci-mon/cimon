@@ -5,7 +5,6 @@ using Akka.Actor;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.Users;

@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Cimon.Contracts;
+﻿using Cimon.Contracts;
 
 namespace Cimon.Data.Users;
 
