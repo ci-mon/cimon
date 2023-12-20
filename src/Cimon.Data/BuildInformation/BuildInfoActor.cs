@@ -104,7 +104,7 @@ class BuildInfoActor : ReceiveActor
 	private IActorRef _mlActor = ActorRefs.Nobody;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
-		if (_config!.DemoState is null && _buildInfos.Last?.Number.Equals(newInfo.Number) is true) {
+		if (_config!.DemoState is null && _buildInfos.Last?.Id.Equals(newInfo.Id) is true) {
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
@@ -120,14 +120,14 @@ class BuildInfoActor : ReceiveActor
 		if (_config!.DemoState is not null) {
 			var buildInfo = _config.DemoState with {
 				Duration = TimeSpan.FromMinutes(Random.Shared.Next(120)),
-				Number = Random.Shared.Next(1000).ToString()
+				Id = Random.Shared.Next(1000).ToString()
 			};
 			Self.Tell(buildInfo);
 			return;
 		}
 		try {
 			var options = new BuildInfoQueryOptions {
-				LastBuildNumber = _buildInfos.Last?.Number
+				LastBuildNumber = _buildInfos.Last?.Id
 			};
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var info = await _provider!.FindInfo(query);

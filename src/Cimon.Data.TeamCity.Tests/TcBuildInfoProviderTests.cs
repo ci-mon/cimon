@@ -48,7 +48,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var info = results.Should().ContainSingle().Subject;
 		info.Url.Should().Be($"http://localhost:8111/viewLog.html?buildId={build.Id}&buildTypeId=Test1_BuildTest1");
 		info.Name.Should().Be($"Build test1");
-		info.Number.Should().Be($"{build.Number}");
+		info.Id.Should().Be($"{build.Number}");
 		info.BranchName.Should().Be("master");
 		info.Group.Should().Be("gogs_Test1");
 		info.BuildConfigId.Should().Be(42);

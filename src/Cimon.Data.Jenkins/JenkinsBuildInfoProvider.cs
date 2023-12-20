@@ -31,7 +31,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 			Url = buildInfo.Url.ToString(),
 			Group = null,
 			BranchName = buildConfig.Branch,
-			Number = buildInfo.Number.ToString(),
+			Id = buildInfo.Id,
 			StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
 			Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
 			Status = GetStatus(buildInfo.Result),
@@ -39,7 +39,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		};
 		var lastBuildNumber = infoQuery.Options?.LastBuildNumber;
 		if (info.Status ==  BuildStatus.Failed && !string.IsNullOrWhiteSpace(lastBuildNumber) &&
-				!lastBuildNumber.Equals(info.Number, StringComparison.OrdinalIgnoreCase)) {
+				!lastBuildNumber.Equals(info.Id, StringComparison.OrdinalIgnoreCase)) {
 			using var client = _factory.Create();
 			info.Log = await client.GetBuildConsole(build.JobName, buildInfo.Id, default);
 		}

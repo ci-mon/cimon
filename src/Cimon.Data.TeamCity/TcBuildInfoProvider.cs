@@ -57,14 +57,14 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 	}
 
 	public async Task<string> GetLogs(LogsQuery logsQuery) {
-		if (logsQuery.BuildInfo is not TcBuildInfo tcBuildInfo) {
+		if (logsQuery.BuildInfo is not TcBuildInfo { TcId: not null } tcBuildInfo) {
 			return string.Empty;
 		}
 		using var clientTicket = _clientFactory.Create(logsQuery.ConnectorInfo.ConnectorKey);
-		return await GetLogsAsync(tcBuildInfo.Id, clientTicket, logsQuery.CancellationToken);
+		return await GetLogsAsync(tcBuildInfo.TcId.Value, clientTicket, logsQuery.CancellationToken);
 	}
 
-	public async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket,
+	private async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket,
 		CancellationToken cancellationToken) {
 		var client = clientTicket.Client;
 		var type = typeof(TeamCityClient);
@@ -92,14 +92,14 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		var startDate = ParseDate(build.StartDate);
 		var changes = GetChanges(build);
 		var info = new TcBuildInfo(_clientFactory) {
-			Id = build.Id ?? 0,
+			Id = build.Id.GetValueOrDefault(0).ToString(),
+			TcId = build.Id,
 			StartDate = startDate ?? DateTimeOffset.Now,
 			Duration = endDate - startDate,
 			Name = build.BuildType.Name,
 			Url = build.WebUrl,
 			Group = build.BuildType.ProjectName,
 			BranchName = build.BranchName,
-			Number = build.Number,
 			StatusText = build.StatusText,
 			Status = GetStatus(build.Status),
 			Changes = changes,

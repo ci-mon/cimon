@@ -28,11 +28,11 @@ internal class ReactiveValueHolder<T>
 	public event Action? OnUnsubscribe;
 	public override string ToString() => Value?.ToString() ?? string.Empty;
 
-	private readonly List<Action<T>> _handlers = new();
+	private readonly List<Action<T?>> _handlers = new();
 	private T? _value;
 
 
-	public void OnChange(Action<T> action) {
+	public void OnChange(Action<T?> action) {
 		_handlers.Add(action);
 		if (Value is {} value) {
 			action(value);

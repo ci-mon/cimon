@@ -6,7 +6,7 @@ public record BuildInfo
 	public required string? Group { get; set; }
 	public required string? BranchName { get; set; }
 	public required string Name { get; set; }
-	public required string Number { get; set; }
+	public required string Id { get; set; }
 	public string? StatusText { get; set; }
 	public string? Log { get; set; }
 	public BuildStatus Status { get; set; }
@@ -23,7 +23,7 @@ public record BuildInfo
 		Group = "NO_DATA",
 		BranchName = "NO_DATA",
 		Name = "NO_DATA",
-		Number = "NO_DATA",
+		Id = "NO_DATA",
 	};
 
 	public bool IsNotOk() => Status == BuildStatus.Failed;

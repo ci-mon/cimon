@@ -19,12 +19,13 @@
         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
         <RadzenTextBox @bind-Value=@Monitor.Title class="w-100"/>
     </RadzenCard>
-    <RadzenCard>
-        <RadzenText TextStyle="TextStyle.Subtitle2" Text="Select builds to display"></RadzenText>
-        <RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
+</RadzenCard>
+<RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterMode="FilterMode.SimpleWithMenu"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
+                        PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
                         Data="@_buildConfigs.Value" TItem="BuildConfigModel" ColumnWidth="200px"
                         SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
             <Columns>
@@ -38,14 +39,13 @@
                                         TValue="bool"/>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Id" Title="Id"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.Key" Title="CI Key" />
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.CISystem" Title="CI type" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.Key" Title="CI Key" Width="150px" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.CISystem" Title="CI type" Width="150px" />
                 <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
                 <RadzenDataGridColumn TItem="BuildConfigModel" Property="Name" Title="Name"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status"/>
                 <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
                 <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch" />
+                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status" Width="100px"/>
                 <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
                     <Template Context="item">
                         <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
@@ -53,9 +53,7 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        </RadzenCard>
-</RadzenCard>
-
+        
 @code {
 
     private ReactiveValue<MonitorModel> _monitor;
