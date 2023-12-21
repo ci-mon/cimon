@@ -27,17 +27,12 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		if (!changesTextData.Any()) {
 			return null;
 		}
-		try {
-			var match = FindBestMatch(buildStatusTextData, changesTextData);
-			if (match.IsEmpty()) {
-				return null;
-			}
-			(VcsUser, string) item = textData.Changes[match.Index];
-			return new BuildFailureSuspect(item.Item1, match.Confidence);
-		} catch (Exception e) {
-			Console.WriteLine(e);
+		BestMatch match = FindBestMatch(buildStatusTextData, changesTextData);
+		if (match.IsEmpty()) {
 			return null;
 		}
+		(VcsUser, string) item = textData.Changes[match.Index];
+		return new BuildFailureSuspect(item.Item1, match.Confidence);
 	}
 
 	public static BuildInfoTextData ExtractTextData(BuildInfo buildInfo) {
