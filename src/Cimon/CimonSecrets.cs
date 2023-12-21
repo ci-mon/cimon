@@ -4,7 +4,7 @@ namespace Cimon;
 
 using Auth;
 
-public class CimonOptions
+public class CimonSecrets
 {
 	
 	public JwtOptions Jwt { get; set; } = new();

@@ -3,12 +3,12 @@ namespace Cimon.Data.Secrets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-public class LocalSecretsInitializer<TSecrets> : IConfigureNamedOptions<TSecrets>
+public class ConfigurationSecretsInitializer<TSecrets> : IConfigureNamedOptions<TSecrets>
 	where TSecrets : class
 {
 	private readonly IConfiguration _configuration;
 
-	public LocalSecretsInitializer(IConfiguration configuration) {
+	public ConfigurationSecretsInitializer(IConfiguration configuration) {
 		_configuration = configuration;
 	}
 
@@ -21,6 +21,8 @@ public class LocalSecretsInitializer<TSecrets> : IConfigureNamedOptions<TSecrets
 			secretsSection = secretsSection.GetSection(key);
 			key = name;
 		}
-		secretsSection.Bind(key, options);
+		if (secretsSection.Exists()) {
+			secretsSection.Bind(key, options);
+		}
 	}
 }

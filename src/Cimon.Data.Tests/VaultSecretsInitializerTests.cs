@@ -10,7 +10,7 @@ public class VaultSecretsInitializerTests
 {
 	[Test]
 	public void Configure() {
-		var initializer = new VaultSecretsInitializer<TeamcitySecrets>(Options.Create(new VaultSettings {
+		var initializer = new VaultSecretsInitializer<TeamcitySecrets>(Options.Create(new VaultSecrets {
 			Token = Guid.Empty.ToString(),
 			Url = "http://localhost:8200",
 			MountPoint = "infrastructure.cimon",

@@ -16,9 +16,9 @@ public static class ConfigurationExtensions
 	class AuthConfigurator: IConfigureNamedOptions<JwtBearerOptions>, IConfigureNamedOptions<CookieAuthenticationOptions>
 	{
 
-		private readonly CimonOptions _options;
-		public AuthConfigurator(IOptions<CimonOptions> options) {
-			_options = options.Value;
+		private readonly CimonSecrets _secrets;
+		public AuthConfigurator(IOptions<CimonSecrets> options) {
+			_secrets = options.Value;
 		}
 
 		public void Configure(JwtBearerOptions options) {
@@ -47,9 +47,9 @@ public static class ConfigurationExtensions
 			parameters.ValidateAudience = true;
 			parameters.ValidateLifetime = true;
 			parameters.ValidateIssuerSigningKey = true;
-			parameters.ValidIssuer = _options.Jwt.Issuer;
-			parameters.ValidAudience = _options.Jwt.Audience;
-			parameters.IssuerSigningKey = new SymmetricSecurityKey(_options.Jwt.Key);
+			parameters.ValidIssuer = _secrets.Jwt.Issuer;
+			parameters.ValidAudience = _secrets.Jwt.Audience;
+			parameters.IssuerSigningKey = new SymmetricSecurityKey(_secrets.Jwt.Key);
 		}
 
 		public void Configure(string? name, JwtBearerOptions options) => Configure(options);
@@ -58,7 +58,7 @@ public static class ConfigurationExtensions
 			options.ReturnUrlParameter = "returnUrl";
 			options.LoginPath = "/Login";
 			options.LogoutPath = "/auth/logout";
-			options.ExpireTimeSpan = _options.Auth.Expiration;
+			options.ExpireTimeSpan = _secrets.Auth.Expiration;
 		}
 
 		public void Configure(string? name, CookieAuthenticationOptions options) => Configure(options);

@@ -18,7 +18,7 @@ public class BaseTeamCityTest
 		var config = new ConfigurationBuilder().AddUserSecrets("0574c095-3b5d-4b4a-83a0-60bd33381798").Build();
 		ServiceProvider = new ServiceCollection()
 			.AddSingleton<IConfiguration>(config)
-			.ConfigureUserSecrets<TeamcitySecrets>()
+			.ConfigureSecretsFromConfig<TeamcitySecrets>()
 			.AddCimonDataTeamCity()
 			.AddLogging()
 			.BuildServiceProvider();

@@ -56,19 +56,18 @@ builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 builder.Services.AddScoped<AppInitialStateAccessor>();
 	
 builder.Services.AddOptions()
-	.Configure<CimonOptions>(builder.Configuration.GetSection("CimonOptions"))
+	.ConfigureSecrets<CimonSecrets>()
 	.Configure<CimonDataSettings>(settings => {
 		settings.IsDevelopment = isDevelopment;
 	})
-	.ConfigureSecrets<TeamcitySecrets>(isDevelopment)
-	.ConfigureSecrets<JenkinsSecrets>(isDevelopment)
-	.ConfigureSecrets<LdapClientSecrets>(isDevelopment)
-	.ConfigureSecrets<NativeAppSecrets>(isDevelopment)
-	.Configure<VaultSettings>(builder.Configuration.GetSection("Vault"))
-	.Configure<LdapClientSecrets>(builder.Configuration.GetSection("LdapClient"))
-	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.BuildInfoMonitoring)
-	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Auth)
-	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonOptions>>().Value.Jwt);
+	.ConfigureSecretsFromConfig<VaultSecrets>()
+	.ConfigureSecrets<TeamcitySecrets>()
+	.ConfigureSecrets<JenkinsSecrets>()
+	.ConfigureSecrets<LdapClientSecrets>()
+	.ConfigureSecrets<NativeAppSecrets>()
+	.AddTransient<BuildInfoMonitoringSettings>(provider => provider.GetRequiredService<IOptions<CimonSecrets>>().Value.BuildInfoMonitoring)
+	.AddTransient<AuthOptions>(provider => provider.GetRequiredService<IOptions<CimonSecrets>>().Value.Auth)
+	.AddTransient<JwtOptions>(provider => provider.GetRequiredService<IOptions<CimonSecrets>>().Value.Jwt);
 
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();

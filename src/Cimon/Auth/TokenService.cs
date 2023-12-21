@@ -9,11 +9,11 @@ namespace Cimon.Auth;
 
 public class TokenService
 {
-	private readonly CimonOptions _options;
+	private readonly CimonSecrets _secrets;
 	private readonly SigningCredentials _signingCredentials;
 
-	public TokenService(IOptions<CimonOptions> cimonOptions) {
-		_options = cimonOptions.Value;
+	public TokenService(IOptions<CimonSecrets> cimonOptions) {
+		_secrets = cimonOptions.Value;
 		_signingCredentials = CreateSigningCredentials();
 	}
 
@@ -29,11 +29,11 @@ public class TokenService
 	}
 
 	private JwtSecurityToken CreateJwtToken(IEnumerable<Claim> claims) =>
-		new(_options.Jwt.Issuer, _options.Jwt.Audience, claims,
-			expires: DateTime.UtcNow + _options.Auth.Expiration,
+		new(_secrets.Jwt.Issuer, _secrets.Jwt.Audience, claims,
+			expires: DateTime.UtcNow + _secrets.Auth.Expiration,
 			signingCredentials: _signingCredentials);
 
 
 	private SigningCredentials CreateSigningCredentials() => 
-		new(new SymmetricSecurityKey(_options.Jwt.Key), SecurityAlgorithms.HmacSha256);
+		new(new SymmetricSecurityKey(_secrets.Jwt.Key), SecurityAlgorithms.HmacSha256);
 }

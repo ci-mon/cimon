@@ -17,12 +17,12 @@ public class AuthController : Controller
 {
 	private readonly TokenService _tokenService;
 	private readonly UserManager _userManager;
-	private readonly CimonOptions _options;
+	private readonly CimonSecrets _secrets;
 
-	public AuthController(TokenService tokenService, UserManager userManager, IOptions<CimonOptions> options) {
+	public AuthController(TokenService tokenService, UserManager userManager, IOptions<CimonSecrets> options) {
 		_tokenService = tokenService;
 		_userManager = userManager;
-		_options = options.Value;
+		_secrets = options.Value;
 	}
 
 	[Route("token")]
@@ -91,7 +91,7 @@ public class AuthController : Controller
 		var claimsIdentity = new ClaimsIdentity(user.Claims, CookieAuthenticationDefaults.AuthenticationScheme);
 		var authProperties = new AuthenticationProperties {
 			AllowRefresh = true,
-			ExpiresUtc = DateTimeOffset.UtcNow.Add(_options.Auth.Expiration),
+			ExpiresUtc = DateTimeOffset.UtcNow.Add(_secrets.Auth.Expiration),
 			IsPersistent = true,
 			RedirectUri = "/auth/autologin",
 		};
