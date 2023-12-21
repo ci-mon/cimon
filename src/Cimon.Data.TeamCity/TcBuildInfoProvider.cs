@@ -24,8 +24,6 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		_logger = logger;
 	}
 
-	public CISystem CiSystem => CISystem.TeamCity;
-
 	private readonly string _dateFormat = "yyyyMMdd'T'HHmmsszzz";
 
 	private DateTimeOffset? ParseDate(string teamcityDate) {
@@ -51,7 +49,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		var build = await GetBuild(buildConfig, clientTicket);
 		if (build is null)
 			return null;
-		TcBuildInfo info = await GetBuildInfo(build, buildConfig.Id, clientTicket);
+		TcBuildInfo info = await GetBuildInfo(build, clientTicket);
 		//info.AddInvestigationActions(build);
 		return info;
 	}
@@ -82,11 +80,11 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			Id = buildId
 		};
 		var build = await GetBuild(clientTicket, locator);
-		var buildInfo = await GetBuildInfo(build, 0, clientTicket);
+		var buildInfo = await GetBuildInfo(build, clientTicket);
 		return buildInfo;
 	}
 
-	private async Task<TcBuildInfo> GetBuildInfo(Build build, int buildConfigId, 
+	private async Task<TcBuildInfo> GetBuildInfo(Build build, 
 			TeamCityClientTicket clientTicket) {
 		var endDate = ParseDate(build.FinishOnAgentDate);
 		var startDate = ParseDate(build.StartDate);
@@ -196,11 +194,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			Running = false,
 			DefaultFilter = false
 		};
-		if (buildConfig.IsDefaultBranch) {
-			/*buildLocator.Branch = new BranchLocator {
-				Default = "true"
-			};*/
-		} else if (!string.IsNullOrWhiteSpace(buildConfig.Branch)) {
+		if (!buildConfig.IsDefaultBranch && !string.IsNullOrWhiteSpace(buildConfig.Branch)) {
 			buildLocator.Branch = new BranchLocator {
 				Name = buildConfig.Branch
 			};
