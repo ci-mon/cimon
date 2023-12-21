@@ -20,4 +20,7 @@ public class BaseTeamCityTest
 			.AddLogging()
 			.BuildServiceProvider();
 	}
+
+	[TearDown]
+	protected virtual void TearDown() => ServiceProvider?.Dispose();
 }

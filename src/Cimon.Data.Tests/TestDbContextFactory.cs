@@ -1,5 +1,7 @@
 ﻿using Cimon.DB;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 
 namespace Cimon.Data.Tests;
 
@@ -15,7 +17,7 @@ public class TestDbContextFactory : IDbContextFactory<CimonDbContext>
 			.Options;
 	}
 
-	public CimonDbContext Context => _context ??= new CimonDbContext(_options);
+	public CimonDbContext Context => _context ??= new CimonDbContext(Substitute.For<IMediator>(), _options);
 
 	public CimonDbContext CreateDbContext() => Context;
 }

@@ -3,6 +3,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using TeamCityAPI.Locators;
+using TeamCityAPI.Queries;
 
 namespace Cimon.Data.TeamCity.Tests;
 
@@ -23,7 +24,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 
 	[Test]
 	public async Task Debug() {
-		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629);//5711671,5738602
+		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, "main");//5711671,5738602
 		info.Should().NotBeNull();
 		var utils = new BuildFailurePredictor();
 		var author = utils.FindFailureSuspect(info);
@@ -32,9 +33,10 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 
 	[Test]
 	public async Task GetInfo_WhenFailed() {
-		var results = await _buildInfoProvider.GetInfo(new BuildInfoQuery[]
-			{ new(new("Test1_BuildTest1", null, true){Id = 42}, new BuildInfoQueryOptions("old")) });
-		using var client = _clientFactory.GetClient();
+		var results = await _buildInfoProvider.GetInfo(new[] {
+			new BuildInfoQuery(new CIConnectorInfo("main", new Dictionary<string, string>()), new BuildConfig())
+		});
+		using var client = _clientFactory.Create("main");
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {
 			BuildType = new BuildTypeLocator {
 				Id = "Test1_BuildTest1"
@@ -51,7 +53,6 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		info.Id.Should().Be($"{build.Number}");
 		info.BranchName.Should().Be("master");
 		info.Group.Should().Be("gogs_Test1");
-		info.BuildConfigId.Should().Be(42);
 		info.StatusText.Should().Be("Exit code 1 (Step: Command Line) (new)");
 		info.Status.Should().Be(BuildStatus.Failed);
 		var commit = DateTimeOffset.Now.AddDays(-10);

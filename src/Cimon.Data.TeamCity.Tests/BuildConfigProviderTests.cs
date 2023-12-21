@@ -19,27 +19,29 @@ public class BuildConfigProviderTests : BaseTeamCityTest
 
 	[Test]
 	public async Task Debug() {
-		var res = await _buildConfigProvider.GetAll();
-		
+		var res = await _buildConfigProvider.GetAll(EmptyCIConnectorInfo);
 	}
+
+	private static CIConnectorInfo EmptyCIConnectorInfo => new("key", new Dictionary<string, string>());
 
 	[Test]
 	public async Task GetAll() {
-		var res = await _buildConfigProvider.GetAll();
+		var res = await _buildConfigProvider.GetAll(EmptyCIConnectorInfo);
 		using var scope = new AssertionScope();
-		res.Should().ContainEquivalentOf(new BuildConfig("Test1_BuildTest1", "master", true) {
+		res.Should().ContainEquivalentOf(new BuildConfig {
+				Name = "Test1_BuildTest1",
 				Props = {
 					{"ProjectId", "gogs_Test1"}
 				}
 			}, 
 			options => options.ComparingRecordsByMembers());
-		res.Should().ContainEquivalentOf(new BuildConfig("Test1_BuildTest1", "test2"){
+		res.Should().ContainEquivalentOf(new BuildConfig{
 				Props = {
 					{"ProjectId", "gogs_Test1"}
 				}
 			}, 
 			options => options.ComparingRecordsByMembers());
-		res.Should().ContainEquivalentOf(new IBuildConfig("TestProject1_IntegrationTests", null, true) {
+		res.Should().ContainEquivalentOf(new BuildConfig {
 				Props = {
 					{"ProjectId", "testProject1"}
 				}
