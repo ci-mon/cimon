@@ -1,0 +1,1 @@
+type .\secrets.local.json | dotnet user-secrets set

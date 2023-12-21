@@ -8,6 +8,7 @@ using TeamCityAPI.Queries;
 namespace Cimon.Data.TeamCity.Tests;
 
 using Contracts.CI;
+using Microsoft.Extensions.Options;
 using ML;
 
 [TestFixture]
@@ -18,13 +19,14 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 
 	public override void Setup() {
 		base.Setup();
-		_buildInfoProvider = (ServiceProvider.GetRequiredService<IBuildInfoProvider>() as TcBuildInfoProvider)!;
+		_buildInfoProvider = (ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(CISystem.TeamCity) as TcBuildInfoProvider)!;
 		_clientFactory = ServiceProvider.GetRequiredService<TcClientFactory>();
 	}
 
 	[Test]
-	public async Task Debug() {
-		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, "main");//5711671,5738602
+	public async Task Debug() {;
+		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, 
+			DefaultConnector.ConnectorKey);//5711671,5738602
 		info.Should().NotBeNull();
 		var utils = new BuildFailurePredictor();
 		var author = utils.FindFailureSuspect(info);
@@ -34,7 +36,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 	[Test]
 	public async Task GetInfo_WhenFailed() {
 		var results = await _buildInfoProvider.GetInfo(new[] {
-			new BuildInfoQuery(new CIConnectorInfo("main", new Dictionary<string, string>()), new BuildConfig())
+			new BuildInfoQuery(DefaultConnector, new BuildConfig())
 		});
 		using var client = _clientFactory.Create("main");
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {
