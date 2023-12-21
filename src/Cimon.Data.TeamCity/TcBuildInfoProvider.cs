@@ -91,6 +91,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		var changes = GetChanges(build);
 		var info = new TcBuildInfo(_clientFactory) {
 			Id = build.Id.GetValueOrDefault(0).ToString(),
+			Number = build.Number,
 			TcId = build.Id,
 			StartDate = startDate ?? DateTimeOffset.Now,
 			Duration = endDate - startDate,

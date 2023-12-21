@@ -26,7 +26,7 @@
             <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
                 @if (IsLoaded) {
                     <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
-                        @BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Id) ? string.Empty : BuildInfo.Id)
+                        @BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)
                     </RadzenLink>
                     <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">

@@ -26,6 +26,8 @@ public record BuildInfo
 		Id = "NO_DATA",
 	};
 
+	public string? Number { get; set; }
+
 	public bool IsNotOk() => Status == BuildStatus.Failed;
 	public bool CanHaveDiscussion() => Status is BuildStatus.Failed or BuildStatus.Investigated or BuildStatus.Fixed;
 }
