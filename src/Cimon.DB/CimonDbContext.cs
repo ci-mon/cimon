@@ -33,8 +33,8 @@ public class CimonDbContext : DbContext
 		modelBuilder.Entity<User>().HasIndex(x => x.Name).IsUnique();
 		modelBuilder.Entity<BuildConfigModel>().HasIndex(x => new { x.Connector, Key = x.Id, x.Branch });
 		modelBuilder.Entity<Role>().HasMany(x => x.OwnedRoles).WithMany();
-		modelBuilder.Entity<BuildConfigModel>().Property(x => x.Props).HasJsonConversion();
-		modelBuilder.Entity<BuildConfigModel>().Property(x => x.DemoState).HasJsonConversion();
+		modelBuilder.Entity<BuildConfigModel>().Property(x => x.Props).HasJsonConversion(Database.ProviderName);
+		modelBuilder.Entity<BuildConfigModel>().Property(x => x.DemoState).HasJsonConversion(Database.ProviderName);
 		modelBuilder.Entity<BuildConfigModel>().Ignore(x => x.Connector)
 			.HasOne(b => b.Connector).WithMany();
 		modelBuilder.Entity<Team>().HasMany(x => x.ChildTeams).WithMany();

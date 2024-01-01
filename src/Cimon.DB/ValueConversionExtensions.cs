@@ -11,7 +11,8 @@ public static class ValueConversionExtensions
 	static string Serialize<T>(T value) => JsonSerializer.Serialize(value);
 	static T? Deserialize<T>(string value) => JsonSerializer.Deserialize<T>(value);
 
-	public static PropertyBuilder<T> HasJsonConversion<T>(this PropertyBuilder<T> propertyBuilder)
+	public static PropertyBuilder<T> HasJsonConversion<T>(this PropertyBuilder<T> propertyBuilder,
+		string? databaseProviderName)
 	{
 		ValueConverter<T?, string> converter = new(
 			v => Serialize(v),
@@ -28,7 +29,9 @@ public static class ValueConversionExtensions
 		propertyBuilder.Metadata.IsNullable = true;
 		propertyBuilder.Metadata.SetValueConverter(converter);
 		propertyBuilder.Metadata.SetValueComparer(comparer);
-		propertyBuilder.HasColumnType("jsonb");
+		if (databaseProviderName?.Contains("Sqlite") == true) {
+			propertyBuilder.HasColumnType("jsonb");
+		}
 		return propertyBuilder;
 	}
 }
