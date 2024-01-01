@@ -6,9 +6,9 @@ namespace Cimon.Data.Secrets;
 public static class SecretsExtensions
 {
 	public static IServiceCollection ConfigureSecrets<TSecrets>(this IServiceCollection services) where TSecrets : class {
+		ConfigureSecretsFromConfig<TSecrets>(services);
 		services.Add(ServiceDescriptor.Transient(typeof(IConfigureOptions<TSecrets>),
 			typeof(VaultSecretsInitializer<TSecrets>)));
-		ConfigureSecretsFromConfig<TSecrets>(services);
 		return services;
 	}
 
