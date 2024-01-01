@@ -7,6 +7,7 @@ using VaultSharp.V1.AuthMethods.Token;
 
 namespace Cimon.Data.Secrets;
 
+using System.Configuration;
 using System.Reflection;
 
 public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecrets> where TSecrets : class
@@ -48,10 +49,12 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 			.ReadSecretAsync(path: _vaultSecrets.Path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
 		var prefix = string.IsNullOrWhiteSpace(key) ? _prefix : $"{_prefix}.{key}";
 		foreach (var property in typeof(TSecrets).GetProperties()) {
+			// TODO rewrite to bind on config
+			Type propertyType = property.PropertyType;
 			var propertyKey = $"{prefix}.{ToVaultName(property.Name)}";
 			if (!secrets.Data.Data.TryGetValue(propertyKey, out var value)) continue;
 			if (value is not JsonElement jsonElement) continue;
-			var propertyValue = jsonElement.Deserialize(property.PropertyType);
+			var propertyValue = jsonElement.Deserialize(propertyType);
 			if (propertyValue is null) {
 				_log.LogWarning("Value with {Key} deserialized to null", propertyKey);
 				continue;
