@@ -27,7 +27,7 @@ public class UserActor : ReceiveActor
         nameProvider.SetUserName(Self.Path.Name);
         _monitorActor = AppActors.Instance.MonitorService;
         Receive<ActorsApi.UserMessage<MentionInfo>>(OnMention);
-        Receive<ActorsApi.GetMentions>(_ => Sender.Tell(_mentionsSubject));
+        Receive<ActorsApi.GetUserMentions>(_ => Sender.Tell(_mentionsSubject));
         Receive<ActorsApi.SubscribeToMentions>(SubscribeToMentions);
         Receive<ActorsApi.UnSubscribeOnMentions>(UnSubscribeOnMentions);
         Receive<CheckMentionSubscriptionsCount>(OnCheckMentionSubscriptionsCount);
