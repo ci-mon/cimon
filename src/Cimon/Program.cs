@@ -21,6 +21,7 @@ using Radzen;
 using NotificationService = Radzen.NotificationService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables("CIMON_");
 builder.Services.AddAuth();
 builder.Services.AddCors();
 builder.Services.AddRazorPages();
