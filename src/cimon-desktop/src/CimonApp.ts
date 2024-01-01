@@ -220,11 +220,6 @@ export class CimonApp {
                 height: 250,
                 frame: false
             });
-            electron.globalShortcut.register('Escape', () => {
-                if (this._loginWindow.isVisible()) {
-                    this._loginWindow.hide();
-                }
-            });
         }
         await this._loginWindow.loadURL(options.baseUrl + '/Login');
         this._loginWindow.center();
@@ -246,11 +241,6 @@ export class CimonApp {
                 height: 800,
                 modal: true,
                 parent: this._window,
-            });
-            electron.globalShortcut.register('Escape', () => {
-                if (this._discussionWindow.isVisible()) {
-                    this._discussionWindow.hide();
-                }
             });
         }
         this._discussionWindow.on("closed", () => {
@@ -332,6 +322,7 @@ export class CimonApp {
             this._onOpenDiscussionWindow.bind(this);
         this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
         await this._startSignalR();
+        this._subscribeForKeyboardShortcuts()
     }
 
     private _restartMenuClicked = false;
@@ -503,9 +494,22 @@ export class CimonApp {
         this._window.show();
     }
 
-
     public setUpdateReady() {
         this._updateReady = true;
         this._rebuildMenu();
+    }
+
+    private _tryHideWindow(window: Electron.CrossProcessExports.BrowserWindow){
+        if (!window) return;
+        if (window.isVisible() && window.isFocused()) {
+            window.hide();
+        }
+    }
+    private _subscribeForKeyboardShortcuts() {
+        electron.globalShortcut.register('Escape', () => {
+            this._tryHideWindow(this._discussionWindow);
+            this._tryHideWindow(this._loginWindow);
+            this._tryHideWindow(this._window);
+        });
     }
 }
