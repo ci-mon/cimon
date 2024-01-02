@@ -18,9 +18,19 @@ using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using Radzen;
+using Serilog;
 using NotificationService = Radzen.NotificationService;
 
+Log.Logger = new LoggerConfiguration()
+	.WriteTo.Console()
+	.WriteTo.File(path: Path.Combine("logs", "main.log"), rollingInterval: RollingInterval.Day,
+		retainedFileCountLimit: 5,
+		shared: true,
+		flushToDiskInterval: TimeSpan.FromMinutes(1))
+	.CreateLogger();
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 builder.Configuration.AddEnvironmentVariables("CIMON_");
 builder.Services.AddAuth();
 builder.Services.AddCors();
