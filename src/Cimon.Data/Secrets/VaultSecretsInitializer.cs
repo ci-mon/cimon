@@ -8,9 +8,6 @@ using VaultSharp.V1.AuthMethods.Token;
 
 namespace Cimon.Data.Secrets;
 
-using System.Configuration;
-using System.Reflection;
-
 public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecrets> where TSecrets : class
 {
 	private readonly string _prefix = typeof(TSecrets).Name.Replace("Secrets", string.Empty);
@@ -72,23 +69,4 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 		config.Bind(options);
 		_log.LogInformation("{TypeName} initialized from vault: {@Config}", typeof(TSecrets).Name, options);
 	}
-
-	private void LogPropertyInitialized(JsonElement jsonElement, PropertyInfo property) {
-		try {
-			string rawText = jsonElement.GetRawText();
-			if (jsonElement.ValueKind == JsonValueKind.String && rawText.Length > 2) {
-				rawText = rawText.Substring(1, rawText.Length - 2);
-			}
-			if (jsonElement.ValueKind == JsonValueKind.Array && rawText.Length > 3) {
-				rawText = rawText.Substring(2, rawText.Length - 3);
-			}
-			var length = rawText.Length - 1;
-			var valueForLog = $"{rawText.FirstOrDefault()}{new string('*', length)}";
-			_log.LogInformation("{TypeName}.{PropertyName} initialized from vault as {ValueForLog}",
-				property.DeclaringType?.Name, property.Name, valueForLog);
-		} catch (Exception e) {
-			_log.LogWarning(e, "Can't log property info");
-		}
-	}
-
 }
