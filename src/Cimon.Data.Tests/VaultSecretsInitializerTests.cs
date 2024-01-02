@@ -10,16 +10,14 @@ public class VaultSecretsInitializerTests
 {
 	[Test]
 	public void Configure() {
-		var initializer = new VaultSecretsInitializer<TeamcitySecrets>(Options.Create(new VaultSecrets {
+		var initializer = new VaultSecretsInitializer<CimonSecrets>(Options.Create(new VaultSecrets {
 			Token = Guid.Empty.ToString(),
 			Url = "http://localhost:8200",
 			MountPoint = "infrastructure.cimon",
 			Path = "dev"
-		}), NullLogger<VaultSecretsInitializer<TeamcitySecrets>>.Instance);
-		var secrets = Activator.CreateInstance<TeamcitySecrets>();
+		}), NullLogger<VaultSecretsInitializer<CimonSecrets>>.Instance);
+		var secrets = Activator.CreateInstance<CimonSecrets>();
 		initializer.Configure(secrets);
-		secrets.Login.Should().Be("admin");
-		secrets.Password.Should().Be("admin");
-		secrets.Uri.Should().NotBeNull();
+		secrets.BuildInfoMonitoring.SystemUserLogins.Should().Contain("user1");
 	}
 }

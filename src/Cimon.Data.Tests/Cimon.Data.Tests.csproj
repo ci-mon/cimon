@@ -29,6 +29,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Cimon.Data.TeamCity\Cimon.Data.TeamCity.csproj" />
       <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
+      <ProjectReference Include="..\Cimon\Cimon.csproj" />
     </ItemGroup>
 
 </Project>
