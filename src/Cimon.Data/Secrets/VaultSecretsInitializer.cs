@@ -45,9 +45,17 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 		IVaultClient vaultClient = new VaultClient(vaultClientSettings);
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
 			.ReadSecretAsync(path: _vaultSecrets.Path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
-		var prefix = string.IsNullOrWhiteSpace(key) ? _prefix : $"{_prefix}.{key}";
 		var config = new ConfigurationManager();
-		if (secrets.Data.Data.TryGetValue(prefix, out var data) && data is JsonElement jsonVal) {
+		var jsonDataKey =
+			secrets.Data.Data.Keys.SingleOrDefault(x => x.Equals(_prefix, StringComparison.OrdinalIgnoreCase));
+		if (jsonDataKey != null &&  secrets.Data.Data.TryGetValue(jsonDataKey, out var data) && data is JsonElement jsonVal) {
+			if (!string.IsNullOrWhiteSpace(key)) {
+				if (jsonVal.TryGetProperty(key, out var prop)) {
+					jsonVal = prop;
+				} else {
+					return;
+				}
+			}
 			var jsonStream = new MemoryStream();
 			await using (var writer = new Utf8JsonWriter(jsonStream)) {
 				jsonVal.WriteTo(writer);
@@ -57,9 +65,13 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 		} else {
 			var values = new Dictionary<string, string?>();
 			foreach (var item in secrets.Data.Data) {
-				var dataKey = item.Key;
-				if (!dataKey.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-				values[dataKey.Substring(prefix.Length + 1)] = item.Value?.ToString();
+				string? dataKey = item.Key;
+				string fullPrefix = _prefix;
+				if (!string.IsNullOrWhiteSpace(key)) {
+					fullPrefix = $"{_prefix}.{key}";
+				}
+				if (!dataKey.StartsWith(fullPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+				values[dataKey.Substring(fullPrefix.Length + 1)] = item.Value?.ToString();
 			}
 			if (values.Count == 0) {
 				return;
