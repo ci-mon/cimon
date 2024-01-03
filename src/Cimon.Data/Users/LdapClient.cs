@@ -75,8 +75,7 @@ public class LdapClient
 		};
 		var teamGroups = _options.TeamGroups.ToHashSet();
 		foreach (Principal group in userPrincipal.GetGroups(context)) {
-			bool isValidTeam = teamGroups.Contains(group.Name) ||
-				teamGroups.Any(g => group.IsMemberOf(context, IdentityType.SamAccountName, g));
+			bool isValidTeam = teamGroups.Contains(group.Name) || teamGroups.Any(g => IsMember(group, g, context));
 			if (isValidTeam) {
 				user.Teams.Add(group.SamAccountName);
 				if (_options.AdminGroups.Any(g => g.Equals(group.Name, StringComparison.OrdinalIgnoreCase))) {
@@ -86,4 +85,16 @@ public class LdapClient
 		}
 		return user;
 	}
+
+	[SupportedOSPlatform("windows")]
+	private bool IsMember(Principal group, string groupToCheck, PrincipalContext context) {
+		try {
+			return group.IsMemberOf(context, IdentityType.SamAccountName, groupToCheck);
+		} catch (Exception e) {
+			_logger.LogError(e, "Failed to validate team: {GroupToCheck} {Group}", groupToCheck, 
+				group.DisplayName);
+			return false;
+		}
+	}
+
 }
