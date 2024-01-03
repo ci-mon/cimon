@@ -46,7 +46,7 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
 			.ReadSecretAsync(path: _vaultSecrets.Path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
 		var prefix = string.IsNullOrWhiteSpace(key) ? _prefix : $"{_prefix}.{key}";
-		var config = new Microsoft.Extensions.Configuration.ConfigurationManager();
+		var config = new ConfigurationManager();
 		if (secrets.Data.Data.TryGetValue(prefix, out var data) && data is JsonElement jsonVal) {
 			var jsonStream = new MemoryStream();
 			await using (var writer = new Utf8JsonWriter(jsonStream)) {
