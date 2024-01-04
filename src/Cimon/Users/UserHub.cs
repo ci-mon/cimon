@@ -74,10 +74,10 @@ public class UserHub : Hub<IUserClientApi>
 	public async Task<bool> SubscribeForLastMonitor() {
 		var user = await _userAccessor.Current;
 		var monitorId = await _mediator.Send<string?>(new GetDefaultMonitorRequest(user));
-		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMonitor(user, monitorId));
 		if (monitorId is not {Length: > 0}) {
 			return false;
 		}
+		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMonitor(user, monitorId));
 		Context.Items[LastMonitorSubscriptionKey] = monitorId;
 		return true;
 	}

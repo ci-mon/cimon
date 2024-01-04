@@ -2,6 +2,8 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
+using Cimon.Contracts.CI;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
@@ -9,8 +11,29 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.Users;
 
+class Debouncer<TIn, TOut>: ReceiveActor where TIn : IEquatable<TIn>
+{
+    public record DelayedMessage(TIn Message);
+
+    private ICancelable? _scheduled;
+    public Debouncer(TimeSpan debounceTime, Func<TIn, TOut> converter) {
+        Receive<TIn>(msg => {
+            _scheduled?.Cancel();
+            _scheduled =
+                Context.System.Scheduler.ScheduleTellOnceCancelable(debounceTime, Self,
+                    new DelayedMessage(msg), Sender);
+        });
+        Receive<DelayedMessage>(msg => {
+            var outMsg = converter(msg.Message);
+            Context.Parent.Tell(outMsg);
+        });
+    }
+
+}
+
 public class UserActor : ReceiveActor
 {
+    
     private ImmutableList<MentionInfo> _mentions = ImmutableList<MentionInfo>.Empty;
     private readonly ReplaySubject<IImmutableList<MentionInfo>> _mentionsSubject = new(1);
     private readonly BuildConfigService _buildConfigService;
@@ -19,7 +42,8 @@ public class UserActor : ReceiveActor
     private readonly IActorRef _monitorActor;
     private IDisposable? _subscription;
 
-    public UserActor(BuildConfigService buildConfigService, IServiceProvider serviceProvider) {
+    public UserActor(BuildConfigService buildConfigService, IServiceProvider serviceProvider, 
+            BuildInfoMonitoringSettings monitoringSettings) {
         _buildConfigService = buildConfigService;
         _scope = serviceProvider.CreateScope();
         _hubAccessor = _scope.ServiceProvider.GetRequiredKeyedService<IHubAccessor<IUserClientApi>>("UserHub");
@@ -34,6 +58,26 @@ public class UserActor : ReceiveActor
         Receive<ActorsApi.SubscribeToMonitor>(SubscribeToMonitor);
         Receive<ActorsApi.UnSubscribeFromMonitor>(UnSubscribeFromMonitor);
         Receive<ActorsApi.UpdateLastMonitor>(UpdateLastMonitor);
+        var delay = monitoringSettings.Delay / 2;
+        var monitorInfoDebounce =
+            Context.ActorOf(Props.Create<Debouncer<ActorsApi.MonitorInfo, MonitorInfo>>(delay, Convert));
+        Receive<ActorsApi.MonitorInfo>(m => monitorInfoDebounce.Forward(m));
+        ReceiveAsync<MonitorInfo>(OnMonitorInfoUpdated);
+    }
+
+    private MonitorInfo Convert(ActorsApi.MonitorInfo monitorInfo) {
+        var failedBuildsCount = monitorInfo.BuildInfos.Count(x => x.LatestInfo?.Status == BuildStatus.Failed);
+        return new MonitorInfo {
+            MonitorKey = monitorInfo.MonitorModel.Key,
+            FailedBuildsCount = failedBuildsCount
+        };
+    }
+
+    private async Task OnMonitorInfoUpdated(MonitorInfo msg) {
+        if (_latestMonitorInfo?.Equals(msg) == true) return;
+        _latestMonitorInfo = msg;
+        var userName = GetUserName();
+        await _hubAccessor.Group(userName).UpdateMonitorInfo(msg);
     }
 
     private void OnMention(ActorsApi.UserMessage<MentionInfo> msg) {
@@ -52,6 +96,7 @@ public class UserActor : ReceiveActor
     }
 
     private void SubscribeToMonitor(ActorsApi.SubscribeToMonitor msg) {
+        _latestMonitorInfo = null;
         _watchLastMonitor = true;
         _lastMonitorId = msg.MonitorId;
         if (string.IsNullOrEmpty(msg.MonitorId)) {
@@ -103,13 +148,14 @@ public class UserActor : ReceiveActor
     private int _mentionSubscriptionCount;
     private string? _lastMonitorId;
     private bool _watchLastMonitor;
+    private MonitorInfo? _latestMonitorInfo;
 
     private void SubscribeToMentions(ActorsApi.SubscribeToMentions msg) {
         _mentionSubscriptionCount++;
         if (_subscription is not null) {
             return;
         }
-        var userName = Self.Path.Name;
+        var userName = GetUserName();
         var mentions = _buildConfigService.GetMentionsWithBuildConfig(_mentionsSubject);
         _subscription = mentions.Select(m => {
             return _hubAccessor.Group(userName).UpdateMentions(m.Select(x =>
@@ -118,4 +164,6 @@ public class UserActor : ReceiveActor
         })
         .Subscribe();
     }
+
+    private string GetUserName() => Self.Path.Name;
 }

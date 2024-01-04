@@ -14,3 +14,10 @@ public interface IBuildInfoStream
 	public BuildConfigModel BuildConfig { get;}
 	public IObservable<BuildInfo> BuildInfo { get; }
 }
+
+public interface IBuildInfoSnapshot
+{
+	public BuildConfigModel BuildConfig { get;}
+	public BuildInfo? LatestInfo { get; }
+
+}

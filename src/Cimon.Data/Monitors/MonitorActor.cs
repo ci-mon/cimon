@@ -13,10 +13,12 @@ namespace Cimon.Data.Monitors;
 
 class MonitorActor : ReceiveActor, IWithUnboundedStash
 {
-	record WatchedBuildInfo(BuildInMonitor Build, ReplaySubject<BuildInfo> Subject) : IBuildInfoStream
+	record WatchedBuildInfo(BuildInMonitor Build, ReplaySubject<BuildInfo> Subject) 
+		: IBuildInfoStream, IBuildInfoSnapshot
 	{
 		public BuildConfigModel BuildConfig => Build.BuildConfig;
 		public IObservable<BuildInfo> BuildInfo => Subject;
+		public BuildInfo? LatestInfo { get; set; }
 	};
 
 	private readonly ReplaySubject<MonitorData> _monitorSubject = new(1);
@@ -26,6 +28,8 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private readonly IObservable<MonitorData> _dataObservable;
 	private volatile int _subscriptionsCount;
 	private ICancelable _stopCountdown = Cancelable.CreateCanceled();
+	private readonly List<IActorRef> _watchers = new();
+	private MonitorModel _model;
 
 	public MonitorActor() {
 		var scheduler = Context.System.Scheduler;
@@ -80,6 +84,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			.RemoveRange(toRemove)
 			.AddRange(toAdd.Select(x => new KeyValuePair<int, WatchedBuildInfo>(x.BuildConfig.Id, x)));
 		_builds = model.Builds.ToImmutableList();
+		_model = model;
 		_monitorSubject.OnNext(new MonitorData {
 			Monitor = model,
 			Builds = _buildInfos.Values
@@ -89,16 +94,26 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private void Ready() {
 		Receive<MonitorModel>(OnMonitorChange);
 		Receive<ActorsApi.WatchMonitor>(_ => Sender.Tell(_dataObservable));
-		Receive<ActorsApi.UnWatchMonitorByActor>(_ => 
-			OnWatcherRemoved(Context.System.Scheduler, Self));
+		Receive<ActorsApi.UnWatchMonitorByActor>(_ => {
+			OnWatcherRemoved(Context.System.Scheduler, Self);
+			_watchers.Remove(Sender);
+		});
 		Receive<ActorsApi.WatchMonitorByActor>(_ => {
 			Interlocked.Increment(ref _subscriptionsCount);
 			Context.Watch(Sender);
+			_watchers.Add(Sender);
 		});
-		Receive<Terminated>(_ => OnWatcherRemoved(Context.System.Scheduler, Self));
+		Receive<Terminated>(msg => {
+			OnWatcherRemoved(Context.System.Scheduler, Self);
+			_watchers.Remove(msg.ActorRef);
+		});
 		Receive<BuildInfoServiceActorApi.BuildInfoItem>(info => {
 			if (_buildInfos.TryGetValue(info.BuildConfigId, out var bucket)) {
 				bucket.Subject.OnNext(info.BuildInfo);
+				bucket.LatestInfo = info.BuildInfo;
+			}
+			foreach (var watcher in _watchers) {
+				watcher.Tell(new ActorsApi.MonitorInfo(_model, _buildInfos.Values));
 			}
 		});
 		Stash.UnstashAll();

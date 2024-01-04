@@ -1,13 +1,14 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Akka.Actor;
-using Cimon.Contracts;
 using Cimon.Contracts.CI;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
+using Cimon.DB.Models;
 using Optional.Collections;
+using User = Cimon.Contracts.User;
 
 namespace Cimon.Data;
 
@@ -17,6 +18,7 @@ public static class ActorsApi
 	public record WatchMonitor(string Id) : MonitorMessage(Id), IMessageWithResponse<IObservable<MonitorData>>;
 	public record WatchMonitorByActor(string Id) : MonitorMessage(Id);
 	public record UnWatchMonitorByActor(string Id) : MonitorMessage(Id);
+	public record MonitorInfo(MonitorModel MonitorModel, IEnumerable<IBuildInfoSnapshot> BuildInfos);
 
 	public abstract record DiscussionAction(int BuildConfigId);
 
