@@ -159,7 +159,7 @@ public class DiscussionActor : ReceiveActor
 			$"""<span class="mention" data-index="1" data-denotation-char="@" data-id="{userId}" data-value="{userName}"><span contenteditable="false"><span class="ql-mention-denotation-char">@</span>{userName}</span></span> """;
 	}
 	private string BuildCommentMessage(BuildInfo buildInfo) {
-		var users = buildInfo.Changes.Select(x=>x.Author);
+		var users = buildInfo.Changes.Select(x=>x.Author).Distinct();
 		var values = users?.Select(u => GetUserMention(u.Name, u.FullName)).ToArray() ?? new[] { "somebody" };
 		var message = values.Any() ? $"Build failed by: {string.Join(", ", values)}" : "Who failed the build?";
 		return $"<p>{message}</p>";;
