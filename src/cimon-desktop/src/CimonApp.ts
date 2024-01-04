@@ -1,26 +1,26 @@
+import * as electron from "electron";
 import {
     app,
     autoUpdater,
     BrowserWindow,
     ipcMain,
-    Menu,
-    session,
-    Tray,
     IpcMainEvent,
+    Menu,
     MenuItemConstructorOptions,
     net,
-    WebContents,
-    shell
+    session,
+    shell,
+    Tray,
+    WebContents
 } from "electron";
-import {ConnectionState, SignalRClient} from "./SignalRClient";
+import {ConnectionState, MonitorInfo, SignalRClient} from "./SignalRClient";
 import log from "electron-log";
 import isDev from "electron-is-dev";
-
-const process = require('process');
-import * as electron from "electron";
 import {NotifierWrapper} from "./notifierWrapper";
 import path from "path";
 import {options} from "./options";
+
+const process = require('process');
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -49,6 +49,7 @@ export class CimonApp {
 
     private tokenDataReceiver: TokenDataReceiver;
     private _mentions: MentionInfo[] = [];
+    private _monitorInfo?: MonitorInfo;
     private _updateReady = false;
 
     private _initToken(): Promise<{
@@ -73,7 +74,7 @@ export class CimonApp {
                     if (["ERR_CONNECTION_REFUSED", "ERR_FAILED"].includes(e.code)) {
                         this._onDisconnected();
                     } else {
-                        this._tray.setImage(options.icons.red.tray);
+                        this._refreshTrayIcon();
                         await this._loadHash(this._window, `warn/${e.code ?? "unavailable"}`)
                         this._window.show();
                     }
@@ -175,8 +176,8 @@ export class CimonApp {
 
     private _onDisconnected() {
         this._window.hide();
-        this._tray.setImage(options.icons.red.tray);
         this._tray.setToolTip(`Waiting for connection to: ${options.baseUrl}. `);
+        this._refreshTrayIcon();
     }
 
     private _trayContextMenuVisibilityConfigs: Array<{
@@ -194,7 +195,7 @@ export class CimonApp {
     }
 
     private _onConnected() {
-        this._tray.setImage(options.icons.green.tray);
+        this._refreshTrayIcon();
         this._tray.setToolTip(
             `cimon - continuous integration monitoring [${options.baseUrl}]`
         );
@@ -256,6 +257,7 @@ export class CimonApp {
         if (this._currentState == state) {
             return;
         }
+        this._monitorInfo = null;
         log.info(`SignalR state ${state}`);
         const previousState = this._currentState;
         this._currentState = state;
@@ -263,10 +265,12 @@ export class CimonApp {
         if (state === ConnectionState.Connected) {
             await NotifierWrapper.hide('connection');
             this._onConnected();
-            await NotifierWrapper.notify('connection', {
-                title: "All good",
-                subtitle: `Connected`
-            });
+            if (previousState == ConnectionState.Disconnected || previousState == ConnectionState.FailedToConnect) {
+                await NotifierWrapper.notify('connection', {
+                    title: "All good",
+                    subtitle: `Connected`
+                });
+            }
             await new Promise<void>(r => setTimeout(r, 5000));
             await NotifierWrapper.hide('connection');
             return;
@@ -321,6 +325,7 @@ export class CimonApp {
         this._signalR.onOpenDiscussionWindow =
             this._onOpenDiscussionWindow.bind(this);
         this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
+        this._signalR.onMonitorInfoChanged = this._onMonitorInfoChanged.bind(this);
         await this._startSignalR();
         this._subscribeForKeyboardShortcuts()
     }
@@ -390,6 +395,10 @@ export class CimonApp {
         if (JSON.stringify(this._mentions) === JSON.stringify(mentions)) return;
         this._mentions = mentions ?? [];
         this._rebuildMenu();
+    }
+    private async _onMonitorInfoChanged(monitorInfo: MonitorInfo) {
+        this._monitorInfo = monitorInfo;
+        this._refreshTrayIcon();
     }
 
     private async _startSignalR() {
@@ -511,5 +520,12 @@ export class CimonApp {
             this._tryHideWindow(this._loginWindow);
             this._tryHideWindow(this._window);
         });
+    }
+
+    private _refreshTrayIcon() {
+        const allOk = this._currentState === ConnectionState.Connected &&
+            !Boolean(this._monitorInfo?.failedBuildsCount);
+        let image = allOk ? options.icons.green.tray : options.icons.red.tray;
+        this._tray.setImage(image);
     }
 }

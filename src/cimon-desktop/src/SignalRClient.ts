@@ -28,6 +28,11 @@ class ReconnectionPolicy implements IRetryPolicy {
     }
 }
 
+export interface MonitorInfo {
+    monitorKey: string;
+    failedBuildsCount: number;
+}
+
 export class SignalRClient {
     disconnect() {
         return this._connection.stop()
@@ -39,6 +44,9 @@ export class SignalRClient {
     ) => void;
     onMentionsChanged: (
         mentions: []
+    ) => void;
+    onMonitorInfoChanged: (
+        monitorInfo: MonitorInfo
     ) => void;
     onOpenDiscussionWindow: (url: string) => void;
     private _connection: HubConnection;
@@ -70,6 +78,7 @@ export class SignalRClient {
         });
         this._connection.on("NotifyWithUrl", this._onNotifyWithUrl.bind(this));
         this._connection.on("UpdateMentions", mentions => this.onMentionsChanged?.(mentions));
+        this._connection.on("UpdateMonitorInfo", monitorInfo => this.onMonitorInfoChanged?.(monitorInfo));
         this._connection.on("CheckForUpdates", () => {
             log.info(`CheckForUpdates message received`);
             autoUpdater.checkForUpdates();
