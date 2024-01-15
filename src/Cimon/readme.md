@@ -1,7 +1,7 @@
 ﻿# Roadmap
 ## MVP
 
-### back-end
+### Back-end
 1. Login by password (+)
 2. Logout (+)
 3. Monitor setup (+)
@@ -25,10 +25,16 @@
 1. Login (negotiate/basic) (+)
 2. Broken build notification (+)
 3. Blame reaction (+)
-4. Auto update
+4. Auto update (+)
 5. Reconnection (+)
 6. Mentions list in menu (+) (have bug)
-7. Monitor list
+7. Monitor list in menu
+
+### Bugs
+1. Auto unsealing for vault after reboot
+2. Electron-auto update: restart button does not restarting app
+3. IIS: pool is not stopped correctly
+4. Build info: show all suspects, not only from latest build
 
 ## V1.5
 ### back-end
