@@ -38,6 +38,8 @@ public class ReactiveComponent : ComponentBase, IDisposable
 		return value;
 	}
 
+	protected virtual bool PreloadData { get; set; }
+
 	protected override bool ShouldRender() => !_initializingReactiveValues && base.ShouldRender();
 
 	private readonly Subject<bool> _disposed = new();
@@ -60,7 +62,7 @@ public class ReactiveComponent : ComponentBase, IDisposable
 		await base.OnParametersSetAsync();
 		try {
 			_initializingReactiveValues = true;
-			if (HttpContextAccessor?.HttpContext?.Response.HasStarted != false) {
+			if (HttpContextAccessor?.HttpContext?.Response.HasStarted != false || PreloadData) {
 				await InitializeReactiveValues();
 			}
 		}

@@ -23,6 +23,8 @@
 </div>
 @code {
 
+    protected override bool PreloadData => true;
+
     [Parameter]
     public string? MonitorId { get; set; }
     private ReactiveValue<MonitorData> _monitor;
