@@ -45,7 +45,6 @@ public class DiscussionStoreActor : ReceiveActor
 			Context.Stop(state.Child);
 			state.Subject.OnCompleted();
 			state.Subject.Dispose();
-			Context.Stop(Self);
 		}
 	}
 
