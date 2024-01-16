@@ -57,6 +57,12 @@ public class AppActors
 		}
 		return Instance.UserSupervisor.Ask(new ActorsApi.GetUserMentions(name));
 	}
+
+	public async Task Stop() {
+		await _actorSystem.Terminate();
+		_actorSystem.Dispose();
+	}
+
 }
 
 public record MentionInBuildConfig(MentionInfo Mention, Option<BuildConfigModel> BuildConfig);
