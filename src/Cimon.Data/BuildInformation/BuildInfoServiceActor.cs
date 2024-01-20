@@ -7,7 +7,7 @@ namespace Cimon.Data.BuildInformation;
 
 static class BuildInfoServiceActorApi
 {
-	public record Subscribe(BuildConfigModel BuildConfig);
+	public record Subscribe(BuildConfig BuildConfig);
 	public record Unsubscribe(int BuildConfigId);
 	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId);
 }

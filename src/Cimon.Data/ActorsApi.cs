@@ -26,10 +26,12 @@ public static class ActorsApi
 
 	public record CloseDiscussion(int BuildConfigId) : DiscussionAction(BuildConfigId);
 
-	public record DiscussionHandle(bool Active, IActorRef Discussion, IObservable<BuildDiscussionState> State)
+	public record DiscussionHandle(bool Active, IActorRef Discussion, IObservable<BuildDiscussionState> State,
+		IObservable<BuildInfo> BuildInfo, IObservable<BuildConfig> BuildConfig)
 	{
 		public static DiscussionHandle Empty { get; } = new(false, ActorRefs.Nobody,
-			Observable.Empty<BuildDiscussionState>());
+			Observable.Empty<BuildDiscussionState>(), Observable.Empty<BuildInfo>(), 
+			Observable.Empty<BuildConfig>());
 	}
 
 	public record FindDiscussion(int BuildConfigId)

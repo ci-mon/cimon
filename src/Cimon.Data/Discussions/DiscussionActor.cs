@@ -25,21 +25,25 @@ public class DiscussionActor : ReceiveActor
 	private readonly ITechnicalUsers _technicalUsers;
 	private readonly IActorRef _stateSubscribers;
 	private IActorRef _commentsSubscribers = ActorRefs.Nobody;
+	private DiscussionData _discussionData;
 
 	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers) {
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
 		_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Context.Parent)));
-		Receive<BuildConfig>(info => {
-			_buildConfig = info;
+		Receive<BuildConfig>(buildConfig => {
+			_buildConfig = buildConfig;
 			_state = _state with {
 				Status = BuildDiscussionStatus.Unknown
 			};
+			_discussionData?.BuildConfig.OnNext(buildConfig);
 		});
+		Receive<DiscussionData>(state => _discussionData = state);
 		ReceiveAsync<BuildInfo>(async info => {
+			_discussionData?.BuildInfo.OnNext(info);
 			if (_state.Status == BuildDiscussionStatus.Unknown) {
-				var state = _state with {
+				BuildDiscussionState state = _state with {
 					Status = BuildDiscussionStatus.Open
 				};
 				StateHasChanged(state);
