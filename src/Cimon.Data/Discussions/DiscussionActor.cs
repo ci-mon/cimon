@@ -1,10 +1,13 @@
 ﻿using System.Collections.Immutable;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Akka.Actor;
 using Akka.Routing;
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using Cimon.Contracts;
 using Cimon.Contracts.CI;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.Users;
 
 namespace Cimon.Data.Discussions;
@@ -25,29 +28,25 @@ public class DiscussionActor : ReceiveActor
 	private readonly ITechnicalUsers _technicalUsers;
 	private readonly IActorRef _stateSubscribers;
 	private IActorRef _commentsSubscribers = ActorRefs.Nobody;
-	private DiscussionData _discussionData;
+	private DiscussionData _discussionData; 
 
 	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers) {
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
 		_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Context.Parent)));
-		Receive<BuildConfig>(buildConfig => {
-			_buildConfig = buildConfig;
-			_state = _state with {
-				Status = BuildDiscussionStatus.Unknown
-			};
-			_discussionData?.BuildConfig.OnNext(buildConfig);
-		});
+		ReceiveAsync<BuildConfig>(OnBuildConfig);
 		Receive<DiscussionData>(state => _discussionData = state);
-		ReceiveAsync<BuildInfo>(async info => {
-			_discussionData?.BuildInfo.OnNext(info);
+		ReceiveAsync<ActorsApi.BuildInfoItem>(async msg => {
+			var buildData = await _discussionData!.Builds.Timeout(TimeSpan.FromSeconds(5)).SelectMany(x => x)
+				.Where(x => x.BuildConfig.Id == msg.BuildConfigId).FirstOrDefaultAsync();
+			buildData?.BuildInfo.OnNext(msg.BuildInfo);
 			if (_state.Status == BuildDiscussionStatus.Unknown) {
 				BuildDiscussionState state = _state with {
 					Status = BuildDiscussionStatus.Open
 				};
 				StateHasChanged(state);
-				await OpenDiscussion(info);
+				await OpenDiscussion(msg.BuildInfo);
 			}
 		});
 		ReceiveAsync<DiscussionActorApi.AddCommentMsg>(msg => AddComment(msg.CommentData));
@@ -77,6 +76,21 @@ public class DiscussionActor : ReceiveActor
 		});
 		Receive<DiscussionActorApi.UnsubscribeForComments>(_ =>
 			_commentsSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(Sender))));
+	}
+
+	private async Task OnBuildConfig(BuildConfig buildConfig) {
+		_buildConfig = buildConfig;
+		_state = _state with { Status = BuildDiscussionStatus.Unknown };
+		var items = await _discussionData.Builds.Timeout(TimeSpan.FromSeconds(5)).FirstOrDefaultAsync() ??
+			ImmutableList.Create<DiscussionBuildData>();
+		var buildData = items.FirstOrDefault(x => x.BuildConfig.Id == buildConfig.Id);
+		if (buildData is not null) {
+			buildData = buildData with { BuildConfig = buildConfig };
+		} else {
+			buildData = new DiscussionBuildData(buildConfig, new ReplaySubject<BuildInfo>(1));
+		}
+		items = items.RemoveAll(x => x.BuildConfig.Id == buildConfig.Id).Add(buildData);
+		_discussionData.Builds.OnNext(items);
 	}
 
 	private async Task AddComment(CommentData data) {

@@ -206,7 +206,9 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 
 .build-info-in-discussion {
     .build-info-item {
-        height: 150px;
+        margin-top: 1em;
+        height: 12em;
+        border-radius: 5px;
     }
     .commits-count {
         position: fixed;

@@ -81,9 +81,7 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
-	private BuildInfoServiceActorApi.BuildInfoItem CreateNotification(BuildInfo current) {
-		return new BuildInfoServiceActorApi.BuildInfoItem(current, _config!.Id);
-	}
+	private ActorsApi.BuildInfoItem CreateNotification(BuildInfo current) => new(current, _config!.Id);
 
 	private async Task InitBuildConfig(BuildConfigModel config) {
 		_config = config;

@@ -107,7 +107,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			OnWatcherRemoved(Context.System.Scheduler, Self);
 			_watchers.Remove(msg.ActorRef);
 		});
-		Receive<BuildInfoServiceActorApi.BuildInfoItem>(info => {
+		Receive<ActorsApi.BuildInfoItem>(info => {
 			if (_buildInfos.TryGetValue(info.BuildConfigId, out var bucket)) {
 				bucket.Subject.OnNext(info.BuildInfo);
 				bucket.LatestInfo = info.BuildInfo;

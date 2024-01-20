@@ -44,6 +44,7 @@ public class ReactiveComponent : ComponentBase, IDisposable
 
 	private readonly Subject<bool> _disposed = new();
 	[Inject] private IHttpContextAccessor? HttpContextAccessor { get; set; }
+	protected bool ReactiveValuesInitialized { get; set; }
 
 	protected virtual void Dispose(bool disposing) {
 		_disposed.OnNext(disposing);
@@ -69,6 +70,7 @@ public class ReactiveComponent : ComponentBase, IDisposable
 		finally {
 			_initializingReactiveValues = false;
 		}
+		ReactiveValuesInitialized = true;
 		if (_triggerStateHasChangedAfterInitializeReactiveValues) {
 			_triggerStateHasChangedAfterInitializeReactiveValues = false;
 			StateHasChanged();

@@ -9,7 +9,6 @@ static class BuildInfoServiceActorApi
 {
 	public record Subscribe(BuildConfig BuildConfig);
 	public record Unsubscribe(int BuildConfigId);
-	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId);
 }
 
 public class BuildInfoServiceActor : ReceiveActor

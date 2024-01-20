@@ -1,4 +1,6 @@
-﻿using System.Reactive.Subjects;
+﻿using System.Collections.Immutable;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Akka.Actor;
 using Cimon.Data.Common;
 
@@ -7,8 +9,18 @@ namespace Cimon.Data.Discussions;
 using Cimon.Contracts.CI;
 using Cimon.Data.BuildInformation;
 
-record DiscussionData(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject,
-	ReplaySubject<BuildInfo> BuildInfo, ReplaySubject<BuildConfig> BuildConfig);
+public record DiscussionBuildData(BuildConfig BuildConfig, ReplaySubject<BuildInfo> BuildInfo) : IDiscussionBuildData
+{
+	IObservable<BuildInfo> IDiscussionBuildData.BuildInfo => BuildInfo;
+}
+
+public interface IDiscussionBuildData {
+	BuildConfig BuildConfig { get; }
+	IObservable<BuildInfo> BuildInfo { get; }
+}
+
+public record DiscussionData(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject,
+	ReplaySubject<IImmutableList<DiscussionBuildData>> Builds);
 
 public class DiscussionStoreActor : ReceiveActor
 {
@@ -35,12 +47,13 @@ public class DiscussionStoreActor : ReceiveActor
 		}
 		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId.ToString());
 		var state = new DiscussionData(child, new ReplaySubject<BuildDiscussionState>(1),
-			new ReplaySubject<BuildInfo>(1), new ReplaySubject<BuildConfig>(1));
+			new ReplaySubject<IImmutableList<DiscussionBuildData>>(1));
+		state.Builds.OnNext(ImmutableList<DiscussionBuildData>.Empty);
 		_stateMap[child] = state;
 		_discussions.Add(req.BuildConfigId, state);
 		child.Tell(state);
 		child.Tell(req.BuildConfig);
-		child.Tell(req.BuildInfo);
+		child.Tell(new ActorsApi.BuildInfoItem(req.BuildInfo, req.BuildConfigId));
 		child.Forward(new DiscussionActorApi.SubscribeForState());
 		child.Tell(new DiscussionActorApi.SubscribeForComments(), _mentionsMonitor);
 		AppActors.Instance.BuildInfoService.Tell(new BuildInfoServiceActorApi.Subscribe(req.BuildConfig), 
@@ -60,8 +73,7 @@ public class DiscussionStoreActor : ReceiveActor
 		if (_discussions.TryGetValue(req.BuildConfigId, out var state)) {
 			var child = state.Child;
 			if (!child.IsNobody()) {
-				Sender.Tell(new ActorsApi.DiscussionHandle(true, child, state.Subject, state.BuildInfo,
-					state.BuildConfig));
+				Sender.Tell(new ActorsApi.DiscussionHandle(true, child, state.Subject, state.Builds));
 				return;
 			}
 		}

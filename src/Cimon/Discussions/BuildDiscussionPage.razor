@@ -1,7 +1,6 @@
 ﻿@namespace Cimon.Discussions
 @page "/buildDiscussion/{BuildConfigId?}"
 @using Cimon.Contracts
-@using Cimon.Contracts.CI
 @using Cimon.Data.Common
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
@@ -12,13 +11,14 @@
 
 @if (_state.HasValue) {
     <div class="container">
-        
         <RadzenRow JustifyContent="JustifyContent.Center">
             <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6">
-                @if (_buildConfig.HasValue && _discussionHandle?.BuildInfo != null) {
-                    <div class="build-info-in-discussion">
-                        <BuildInfoComponent BuildConfig="@_buildConfig.Value" Info="@_discussionHandle.BuildInfo"/>
-                    </div>
+                @if (_builds.HasValue) {
+                    @foreach (var build in _builds.Value) {
+                        <div class="build-info-in-discussion">
+                            <BuildInfoComponent BuildConfig="@build.BuildConfig" Info="@build.BuildInfo"/>
+                        </div>
+                    }
                 }
                 <RadzenCard class="status-item">
                     <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@State.Status.ToString()"></RadzenLabel>
@@ -45,7 +45,7 @@
             </RadzenColumn>
         </RadzenRow>
     </div>
-} else {
+} else if (ReactiveValuesInitialized) {
     <RadzenText TextStyle="TextStyle.H1" Text="Discussion not found"/>
 }
 <style>
@@ -109,11 +109,13 @@
     [Parameter]
     public string BuildConfigId { get; set; }
 
+    protected override bool PreloadData => true;
+
     private ReactiveValue<BuildDiscussionState> _state;
     private CommentData _newComment = new();
     private User _user = null!;
     private ActorsApi.DiscussionHandle? _discussionHandle;
-    private ReactiveValue<BuildConfig> _buildConfig;
+    private ReactiveValue<IEnumerable<IDiscussionBuildData>> _builds;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
@@ -125,7 +127,7 @@
         _user = await CurrentUserAccessor.Current;
         _discussionHandle = await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
         Subscribe(ref _state, _discussionHandle.State);
-        Subscribe(ref _buildConfig, _discussionHandle.BuildConfig);
+        Subscribe(ref _builds, _discussionHandle.Builds);
         ClearComment();
         StateHasChanged();
     }

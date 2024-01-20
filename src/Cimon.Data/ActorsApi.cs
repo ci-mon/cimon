@@ -27,11 +27,11 @@ public static class ActorsApi
 	public record CloseDiscussion(int BuildConfigId) : DiscussionAction(BuildConfigId);
 
 	public record DiscussionHandle(bool Active, IActorRef Discussion, IObservable<BuildDiscussionState> State,
-		IObservable<BuildInfo> BuildInfo, IObservable<BuildConfig> BuildConfig)
+		IObservable<IEnumerable<IDiscussionBuildData>> Builds)
 	{
 		public static DiscussionHandle Empty { get; } = new(false, ActorRefs.Nobody,
-			Observable.Empty<BuildDiscussionState>(), Observable.Empty<BuildInfo>(), 
-			Observable.Empty<BuildConfig>());
+			Observable.Empty<BuildDiscussionState>(), 
+			Observable.Empty<ImmutableList<IDiscussionBuildData>>());
 	}
 
 	public record FindDiscussion(int BuildConfigId)
@@ -68,4 +68,6 @@ public static class ActorsApi
 				.ToImmutableList();
 		});
 	}
+
+	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId);
 }
