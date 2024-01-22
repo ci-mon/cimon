@@ -6,8 +6,8 @@
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenProfileMenu>
         <Template>
-            <RadzenLabel>@_user.FullName</RadzenLabel>
-            <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user.Email"></RadzenGravatar>
+            <RadzenLabel>@_user?.FullName</RadzenLabel>
+            <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user?.Email"></RadzenGravatar>
         </Template>
         <ChildContent>
             @if (_user?.IsGuest() ?? false) {
