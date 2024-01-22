@@ -81,7 +81,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
                 .AppendQuoted(context.PublishDir.FullPath)
                 .AppendQuoted(deployPath)
                 .Append("/MIR")
-                .Append("/R:5")
+                .Append("/R:15")
                 .Append("/W:5")
                 .Append("/XD").AppendQuoted("nativeApps").AppendQuoted("db")
         });
