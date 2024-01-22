@@ -41,8 +41,7 @@
                 }
             </RadzenText>
         </RadzenStack>
-        
-        <RadzenText Visible="@IsLoaded" TextStyle="TextStyle.H4" MouseEnter="@(ShowStatusTooltip)" class="build-status">
+                <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H4" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
             @{
                 var durationInfo = GetDurationInfo();
             }
@@ -84,6 +83,7 @@
 </div>
 
 @code {
+    RadzenText infoText;
     private ReactiveValue<BuildInfo> _infoSubscription;
     private BuildInfo? BuildInfo => _infoSubscription.Value;
     private bool IsLoaded => BuildInfo is not null;
@@ -129,12 +129,8 @@
     }
 
     void ShowStatusTooltip(ElementReference elementReference) {
-        if ((BuildInfo?.StatusText?.Length ?? 0) < 70) {
-            return;
-        }
-
         var options = new TooltipOptions {
-            Duration = 50000
+            Duration = 50000,
         };
         TooltipService.Open(elementReference, _ => @<div class="status-tooltip">@BuildInfo.StatusText</div>, options);
     }

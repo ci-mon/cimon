@@ -112,6 +112,11 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 , .build-status {
     color: var(--rz-white) !important;
 }
+.build-info-item.failed {
+    .build-status {
+        cursor: pointer;
+    }
+}
 .build-info-item h4 {
     font-size: clamp(10px, 2vw, 20px) !important;
 }
