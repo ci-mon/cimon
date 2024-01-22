@@ -61,13 +61,13 @@ public sealed class DeployTask : FrostingTask<BuildContext>
             $$"""
               Stop-WebAppPool -Name "{{context.AppPoolName}}";
               $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
-              sleep 15;
               $pattern = 'WP "(\d+)" \(applicationPool:{{context.AppPoolName}}\)'
-              $match = [regex]::Match($WorkerProcesses, $p)
+              $match = [regex]::Match($WorkerProcesses, $pattern)
               if ($match.Success) {
                   $ProcessId = $match.Groups[1].Value
                   Write-Host "Killing process ID: $ProcessId"
                   # Kill the process
+                  sleep 15;
                   Stop-Process -Id $ProcessId -Force
               }
           """;
