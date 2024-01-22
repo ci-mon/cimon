@@ -34,7 +34,6 @@ public class DiscussionActor : ReceiveActor
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
-		_stateSubscribers.Tell(new AddRoutee(new ActorRefRoutee(Context.Parent)));
 		ReceiveAsync<BuildConfig>(OnBuildConfig);
 		Receive<DiscussionData>(state => _discussionData = state);
 		ReceiveAsync<ActorsApi.BuildInfoItem>(async msg => {
@@ -80,6 +79,7 @@ public class DiscussionActor : ReceiveActor
 
 	private async Task OnBuildConfig(BuildConfig buildConfig) {
 		_buildConfig = buildConfig;
+		AppActors.Instance.BuildInfoService.Tell(new BuildInfoServiceActorApi.Subscribe(buildConfig));
 		_state = _state with { Status = BuildDiscussionStatus.Unknown };
 		var items = await _discussionData.Builds.Timeout(TimeSpan.FromSeconds(5)).FirstOrDefaultAsync() ??
 			ImmutableList.Create<DiscussionBuildData>();

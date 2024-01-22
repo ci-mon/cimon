@@ -49,8 +49,6 @@ public class DiscussionStoreActor : ReceiveActor
 		child.Tell(new ActorsApi.BuildInfoItem(req.BuildInfo, req.BuildConfigId));
 		child.Forward(new DiscussionActorApi.SubscribeForState());
 		child.Tell(new DiscussionActorApi.SubscribeForComments(), _mentionsMonitor);
-		AppActors.Instance.BuildInfoService.Tell(new BuildInfoServiceActorApi.Subscribe(req.BuildConfig), 
-			child);
 	}
 
 	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {
