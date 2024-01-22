@@ -112,7 +112,7 @@ window.quillInterop = {
                             renderList(values, searchTerm);
                         }
                     },
-                    renderItem: (item, searchTerm) => item.team ? `${item.value} (#${item.team})` : item.value
+                    renderItem: (item, searchTerm) => item.team ? `${item.value} #${item.team}` : item.value
                 },
                 toolbar: toolbar,
             },

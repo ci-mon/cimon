@@ -25,3 +25,6 @@
 .ql-editor img {
     cursor: zoom-in;
 }
+.ql-mention-list-item {
+    font-size: 1em;
+}
