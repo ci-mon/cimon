@@ -26,17 +26,11 @@ public class DiscussionStoreActor : ReceiveActor
 {
 	private readonly IActorRef _mentionsMonitor;
 	private readonly Dictionary<int, DiscussionData> _discussions = new();
-	private readonly Dictionary<IActorRef, DiscussionData> _stateMap = new();
 	public DiscussionStoreActor(IActorRef mentionsMonitor) {
 		_mentionsMonitor = mentionsMonitor;
 		Receive<ActorsApi.FindDiscussion>(FindDiscussion);
 		Receive<ActorsApi.CloseDiscussion>(CloseDiscussion);
 		Receive<ActorsApi.OpenDiscussion>(OpenDiscussion);
-		Receive<BuildDiscussionState>(newState => {
-			if (_stateMap.TryGetValue(Sender, out var state)) {
-				state.Subject.OnNext(newState);
-			}
-		});
 	}
 
 	private void OpenDiscussion(ActorsApi.OpenDiscussion req) {
@@ -49,7 +43,6 @@ public class DiscussionStoreActor : ReceiveActor
 		var state = new DiscussionData(child, new ReplaySubject<BuildDiscussionState>(1),
 			new ReplaySubject<IImmutableList<DiscussionBuildData>>(1));
 		state.Builds.OnNext(ImmutableList<DiscussionBuildData>.Empty);
-		_stateMap[child] = state;
 		_discussions.Add(req.BuildConfigId, state);
 		child.Tell(state);
 		child.Tell(req.BuildConfig);
@@ -62,10 +55,7 @@ public class DiscussionStoreActor : ReceiveActor
 
 	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {
 		if (_discussions.Remove(req.BuildConfigId, out var state)) {
-			_stateMap.Remove(state.Child);
 			Context.Stop(state.Child);
-			state.Subject.OnCompleted();
-			state.Subject.Dispose();
 		}
 	}
 

@@ -134,6 +134,7 @@ public class DiscussionActor : ReceiveActor
 	private void StateHasChanged(BuildDiscussionState state) {
 		_state = state;
 		_stateSubscribers.Tell(state);
+		_discussionData.Subject.OnNext(state);
 	}
 
 	private void RemoveComment(BuildComment comment) {
@@ -214,5 +215,10 @@ public class DiscussionActor : ReceiveActor
 			Author = _technicalUsers.MonitoringBot,
 			Comment = $"<p>{string.Join(", ", values)} build is green now.</p>"
 		});
+	}
+
+	protected override void PostStop() {
+		_discussionData.Subject.OnCompleted();
+		_discussionData.Subject.Dispose();
 	}
 }
