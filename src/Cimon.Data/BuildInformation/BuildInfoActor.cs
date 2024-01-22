@@ -16,6 +16,7 @@ class BuildInfoActor : ReceiveActor
 	private readonly int _buildConfigId;
 	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
+	private readonly IActorRef _mlActor = ActorRefs.Nobody;
 
 	record StopIfIdle;
 	record GetBuildInfo;
@@ -35,8 +36,9 @@ class BuildInfoActor : ReceiveActor
 	private readonly IServiceScope _scope;
 	private CIConnectorInfo _connectorInfo;
 
-	public BuildInfoActor(int buildConfigId, IServiceProvider serviceProvider, BuildConfigService buildConfigService,
+	public BuildInfoActor(int buildConfigId, IActorRef mlActor, IServiceProvider serviceProvider, BuildConfigService buildConfigService,
 			BuildInfoMonitoringSettings settings) {
+		_mlActor = mlActor;
 		_scope = serviceProvider.CreateScope();
 		_buildConfigId = buildConfigId;
 		_buildConfigService = buildConfigService;
@@ -99,16 +101,13 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
-	private IActorRef _mlActor = ActorRefs.Nobody;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
 		if (_config!.DemoState is null && _buildInfos.Last?.Id.Equals(newInfo.Id) is true) {
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-		Context.Stop(_mlActor);
-		_mlActor = Context.DIActorOf<BuildMLActor>($"ml{Guid.NewGuid()}", _connectorInfo, _config!, _provider!);
-		_mlActor.Tell(newInfo);
+		_mlActor.Tell(new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self));
 		HandleDiscussion(newInfo);
 		_buildInfos.Add(newInfo);
 		DelayedNotifySubscribers();

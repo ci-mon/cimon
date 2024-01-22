@@ -68,8 +68,8 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 				ngramLength: 3, useAllLengths: true, weighting: NgramExtractingEstimator.WeightingCriteria.Tf))
 			.Append(mlContext.Transforms.Text.LatentDirichletAllocation("Features", "Ngrams", 
 				numberOfTopics: itemsToMatch.Count + 1));
-		var transformer = pipeline.Fit(dataView);
-		var predictionEngine = mlContext.Model.CreatePredictionEngine<TextData, TransformedTextData>(transformer);
+		using var transformer = pipeline.Fit(dataView);
+		using var predictionEngine = mlContext.Model.CreatePredictionEngine<TextData, TransformedTextData>(transformer);
 		TransformedTextData? sourceRes = predictionEngine.Predict(source);
 		var sourceTopic = sourceRes.Features.GetItemWithMaxValue();
 		var probabilities = itemsToMatch.Select(item => {
@@ -82,7 +82,7 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		if (totalProbabilities == 0) {
 			return BestMatch.Empty;
 		}
-		var confidence = bestFit.Value / totalProbabilities * 100;
+		float confidence = bestFit.Value / totalProbabilities * 100;
 		return new BestMatch(bestFit.Index, Convert.ToInt32(confidence));
 	}
 

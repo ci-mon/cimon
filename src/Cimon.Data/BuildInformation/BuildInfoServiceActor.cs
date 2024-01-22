@@ -14,8 +14,9 @@ static class BuildInfoServiceActorApi
 public class BuildInfoServiceActor : ReceiveActor
 {
 	public BuildInfoServiceActor(IActorRef discussionsService) {
+		var mlActor = Context.DIActorOf<BuildMLActor>("ML");
 		Receive<BuildInfoServiceActorApi.Subscribe>(msg => {
-			Context.GetOrCreateChild<BuildInfoActor>(msg.BuildConfig.Id.ToString(), msg.BuildConfig.Id)
+			Context.GetOrCreateChild<BuildInfoActor>(msg.BuildConfig.Id.ToString(), msg.BuildConfig.Id, mlActor)
 				.Forward(msg);
 		});
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(msg => {
