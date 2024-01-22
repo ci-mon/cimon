@@ -59,13 +59,14 @@ public sealed class DeployTask : FrostingTask<BuildContext>
         var deployPath = context.Argument<string>("deploy-path");
         var stopPoolScript = 
             $$"""
-              $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
               Stop-WebAppPool -Name "{{context.AppPoolName}}";
-              sleep 5;
-              if ($wp -match "WP ""(\d+)"" \(applicationPool:{{context.AppPoolName}}\)") {
-                  $ProcessId = $matches[1]
+              $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
+              sleep 15;
+              $pattern = 'WP "(\d+)" \(applicationPool:{{context.AppPoolName}}\)'
+              $match = [regex]::Match($WorkerProcesses, $p)
+              if ($match.Success) {
+                  $ProcessId = $match.Groups[1].Value
                   Write-Host "Killing process ID: $ProcessId"
-                  
                   # Kill the process
                   Stop-Process -Id $ProcessId -Force
               }
