@@ -27,6 +27,8 @@
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
+    background-color: #e66060;
+    color: white;
 }
 
 button.rz-button.discussion-button {
@@ -59,7 +61,8 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 .commits-count {
     top: -4px;
     right: -10px;
-    background-color: #e66060;
+    background-color: #ffb35bfc;
+    color: #980202;
 }
 
 .commits-count p {
@@ -99,12 +102,20 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     font-size: clamp(5px, 12cqmin, 15px);
 }
 
-.build-info-item h5 {
-    font-size: clamp(8px, 15cqmin, 20px);
+.build-info-item h4 {
+    font-size: clamp(10px, 2vw, 15px) !important;
 }
-
+.build-info-item h5 {
+    font-size: clamp(.8em, 5vw, 1em) !important;
+}
 .committer-wrap {
     scale: 0.7;
+}
+.build-status {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
 }
 
 .build-info-item .build-info-link
@@ -116,9 +127,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-status {
         cursor: pointer;
     }
-}
-.build-info-item h4 {
-    font-size: clamp(10px, 2vw, 20px) !important;
 }
 @media only screen and (max-width: 700px) {
     .build-info-item {
@@ -187,7 +195,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 
     .build-info-item h5 {
         font-size: clamp(5px, 17cqmin, 20px);
-        max-width: 420px;
     }
 
     .build-info-item h4 {

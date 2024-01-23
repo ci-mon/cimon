@@ -27,6 +27,7 @@
                 @if (IsLoaded) {
                     <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
                         @BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)
+                        <RadzenIcon Icon="open_in_new" />
                     </RadzenLink>
                     <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
@@ -35,21 +36,21 @@
                         </RadzenBadge>
                     </RadzenButton>
                 } else {
-                    <RadzenText TextStyle="TextStyle.H4" class="build-info-link">
+                    <RadzenText TextStyle="TextStyle.H5" class="build-info-link">
                         @BuildConfig.Key
                     </RadzenText>
                 }
             </RadzenText>
         </RadzenStack>
-                <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H4" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
+                <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
             @{
                 var durationInfo = GetDurationInfo();
             }
-            <span title="@durationInfo.Full">@durationInfo.Start</span>
-            <span> | </span>
-            <span title="@durationInfo.Full">@durationInfo.Duration</span>
-            <span> | </span>
-            <span>@GetStatusInfo()</span>
+           <span title="@durationInfo.Full">@durationInfo.Start</span>
+           <span> | </span>
+           <span title="@durationInfo.Full">@durationInfo.Duration</span>
+           <span> | </span>
+           <span class="status-text">@GetStatusInfo()</span>
         </RadzenText>
     </RadzenStack>
     @if (BuildInfo?.Status == BuildStatus.Failed) {
@@ -62,7 +63,7 @@
                     <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                  AlignItems="AlignItems.Center" Gap="2px">
                         <div class="avatar committer @committerClasses">
-                            <CimonAvatar UserName="@user.Name" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                            <CimonAvatar UserName="@GetUserName(user)" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
                             <div class="commits-count">
                                 <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
                                 @if (IsSuspect(user)) {
@@ -74,7 +75,7 @@
                                 }
                             </div>
                         </div>
-                        <RadzenText Text="@user.Name" title="@user.Name" class="user-name"></RadzenText>
+                        <RadzenText Text="@GetUserName(user)" title="@GetUserName(user)" class="user-name"></RadzenText>
                     </RadzenStack>
                 }
             </RadzenStack>
@@ -95,6 +96,9 @@
     [Parameter] public BuildConfig BuildConfig { get; set; } = null!;
     [Parameter] public IObservable<BuildInfo> Info { get; set; } = null!;
 
+    [Parameter]
+    public int? MaxCommitters { get; set; }
+
     protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;
         await base.OnInitializedAsync();
@@ -103,9 +107,15 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
-            Committers = value?.Changes.GroupBy(x => x.Author).OrderByDescending(x => x.Count())
-                .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
+            var committers = value?.Changes.GroupBy(x => x.Author)
+                    .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)
+                    .ThenByDescending(x => x.Count())
+                    .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
                 (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+            if (MaxCommitters.HasValue && committers.Count > MaxCommitters.Value) {
+                committers = committers.Take(MaxCommitters.Value).ToList();
+            }
+            Committers = committers;
         });
     }
 
@@ -166,3 +176,10 @@
     }
 
 }
+@code {
+    private static string GetUserName(VcsUser user) {
+        string? name = user.Name;
+        return string.IsNullOrWhiteSpace(name) ? "<anonymous>" : name;
+    }
+}
+

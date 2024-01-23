@@ -17,7 +17,8 @@
     } else if (_monitor.HasValue) {
         @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Connector.CISystem)) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig" 
-                                Info="@build.BuildInfo" />
+                                Info="@build.BuildInfo"
+                                MaxCommitters="5"/>
         }
     }
 </div>
