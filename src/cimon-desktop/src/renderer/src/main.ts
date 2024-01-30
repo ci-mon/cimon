@@ -4,27 +4,27 @@ import {createVuetify} from 'vuetify'
 import 'vuetify/dist/vuetify.css'
 import '@mdi/font/css/materialdesignicons.css'
 import {components, directives} from "vuetify/dist/vuetify";
-import App from './Renderer/App.vue'
+import App from './App.vue'
 
 import {createRouter, createWebHashHistory} from 'vue-router'
-import WarnComponent from "./Renderer/WarnComponent.vue";
+import WarnComponent from "./components/warn.component.vue";
 
 const vuetify = createVuetify({
-    components,
-    directives
+  components,
+  directives
 })
 
 window.CimonDesktop?.skipInit();
 
 const router = createRouter({
-    history: createWebHashHistory(),
-    routes: [
-        {
-            path: '/warn/:messageCode',
-            name: 'warnPage',
-            component: WarnComponent
-        }
-    ],
+  history: createWebHashHistory(),
+  routes: [
+    {
+      path: '/warn/:messageCode',
+      name: 'warnPage',
+      component: WarnComponent
+    }
+  ],
 })
 
 createApp(App).use(vuetify).use(router).mount('#app');

@@ -1,6 +1,6 @@
 import Path from "path";
 import isDev from "electron-is-dev";
-import { CimonConfig } from "../cimon-config";
+import { CimonConfig } from '../../cimon-config';
 const process = require('process');
 
 class IconLocator {

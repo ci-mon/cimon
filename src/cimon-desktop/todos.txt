@@ -1,4 +1,0 @@
-1. fix app size
-2. fix image
-2. rename win-toast-notifier to cimon-notifier
-3. add notifier restarts/api

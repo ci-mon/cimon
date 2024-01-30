@@ -11,7 +11,11 @@ const config: ForgeConfig = {
     icon: './icons/green/icon.ico',
     extraResource: [
       "./icons"
-    ]
+    ],
+    ignore: [
+      /^\/src/,
+      /(.eslintrc.json)|(.gitignore)|(electron.vite.config.ts)|(forge.config.cjs)|(tsconfig.*)/,
+    ],
   },
   rebuildConfig: {},
   publishers: [new PublisherCimon({
@@ -28,31 +32,10 @@ const config: ForgeConfig = {
     new MakerZIP({}, ['darwin','linux'])
   ],
   plugins: [
-    new VitePlugin({
-      // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
-      // If you are familiar with Vite configuration, it will look really familiar.
-      build: [
-        {
-          // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: 'src/main.ts',
-          config: 'vite.main.config.ts',
-        },
-        {
-          entry: 'src/preload.ts',
-          config: 'vite.preload.config.ts',
-        },
-      ],
-      renderer: [
-        {
-          name: 'main_window',
-          config: 'vite.renderer.config.ts',
-        },
-      ],
-    }),
     new RemoveNodeModulesFoldersPlugin({
       foldersToRemove: ['prettier', 'node-win-toast-notifier', '@microsoft', 'web-streams-polyfill', '.vite']
     })
-  ],
+  ]
 };
 
 export default config;
