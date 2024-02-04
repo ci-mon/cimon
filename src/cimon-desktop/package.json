@@ -22,13 +22,14 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "start": "electron-vite preview --outDir=dist",
-    "dev": "electron-vite dev --outDir=dist --watch",
-    "package": "electron-vite build --outDir=dist && electron-forge package",
-    "make": "electron-vite build --outDir=dist && electron-forge make",
-    "make:mac": "electron-vite build --outDir=dist && electron-forge make -- --platform=darwin",
-    "publish": "electron-vite build --outDir=dist && electron-forge publish",
-    "build": "npm run typecheck && electron-vite build"
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev --watch",
+    "package": "npm run build && electron-forge package",
+    "make": "npm run build && electron-forge make",
+    "make:mac": "npm run build && electron-forge make -- --platform=darwin",
+    "publish": "npm run build && electron-forge publish",
+    "build": "npm run typecheck && electron-vite build",
+    "build2": "electron-vite build -c electron.vite.config.ts"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.2.0",

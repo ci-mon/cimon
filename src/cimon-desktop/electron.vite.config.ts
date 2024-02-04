@@ -27,22 +27,28 @@ const copyNotifierPlugin = {
     return Promise.resolve(null);
   },
 } as unknown as Plugin;
-export default defineConfig({
-  main: {
-    build: {
-      sourcemap: true,
-    },
-    plugins: [externalizeDepsPlugin(), copyNotifierPlugin],
-  },
-  preload: {
-    plugins: [externalizeDepsPlugin()],
-  },
-  renderer: {
-    resolve: {
-      alias: {
-        '@renderer': resolve('src/renderer/src'),
+export default defineConfig(
+  ({ mode }) =>
+    ({
+      main: {
+        build: {
+          outDir: 'dist/main',
+          sourcemap: true,
+        },
+        plugins: [externalizeDepsPlugin(), copyNotifierPlugin],
       },
-    },
-    plugins: [vue()],
-  },
-} as UserConfig);
+      preload: {
+        build: { outDir: 'dist/preload' },
+        plugins: [externalizeDepsPlugin()],
+      },
+      renderer: {
+        build: { outDir: 'dist/renderer', target: 'es2020' },
+        resolve: {
+          alias: {
+            '@renderer': resolve('src/renderer/src'),
+          },
+        },
+        plugins: [vue({ isProduction: mode === 'build' })],
+      },
+    }) as UserConfig
+);
