@@ -1,10 +1,10 @@
 export interface ICimonAPI {
-    init: () => Promise<void>,
-    skipInit: () => void
+  init: () => Promise<void>;
+  skipInit: () => void;
 }
 
 declare global {
-    interface Window {
-        CimonDesktop: ICimonAPI
-    }
+  interface Window {
+    CimonDesktop: ICimonAPI;
+  }
 }

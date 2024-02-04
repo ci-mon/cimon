@@ -1,12 +1,12 @@
 import path, { resolve } from 'path';
 import { externalizeDepsPlugin } from 'electron-vite';
 import vue from '@vitejs/plugin-vue';
-import { defineConfig, ResolvedConfig, Plugin } from 'vite';
+import { defineConfig, ResolvedConfig, Plugin, UserConfig } from 'vite';
 import fs from 'fs';
 
 import { build } from './package.json';
 
-let viteConfig: ResolvedConfig = null,
+let viteConfig: ResolvedConfig | undefined = undefined,
   notifierCopied: boolean;
 const copyNotifierPlugin = {
   name: 'copy-notifier',
@@ -17,7 +17,7 @@ const copyNotifierPlugin = {
     if (!notifierCopied) {
       notifierCopied = true;
       const source = path.resolve(__dirname, `./node_modules/node-win-toast-notifier/bin/win-toast-notifier.exe`);
-      const dest = path.resolve(viteConfig.build.outDir, '../bin');
+      const dest = path.resolve(viteConfig!.build.outDir, '../bin');
       if (!fs.existsSync(dest)) {
         fs.mkdirSync(dest);
       }
@@ -45,4 +45,4 @@ export default defineConfig({
     },
     plugins: [vue()],
   },
-});
+} as UserConfig);

@@ -1,6 +1,6 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
-import {contextBridge, ipcRenderer} from "electron";
+import { contextBridge, ipcRenderer } from 'electron';
 
 class Cimon {
   private _disabled: boolean = false;
@@ -8,7 +8,7 @@ class Cimon {
   async init() {
     if (this._disabled) return;
     const baseUrl = await ipcRenderer.invoke('cimon-get-base-url');
-    const result = await fetch(`${baseUrl}/auth/token`, {credentials: 'same-origin'});
+    const result = await fetch(`${baseUrl}/auth/token`, { credentials: 'same-origin' });
     if (result.ok) {
       const tokenResponse = await result.json();
       ipcRenderer.send('cimon-token-ready', tokenResponse);
@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('CimonDesktop', {
 window.onload = async () => {
   if (window.location.protocol === 'chrome-error:') {
     await ipcRenderer.invoke('cimon-load', 'warn/unavailable');
-    return
+    return;
   }
   if (cimon.isLogin()) {
     return;

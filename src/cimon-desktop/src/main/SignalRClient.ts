@@ -17,8 +17,8 @@ export enum ConnectionState {
 }
 
 class ReconnectionPolicy implements IRetryPolicy {
-  private _lastError: Error;
-  public get lastError(): Error {
+  private _lastError?: Error;
+  public get lastError(): Error | undefined {
     return this._lastError;
   }
 
@@ -38,16 +38,16 @@ export class SignalRClient {
     return this._connection.stop();
   }
 
-  onConnectionStateChanged: (state: ConnectionState, errorMessage?: string) => void;
-  onMentionsChanged: (mentions: []) => void;
-  onMonitorInfoChanged: (monitorInfo: MonitorInfo) => void;
-  onOpenDiscussionWindow: (url: string) => void;
+  onConnectionStateChanged?: (state: ConnectionState, errorMessage?: string) => void;
+  onMentionsChanged?: (mentions: []) => void;
+  onMonitorInfoChanged?: (monitorInfo: MonitorInfo) => void;
+  onOpenDiscussionWindow?: (url: string) => void;
   private _connection: HubConnection;
   private _notifier = new NotifierWrapper();
 
   constructor(
     private _baseUrl: string,
-    private accessTokenFactory: (error: Error) => Promise<string>
+    private accessTokenFactory: (error: Error | undefined) => Promise<string>
   ) {
     const reconnectPolicy = new ReconnectionPolicy();
     this._connection = new HubConnectionBuilder()
@@ -58,10 +58,10 @@ export class SignalRClient {
       .withAutomaticReconnect(reconnectPolicy)
       .build();
     this._connection.onreconnecting((error) => {
-      this.onConnectionStateChanged(ConnectionState.Disconnected, error.message);
+      this.onConnectionStateChanged?.(ConnectionState.Disconnected, error?.message);
     });
     this._connection.onreconnected(async () => {
-      this.onConnectionStateChanged(ConnectionState.Connected);
+      this.onConnectionStateChanged?.(ConnectionState.Connected);
       await this._connection.invoke('SubscribeForMentions');
       await this._connection.invoke('SubscribeForLastMonitor');
     });
@@ -102,10 +102,10 @@ export class SignalRClient {
         ],
       });
       notification.show();
-      notification.on('reply', async (e, reply) => {
+      notification.on('reply', async (_, reply) => {
         await this._replyToNotification(buildId, NotificationQuickReply.None, reply);
       });
-      notification.on('action', async (e, action) => {
+      notification.on('action', async (_, action) => {
         if (action === 0) {
           this.onOpenDiscussionWindow?.(url);
           return;
@@ -115,15 +115,16 @@ export class SignalRClient {
       });
       return;
     }
-    let result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment, authorEmail);
+    const result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment, authorEmail);
     switch (result.type) {
       case StatusMessageType.Activated: {
-        switch (result.info.arguments) {
+        const info = result.info;
+        switch (info?.arguments) {
           case 'open':
             this.onOpenDiscussionWindow?.(url);
             break;
-          case 'sendQuickReply':
-            const type = result.info.inputs['quickReply'];
+          case 'sendQuickReply': {
+            const type = info.inputs['quickReply'];
             const map: Record<string, NotificationQuickReply> = {
               wip: NotificationQuickReply.Wip,
               rollback: NotificationQuickReply.RequestingRollback,
@@ -131,15 +132,20 @@ export class SignalRClient {
             };
             await this._replyToNotification(buildId, map[type]);
             break;
+          }
           case 'sendReply':
-            await this._replyToNotification(buildId, NotificationQuickReply.None, result.info.inputs['replyText']);
+            await this._replyToNotification(buildId, NotificationQuickReply.None, info.inputs['replyText']);
             break;
         }
       }
     }
   }
 
-  private async _replyToNotification(buildId: number, type: NotificationQuickReply, customReply: string = null) {
+  private async _replyToNotification(
+    buildId: number,
+    type: NotificationQuickReply,
+    customReply: string | undefined = undefined
+  ) {
     await this._connection.invoke('ReplyToNotification', buildId, type, customReply);
   }
 }

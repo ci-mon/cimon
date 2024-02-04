@@ -71,11 +71,12 @@ export class CimonApp {
         } catch (e) {
           this.tokenDataReceiver?.reject();
           this.tokenDataReceiver = undefined;
-          if (['ERR_CONNECTION_REFUSED', 'ERR_FAILED'].includes(e.code)) {
+          const code = e?.['code'];
+          if (['ERR_CONNECTION_REFUSED', 'ERR_FAILED'].includes(code)) {
             this._onDisconnected();
           } else {
             this._refreshTrayIcon();
-            await this._loadHash(this._window, `warn/${e.code ?? 'unavailable'}`);
+            await this._loadHash(this._window, `warn/${code ?? 'unavailable'}`);
             this._window.show();
           }
           reject(e);
@@ -141,7 +142,7 @@ export class CimonApp {
         return { action: 'deny' };
       }
       if (url.startsWith(options.baseUrl)) {
-        return;
+        return { action: 'allow' };
       }
       shell.openExternal(url);
       return { action: 'deny' };
@@ -324,7 +325,9 @@ export class CimonApp {
   private _restartMenuClicked = false;
 
   private _rebuildMenu() {
-    const versionMenuLabel = this._updateReady ? `Restart to update` : `Version: ${app.getVersion()}`;
+    const versionMenuLabel = this._updateReady
+      ? `Restart to update`
+      : `Version: ${app.getVersion()}. User ${this._userName}`;
     const template: MenuItemConstructorOptions[] = [
       {
         id: 'showMonitor',
@@ -465,7 +468,7 @@ export class CimonApp {
   private _userName?: string;
   private _lastProvidedToken?: string = undefined;
 
-  private async _getToken(error: Error & { errorType?: string }) {
+  private async _getToken(error: (Error & { errorType?: string }) | undefined) {
     if (error?.errorType === 'FailedToNegotiateWithServerError') {
       this._token = undefined;
     }
