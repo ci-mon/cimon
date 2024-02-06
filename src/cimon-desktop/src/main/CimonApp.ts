@@ -113,8 +113,11 @@ export class CimonApp {
       paintWhenInitiallyHidden: false,
       autoHideMenuBar: !isDev,
     });
-    //await this._window.webContents.openDevTools();
     this._window.on('close', (evt) => {
+      evt.preventDefault();
+      this._window?.hide();
+    });
+    this._window.on('minimize', (evt) => {
       evt.preventDefault();
       this._window?.hide();
     });
@@ -147,24 +150,28 @@ export class CimonApp {
       shell.openExternal(url);
       return { action: 'deny' };
     });
-    this._window.webContents.on('did-navigate-in-page', async (_, url) => {
-      if (url.endsWith('/Login')) {
-        let windowWasHidden = false;
-        if (this._window.isVisible()) {
-          this._window.hide();
-          windowWasHidden = true;
-        }
-        await this._openLoginWindow();
-        this._loginWindow!.webContents.once('did-redirect-navigation', async () => {
-          this._loginWindow?.destroy();
-          this._loginWindow = undefined;
-          await this._window.loadURL(options.entrypoint);
-          if (windowWasHidden) {
-            this._window.show();
-          }
-        });
+    this._window.webContents.on('did-navigate-in-page', (_, url) => this._onRedirectedToLogin(url));
+    this._window.webContents.on('did-navigate', (_, url) => this._onRedirectedToLogin(url));
+  }
+
+  private _loginPageUrl = '/Login';
+  private async _onRedirectedToLogin(url: string) {
+    if (url.endsWith(this._loginPageUrl)) {
+      let windowWasHidden = false;
+      if (this._window.isVisible()) {
+        this._window.hide();
+        windowWasHidden = true;
       }
-    });
+      await this._openLoginWindow();
+      this._loginWindow!.webContents.once('did-redirect-navigation', async () => {
+        this._loginWindow?.destroy();
+        this._loginWindow = undefined;
+        await this._window.loadURL(options.entrypoint);
+        if (windowWasHidden) {
+          this._window.show();
+        }
+      });
+    }
   }
 
   private _getIsDiscussionUrl(url: string) {
@@ -208,7 +215,7 @@ export class CimonApp {
   private _signalR!: SignalRClient;
 
   private async _openLoginWindow() {
-    if (this._loginWindow == null) {
+    if (this._loginWindow == null || this._loginWindow.isDestroyed()) {
       this._loginWindow = new BrowserWindow({
         webPreferences: {
           session: this._session,
@@ -218,12 +225,13 @@ export class CimonApp {
         paintWhenInitiallyHidden: true,
         autoHideMenuBar: true,
         center: true,
-        width: 300,
-        height: 250,
-        frame: false,
+        width: 320,
+        height: 300,
+        minimizable: false,
+        maximizable: false,
       });
     }
-    await this._loginWindow.loadURL(options.baseUrl + '/Login');
+    await this._loginWindow.loadURL(options.baseUrl + this._loginPageUrl);
     this._loginWindow.center();
     this._loginWindow.show();
   }
@@ -488,7 +496,9 @@ export class CimonApp {
 
   public async showMonitors(): Promise<void> {
     await this._window.loadURL(options.lastMonitor);
-    this._window.show();
+    if (!this._window.webContents.getURL().endsWith(this._loginPageUrl)) {
+      this._window.show();
+    }
   }
 
   public setUpdateReady() {
@@ -497,7 +507,7 @@ export class CimonApp {
   }
 
   private _tryHideWindow(window?: Electron.CrossProcessExports.BrowserWindow) {
-    if (!window) return;
+    if (!window || window.isDestroyed()) return;
     if (window.isVisible() && window.isFocused()) {
       window.hide();
     }
