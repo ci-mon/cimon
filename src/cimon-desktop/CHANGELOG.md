@@ -1,5 +1,9 @@
 # cimon-desktop changelog
 
+## 1.0.11
+1. login window fixes
+2. hide app on minimize
+
 ## 1.0.10
 1. Update deps
 
