@@ -98,6 +98,11 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     container-type: size;
 }
 
+.build-info-item.loading {
+    background: rgb(60, 60, 60);
+    background: linear-gradient(1deg, rgb(110, 110, 110) 0%, rgb(61 60 60) 100%);
+}
+
 .build-info-item .committer p {
     font-size: clamp(5px, 12cqmin, 15px);
 }
