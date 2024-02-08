@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
     <data-source source="LOCAL" name="dev_data" uuid="dce8b8ee-82bc-48c3-91d8-d6eaa5c235e9">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>18d24083-1d6d-4b28-9a86-3d427a6d77af</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:E:\GitHub\cimon\src\Cimon\db\dev_data.db</jdbc-url>
@@ -14,7 +14,7 @@
       </libraries>
     </data-source>
     <data-source source="LOCAL" name="dev_data [2]" uuid="d32bf54f-e7de-4905-9d36-e2b7d7bc7441">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>18d24083-1d6d-4b28-9a86-3d427a6d77af</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:D:\github\cimon\src\Cimon\db\dev_data.db</jdbc-url>
