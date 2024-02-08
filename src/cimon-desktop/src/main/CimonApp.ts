@@ -500,7 +500,10 @@ export class CimonApp {
       await this._waitForConnection();
       const { token, userName } = await this._initToken();
       this._token = token;
-      this._userName = userName;
+      if (this._userName !== userName){
+        this._userName = userName;
+        this._rebuildMenu();
+      }
     }
     this._lastProvidedToken = this._token;
     return this._token;
