@@ -256,6 +256,22 @@ export class CimonApp {
     this._discussionWindow.on('closed', () => {
       this._discussionWindow = undefined;
     });
+    this._discussionWindow.webContents.on('will-navigate', async (e, url) => {
+      e.preventDefault();
+      if (this._getIsDiscussionUrl(url)) {
+        await this._discussionWindow?.loadURL(url);
+        return;
+      }
+      await shell.openExternal(url);
+    });
+    this._discussionWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (this._getIsDiscussionUrl(url)) {
+        this._discussionWindow?.loadURL(url);
+        return { action: 'deny' };
+      }
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
     await this._discussionWindow.loadURL(options.baseUrl + url);
     this._discussionWindow.show();
   }
