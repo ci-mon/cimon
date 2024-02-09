@@ -90,17 +90,34 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     color: var(--rz-danger);
 }
 
+@property --bg-from {
+    syntax: '<color>';
+    initial-value: #3e6213;
+    inherits: false;
+}
+
+@property --bg-to {
+    syntax: '<color>';
+    initial-value: #71a431;
+    inherits: false;
+}
 .build-info-item {
-    background: rgb(76, 116, 34);
-    background: linear-gradient(1deg, rgba(76, 116, 34, 1) 0%, rgba(131, 190, 64, 1) 100%);
+    transition: --bg-from 1s, --bg-to 1s;
+    background: var(--bg-from);
+    background: linear-gradient(1deg, var(--bg-from) 0%, var(--bg-to) 100%);
     padding: 0.5em;
     margin: 0.1em;
     container-type: size;
 }
 
 .build-info-item.loading {
-    background: rgb(60, 60, 60);
-    background: linear-gradient(1deg, rgb(110, 110, 110) 0%, rgb(61 60 60) 100%);
+    --bg-from: rgb(76 116 34 / 0%);
+    --bg-to: rgb(180 180 180 / 25%);
+}
+
+.build-info-item.failed {
+    --bg-from: rgb(116, 34, 34);
+    --bg-to: rgb(190, 64, 64);
 }
 
 .build-info-item .committer p {
@@ -216,11 +233,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     }
 
 }
-.build-info-item.failed {
-    background: rgb(76, 116, 34);
-    background: linear-gradient(1deg, rgb(116, 34, 34) 0%, rgb(190, 64, 64) 100%);
-}
-
 .build-info-in-discussion {
     .build-info-item {
         margin-top: 1em;

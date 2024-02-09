@@ -18,7 +18,7 @@
 @inject AppInitialStateAccessor AppInitialStateAccessor
 <div class="build-info-item @GetClasses()">
 <RadzenProgressBar Visible="@(!IsLoaded)"
-                                ProgressBarStyle="ProgressBarStyle.Secondary"
+                                ProgressBarStyle="ProgressBarStyle.Light"
                                 Value="100" ShowValue="false" 
                                 Mode="ProgressBarMode.Indeterminate"/>
     <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
@@ -99,6 +99,8 @@
     [Parameter]
     public int? MaxCommitters { get; set; }
 
+    protected override bool PreloadData => true;
+
     protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;
         await base.OnInitializedAsync();
@@ -121,7 +123,7 @@
 
     private string GetClasses() {
         var builder = new DefaultInterpolatedStringHandler();
-        if (BuildInfo is null) {
+        if (!IsLoaded) {
             builder.AppendLiteral(" loading");
         } else if (BuildInfo?.Status == BuildStatus.Failed) {
             builder.AppendLiteral(" failed");
@@ -129,7 +131,6 @@
                 builder.AppendLiteral(" with-committers");
             }
         }
-
         return builder.ToStringAndClear();
     }
 
@@ -175,11 +176,9 @@
         return BuildInfo.FailureSuspect?.User.Name == user.Name;
     }
 
-}
-@code {
     private static string GetUserName(VcsUser user) {
         string? name = user.Name;
         return string.IsNullOrWhiteSpace(name) ? "<anonymous>" : name;
     }
-}
 
+}
