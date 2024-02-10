@@ -12,9 +12,17 @@
 <RadzenCard Visible="_monitor.HasValue">
     <RadzenButton Text="Save" Icon="save" Click="Save"/>
     <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
-    <RadzenCard class="rz-mb-4 rz-mt-4">
-        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
-        <RadzenTextBox @bind-Value=@Monitor.Title class="w-100"/>
+    <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
+        <RadzenStack Orientation="Orientation.Vertical">
+            <RadzenFormField Text="Title" >
+               <RadzenTextBox @bind-Value="@Monitor.Title" class="w-100"/>
+            </RadzenFormField>
+            <RadzenStack Orientation="Orientation.Horizontal">
+                <RadzenLabel Text="Shared:" />
+                <RadzenSwitch @bind-Value="@Monitor.Shared" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Switch value" } })"/>
+            </RadzenStack>
+           
+        </RadzenStack>
     </RadzenCard>
     <RadzenButton Text="Add" Icon="add" Click="Add"/>
     <RadzenButton Text="Remove" Icon="remove" Click="Remove"/>
@@ -58,6 +66,7 @@
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
+        await MonitorService.Refresh();
         Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId));
     }
 

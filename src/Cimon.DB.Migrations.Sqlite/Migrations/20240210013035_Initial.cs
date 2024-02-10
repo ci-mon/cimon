@@ -33,7 +33,8 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     Key = table.Column<string>(type: "TEXT", nullable: false),
                     Title = table.Column<string>(type: "TEXT", nullable: true),
                     Removed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    AlwaysOnMonitoring = table.Column<bool>(type: "INTEGER", nullable: false)
+                    AlwaysOnMonitoring = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Shared = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -94,7 +95,6 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
                     DemoState = table.Column<string>(type: "jsonb", nullable: true),
                     Props = table.Column<string>(type: "jsonb", nullable: true),
-                    CIConnectorId = table.Column<int>(type: "INTEGER", nullable: true),
                     Key = table.Column<string>(type: "TEXT", nullable: false),
                     Branch = table.Column<string>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
@@ -103,11 +103,6 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BuildConfigurations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BuildConfigurations_CIConnectors_CIConnectorId",
-                        column: x => x.CIConnectorId,
-                        principalTable: "CIConnectors",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_BuildConfigurations_CIConnectors_ConnectorId",
                         column: x => x.ConnectorId,
@@ -258,14 +253,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_BuildConfigurations_CIConnectorId",
+                name: "IX_BuildConfigurations_ConnectorId_Id_Branch",
                 table: "BuildConfigurations",
-                column: "CIConnectorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BuildConfigurations_ConnectorId",
-                table: "BuildConfigurations",
-                column: "ConnectorId");
+                columns: new[] { "ConnectorId", "Id", "Branch" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CIConnectorSettings_CIConnectorId",

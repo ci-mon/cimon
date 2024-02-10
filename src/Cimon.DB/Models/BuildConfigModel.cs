@@ -15,6 +15,7 @@ public record BuildConfigModel : BuildConfig, IEntityCreator<BuildConfigModel>
 		IsDefaultBranch = isDefaultBranch;
 		Name = name;
 	}
+	public int ConnectorId { get; set; }
 	public CIConnector Connector { get; set; }
 	public BuildConfigStatus Status { get; set; }
 	public BuildInfo? DemoState { get; set; }

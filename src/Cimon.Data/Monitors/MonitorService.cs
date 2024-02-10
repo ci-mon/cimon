@@ -90,4 +90,7 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		await _state.Refresh();
 	}
 
+	public async Task Refresh() {
+		await _state.Refresh();
+	}
 }
