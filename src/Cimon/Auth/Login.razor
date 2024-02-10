@@ -7,6 +7,9 @@
         <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
             <RadzenLogin AllowRegister="false" AllowResetPassword="false"/>
         </RadzenTemplateForm>
+        <RadzenAlert  AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
+            cimon doesn't store your password
+        </RadzenAlert>
     </RadzenCard>
 </RadzenStack>
 @code {
