@@ -18,8 +18,8 @@ path "infrastructure.cimon/+/dev" {
 }
 EOF
 echo "Creating tokens..."
-vault token create -period=180m -policy=p.cimon.dev -id=10000000-0000-0000-0000-000000000000
-vault token create -period=180m -policy=root -id=00000000-0000-0000-0000-000000000000
+vault token create -period=1000m -policy=p.cimon.dev -id=10000000-0000-0000-0000-000000000000
+vault token create -period=1000m -policy=root -id=00000000-0000-0000-0000-000000000000
 echo "Adding entries..."
 vault kv put infrastructure.cimon/dev @secrets.json
 echo "Complete..."

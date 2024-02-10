@@ -19,7 +19,7 @@
                <RadzenTextBox @bind-Value="@Monitor.Title" class="w-100"/>
             </RadzenFormField>
             <RadzenStack Orientation="Orientation.Horizontal">
-                <RadzenLabel Text="Share view:" />
+                <RadzenLabel Text="Share with others:" />
                 <RadzenSwitch @bind-Value="@Monitor.Shared" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Switch value" } })"/>
             </RadzenStack>
            
