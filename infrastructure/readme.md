@@ -7,6 +7,7 @@
 4. jenkins http://localhost:8080
 5. Git server gogs http://localhost:3001
     user: should be created manually. root/root
+	`docker exec -it -u git infrastructure-gogs-1 ./gogs admin create-user --name=root --password=root --email=root@user.com --admin=true`
 
 # Run separate
 1. CI: `docker compose up db teamcity teamcity-agent-1 jenkins`

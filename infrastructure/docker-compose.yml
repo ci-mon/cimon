@@ -9,11 +9,12 @@ version: '3.1'
 # ./agents/agent-1/conf - configuration directory for the second build agent
 volumes:
   buildserver_pgdata:
+  gogs-data:
 services:
   db:
     profiles:
       - tc
-    image: postgres:15
+    image: postgres:16
     environment:
       - POSTGRES_PASSWORD=teamcity_password
       - POSTGRES_USER=teamcity_user
@@ -24,25 +25,11 @@ services:
     ports:
       - 5433:5432
 
-  # docker compose exec db psql -d postgres -U teamcity_user -c "DROP DATABASE teamcity_db;"
-  pg-upgrade:
-    profiles:
-      - db-upgrade
-    image: tianon/postgres-upgrade:15-to-16
-    volumes:
-      - ./buildserver_pgdata_old:/var/lib/postgresql/15/data
-      - ./buildserver_pgdata:/var/lib/postgresql/16/data
-    environment:
-      - POSTGRES_USER=teamcity_user
-      - POSTGRES_PASSWORD=teamcity_password
-      - POSTGRES_DB=teamcity_db
-      - PGUSER=teamcity_user
-      - POSTGRES_INITDB_ARGS="-U teamcity_user"
-
   teamcity:
     image: jetbrains/teamcity-server:${TEAMCITY_VERSION}-linux
     profiles:
       - tc
+    user: root
     ports:
       - "8112:8111"
     volumes:
@@ -122,5 +109,8 @@ services:
       - "2222:2222"
       - "3001:3001"
     volumes:
-      - "./gogs-data:/data"
+      - "gogs-data:/data"
       - "./gogs.ini:/data/gogs/conf/app.ini"
+#      - "./gogs-git:/data/git"
+#      - "gogs_ssh:/data/ssh"
+
