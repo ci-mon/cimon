@@ -5,6 +5,7 @@ using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
 using Monitor = Cimon.DB.Models.MonitorModel;
+using User = Cimon.Contracts.User;
 
 namespace Cimon.Data.Monitors;
 
@@ -20,12 +21,14 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _state.Items;
 
-	public async Task<Monitor> Add() {
+	public async Task<Monitor> Add(User user) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
 		var monitor = new Monitor {
 			Key = Guid.NewGuid().ToString(),
 			Title = "Untitled",
+			Owner = userModel
 		};
-		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		await ctx.Monitors.AddAsync(monitor);
 		await ctx.SaveChangesAsync();
 		await _state.Refresh();
@@ -47,7 +50,8 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public async Task RemoveBuilds(MonitorModel monitor, IEnumerable<int> buildIds) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		var items = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id && buildIds.Contains(x.BuildConfigId))
+		var items = await ctx.MonitorBuilds
+			.Where(x => x.MonitorId == monitor.Id && buildIds.Contains(x.BuildConfigId))
 			.ToListAsync();
 		ctx.MonitorBuilds.RemoveRange(items);
 		await ctx.SaveChangesAsync();
@@ -71,6 +75,7 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 	public async Task<IImmutableList<Monitor>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
 		var result = await ctx.Monitors
+			.Include(x => x.Owner)
 			.Include(x => x.Builds)
 			.ThenInclude(x => x.BuildConfig)
 			.ThenInclude(x => x.Connector)

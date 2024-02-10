@@ -1,13 +1,17 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Reactive.Linq;
 using System.Security.Claims;
 using Cimon.Data.Users;
 using System.Security.Principal;
+using Cimon.Data.Monitors;
+using Cimon.DB.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using RouteData = Microsoft.AspNetCore.Components.RouteData;
 
 namespace Cimon.Auth;
 
@@ -86,6 +90,12 @@ public static class ConfigurationExtensions
 			return await userManager.IsDeactivated(name);
 		}
 	}
+	
+	public static IServiceCollection AddAuthorization(this IServiceCollection services,
+		Action<AuthorizationOptions, IServiceProvider> configure) {
+		services.AddOptions<AuthorizationOptions>().Configure<IServiceProvider>(configure);
+		return services.AddAuthorization();
+	}
 
 	public static void AddAuth(this IServiceCollection services) {
 		services.AddSingleton<TokenService>();
@@ -93,9 +103,10 @@ public static class ConfigurationExtensions
 			.AddNegotiate()
 			.AddCookie()
 			.AddJwtBearer();
-		services.AddAuthorization(options => {
+		services.AddAuthorization((options, sp) => {
 			options.AddPolicy("LocalhostPolicy", policy =>
 				policy.Requirements.Add(new LocalhostRequirement()));
+			options.AddPolicy("EditMonitor", policy => policy.RequireAssertion(x => MonitorEditAssertions(x, sp)));
 		});
 		services.AddTransient<IStartupFilter, UserManagerFilter>();
 		services.AddTransient<IConfigureOptions<JwtBearerOptions>, AuthConfigurator>();
@@ -103,4 +114,25 @@ public static class ConfigurationExtensions
 		services.AddSingleton<IAuthorizationHandler, LocalhostRequirementHandler>();
 	}
 
+	private static async Task<bool> MonitorEditAssertions(AuthorizationHandlerContext context, IServiceProvider sp) {
+		if (context.User.IsInRole("monitor-editor")) {
+			return true;
+		}
+		MonitorModel? monitor = null;
+		switch (context.Resource) {
+			case RouteData rd when rd.RouteValues.TryGetValue("monitorId", out var monitorId): {
+				var monService = sp.GetRequiredService<MonitorService>();
+				var id = Convert.ToString(monitorId, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+				monitor = await monService.GetMonitorById(id).Timeout(TimeSpan.FromSeconds(10)).FirstOrDefaultAsync();
+				break;
+			}
+			case MonitorModel monitorModel:
+				monitor = monitorModel;
+				break;
+		}
+		if (monitor?.Owner?.Name is {Length:>0 } name) {
+			return context.User.HasClaim(ClaimTypes.NameIdentifier, name);
+		}
+		return false;
+	}
 }

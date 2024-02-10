@@ -1,5 +1,5 @@
 ﻿@page "/setupMonitor/{monitorId?}"
-@attribute [Authorize(Roles = "monitor-editor")]
+@attribute [Authorize(Policy = "EditMonitor")]
 
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager
@@ -10,6 +10,7 @@
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
 <RadzenCard Visible="_monitor.HasValue">
+    <RadzenButton Text="Close" Icon="close" Click="Close"/>
     <RadzenButton Text="Save" Icon="save" Click="Save"/>
     <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
     <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
@@ -18,7 +19,7 @@
                <RadzenTextBox @bind-Value="@Monitor.Title" class="w-100"/>
             </RadzenFormField>
             <RadzenStack Orientation="Orientation.Horizontal">
-                <RadzenLabel Text="Shared:" />
+                <RadzenLabel Text="Share view:" />
                 <RadzenSwitch @bind-Value="@Monitor.Shared" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Switch value" } })"/>
             </RadzenStack>
            
@@ -90,9 +91,12 @@
         }
     }
 
+    private void Close() {
+        NavigationManager.NavigateTo("/monitorList");
+    }
+
     private async Task Save() {
         await MonitorService.Save(Monitor!);
-        NavigationManager.NavigateTo("/monitorList");
     }
 
     private void SetupCIConnectors() {

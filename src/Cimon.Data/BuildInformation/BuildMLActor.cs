@@ -20,7 +20,7 @@ class BuildMLActor: ReceiveActor
 {
 	private readonly IBuildFailurePredictor _buildFailurePredictor;
 	private readonly ILogger<BuildMLActor> _logger;
-	private CancellationTokenSource _cts;
+	private CancellationTokenSource? _cts;
 	private ImmutableQueue<MlRequest> _requests = ImmutableQueue<MlRequest>.Empty;
 	private MlRequest _active;
 
@@ -92,7 +92,7 @@ class BuildMLActor: ReceiveActor
 	}
 
 	public override void AroundPostStop() {
-		_cts.Cancel();
+		_cts?.Cancel();
 		base.AroundPostStop();
 	}
 }

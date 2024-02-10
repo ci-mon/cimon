@@ -8,5 +8,6 @@ public class MonitorModel
 	public bool Removed { get; set; }
 	public bool AlwaysOnMonitoring { get; set; }
 	public bool Shared { get; set; }
+	public User? Owner { get; set; }
 	public List<BuildInMonitor> Builds { get; set; } = new();
 }

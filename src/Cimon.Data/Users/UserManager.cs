@@ -90,7 +90,8 @@ public class UserManager : ITechnicalUsers
 			var claims = CreateClaims(userModel, roles, teams);
 			var user = new User(userModel.Name, userModel.FullName, teams, roles) {
 				Claims = claims,
-				DefaultMonitorId = userModel.DefaultMonitorId
+				DefaultMonitorId = userModel.DefaultMonitorId,
+				Id = userModel.Id
 			};
 			return new UserCache(userModel, user);
 		}
@@ -213,7 +214,7 @@ public class UserManager : ITechnicalUsers
 		return claims.ToImmutableList();
 	}
 	
-	public User MonitoringBot { get; } = User.Create("monitoring.bot", "Monitoring bot");
+	public User MonitoringBot { get; } = User.Create("monitoring.bot", "Monitoring bot", -2);
 
 	public async Task SaveLastViewedMonitorId(UserName name, string monitorId) {
 		await EditUser(name, user => {
