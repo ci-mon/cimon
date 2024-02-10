@@ -38,15 +38,30 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			: GetMonitors().SelectMany(x => x).Where(x => x.Key == monitorId);
 	}
 
-	public async Task Save(Monitor monitor, IList<BuildConfigModel> builds) {
+	public async Task Save(Monitor monitor) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		ctx.Monitors.Update(monitor);
-		var existing = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id).ToListAsync();
-		ctx.MonitorBuilds.RemoveRange(existing);
-		foreach (var buildConfig in builds) {
+		await ctx.SaveChangesAsync();
+		await _state.Refresh();
+	}
+
+	public async Task RemoveBuilds(MonitorModel monitor, IEnumerable<int> buildIds) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		var items = await ctx.MonitorBuilds.Where(x => x.MonitorId == monitor.Id && buildIds.Contains(x.BuildConfigId))
+			.ToListAsync();
+		ctx.MonitorBuilds.RemoveRange(items);
+		await ctx.SaveChangesAsync();
+		await _state.Refresh();
+	}
+	public async Task AddBuilds(Monitor monitor, IEnumerable<int> buildIds) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		foreach (var buildConfigId in buildIds) {
+			if (await ctx.MonitorBuilds.AnyAsync(x => x.MonitorId == monitor.Id && x.BuildConfigId == buildConfigId)) {
+				continue;
+			}
 			await ctx.MonitorBuilds.AddAsync(new BuildInMonitor {
 				MonitorId = monitor.Id,
-				BuildConfigId = buildConfig.Id
+				BuildConfigId = buildConfigId
 			});
 		}
 		await ctx.SaveChangesAsync();

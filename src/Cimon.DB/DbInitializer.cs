@@ -85,6 +85,10 @@ public class DbInitializer
 		if (!_options.UseTestData) {
 			return;
 		}
+		await context.AddAsync(new CIConnector {
+			Key = "demo_main",
+			CISystem = CISystem.Demo
+		});
 		await context.Users.AddAsync(new User
 			{ Name = "test", FullName = "Test User", Email = "milton.soto@example.com", AllowLocalLogin = true,
 				Teams = { usersTeam.Entity, allTeam.Entity } });

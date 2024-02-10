@@ -86,11 +86,16 @@ class BuildInfoActor : ReceiveActor
 	private ActorsApi.BuildInfoItem CreateNotification(BuildInfo current) => new(current, _config!.Id);
 
 	private async Task InitBuildConfig(BuildConfigModel config) {
-		_config = config;
-		_provider = _scope.ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(config.Connector.CISystem);
-		_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
-		_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-			TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
+		try {
+			_config = config;
+			_provider = _scope.ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(config.Connector.CISystem);
+			_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
+			_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+				TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
+		} catch (Exception e) {
+			_log.Error("Failed to InitBuildConfig", e);
+			Context.Stop(Self);
+		}
 	}
 
 	private void HandleBuildFailureSuspect(BuildFailureSuspect suspect) {

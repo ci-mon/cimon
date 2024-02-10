@@ -3,12 +3,9 @@
 
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager
-@inject BuildConfigService BuildConfigService; 
+@inject DialogService DialogService
 @using Cimon.Data.Monitors
-@using System.Collections.Immutable
-@using System.Text.Json
 @using Cimon.DB.Models
-@using Cimon.Data.CIConnectors
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -19,81 +16,73 @@
         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Title</RadzenText>
         <RadzenTextBox @bind-Value=@Monitor.Title class="w-100"/>
     </RadzenCard>
+    <RadzenButton Text="Add" Icon="add" Click="Add"/>
+    <RadzenButton Text="Remove" Icon="remove" Click="Remove"/>
 </RadzenCard>
-<RadzenDataGrid @ref="grid" AllowRowSelectOnRowClick="@true" Render="@OnRender"
-                        AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
-                        FilterMode="FilterMode.SimpleWithMenu"
-                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                        AllowSorting="true" AllowColumnResize="true" AllowGrouping="true" AllGroupsExpanded="@true"
-                        PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
-                        Data="@_buildConfigs.Value" TItem="BuildConfigModel" ColumnWidth="200px"
-                        SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@_selectedLocators class="m-4">
-            <Columns>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
-                    <HeaderTemplate>
-                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(_buildConfigs.Value?.Any(i => _selectedLocators?.Contains(i) ?? false) ?? false)"
-                                        Change="@(OnSelectAllChanged)"/>
-                    </HeaderTemplate>
-                    <Template Context="data">
-                        <RadzenCheckBox TriState="false" Value="@(_selectedLocators.Contains(data))"
-                                        TValue="bool"/>
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.Key" Title="CI Key" Width="150px" />
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Connector.CISystem" Title="CI type" Width="150px" />
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Name" Title="Name"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch" />
-                <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status" Width="100px"/>
-                <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
-                    <Template Context="item">
-                        <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
-                    </Template>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
-        
+<RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
+                AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                FilterMode="FilterMode.SimpleWithMenu"
+                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                AllowSorting="true" AllowColumnResize="true"
+                PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
+                Data="@Builds" TItem="BuildInMonitor" ColumnWidth="200px"
+                SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@_selectedBuilds" class="m-4">
+    <Columns>
+        <RadzenDataGridColumn TItem="BuildInMonitor" Width="60px" Sortable="false" Filterable="false">
+            <HeaderTemplate>
+                <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
+            </HeaderTemplate>
+            <Template Context="data">
+                <RadzenCheckBox TriState="false" Value="@(_selectedBuilds.Contains(data))"
+                                TValue="bool"/>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.CISystem" Title="CI type" Width="150px" />
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.Key" Title="CI Key" Width="150px" />
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Name" Title="Name"/>
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.IsDefaultBranch" Title="IsDefaultBranch" />
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Status" Title="Status" Width="100px"/>
+
+    </Columns>
+</RadzenDataGrid>
 @code {
 
+    private RadzenDataGrid<BuildInMonitor> Grid = null!;
     private ReactiveValue<MonitorModel> _monitor;
     private MonitorModel? Monitor => _monitor.Value;
-    RadzenDataGrid<BuildConfigModel> grid = null!;
-    private ReactiveValue<IImmutableList<BuildConfigModel>> _buildConfigs = new(ImmutableList<BuildConfigModel>.Empty);
-    IList<BuildConfigModel> _selectedLocators = new List<BuildConfigModel>();
+    private IList<BuildInMonitor> Builds => _monitor.Value?.Builds ?? (IList<BuildInMonitor>)Array.Empty<BuildInMonitor>();
+    private IList<BuildInMonitor> _selectedBuilds = new List<BuildInMonitor>();
     
     [Parameter]
     public string? MonitorId { get; set; }
 
-    void OnRender(DataGridRenderEventArgs<BuildConfigModel> args) {
-        if (!args.FirstRender)
-            return;
-        args.Grid.Groups.Add(new GroupDescriptor {
-            Title = "CI type",
-            Property = "Connector.CISystem",
-            SortOrder = SortOrder.Ascending
-        });
-        StateHasChanged();
-    }
-
-    private void SetSelectedLocators(IList<BuildConfigModel>? list) {
-        _selectedLocators = list ?? ArraySegment<BuildConfigModel>.Empty;
-    }
-
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
-        Subscribe(ref _buildConfigs, BuildConfigService.BuildConfigs);
-        // todo combine build configs and monitor
-        Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId)).OnChange(monitor => {
-            var buildConfigs = _buildConfigs.Value?
-                .Where(l => monitor.Builds.Any(b => l.Id.Equals(b.BuildConfigId)))
-                .ToList();
-            SetSelectedLocators(buildConfigs);
-        });
+        Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId));
+    }
+
+    private async Task Remove() {
+        await MonitorService.RemoveBuilds(Monitor!, _selectedBuilds.Select(x=>x.BuildConfigId));
+    }
+
+    private async Task Add() {
+        var selected = await DialogService.OpenAsync<BuildConfigListDialog>("Add build configs",
+            new Dictionary<string, object?> {
+                { nameof(BuildConfigListDialog.SelectedBuildConfigIds), _monitor.Value?.Builds.Select(x => x.BuildConfigId) }
+            },
+            new DialogOptions {
+                Width = "95%",
+                Height = "90%",
+                Resizable = true,
+                Draggable = false
+            });
+        if (selected is IEnumerable<int>) {
+            await MonitorService.AddBuilds(Monitor!, selected);
+        }
     }
 
     private async Task Save() {
-        await MonitorService.Save(Monitor!, _selectedLocators);
+        await MonitorService.Save(Monitor!);
         NavigationManager.NavigateTo("/monitorList");
     }
 
@@ -101,9 +90,9 @@
         NavigationManager.NavigateTo("/SetupCIConnectors");
     }
 
-    private void OnSelectAllChanged(bool args) {
-        SetSelectedLocators(args ? _buildConfigs.Value?.ToList() : null);
-    }
 
+    private void OnSelectAllChanged(bool select) {
+        _selectedBuilds = select ? Builds.ToList() : Array.Empty<BuildInMonitor>();
+    }
 
 }

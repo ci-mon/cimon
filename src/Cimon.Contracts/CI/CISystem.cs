@@ -2,5 +2,5 @@
 
 public enum CISystem
 {
-	TeamCity, Jenkins
+	TeamCity, Jenkins, Demo
 }

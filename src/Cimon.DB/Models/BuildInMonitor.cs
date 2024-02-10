@@ -6,4 +6,5 @@ public class BuildInMonitor
 	public int MonitorId { get; set; }
 	public BuildConfigModel BuildConfig { get; set; }
 	public int BuildConfigId { get; set; }
+	public static BuildInMonitor Create() => new();
 }

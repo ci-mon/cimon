@@ -26,7 +26,6 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 	}
 
 	public IObservable<IImmutableList<BuildConfigModel>> BuildConfigs => _state.Items;
-
 	public async Task<IImmutableList<BuildConfigModel>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
 		var result = await ctx.BuildConfigurations.Include(x => x.Connector).ToListAsync(cancellationToken: token);

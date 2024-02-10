@@ -2,7 +2,7 @@
 
 namespace Cimon.DB.Models;
 
-public record BuildConfigModel : BuildConfig
+public record BuildConfigModel : BuildConfig, IEntityCreator<BuildConfigModel>
 {
 	public BuildConfigModel() {
 	}
@@ -19,6 +19,8 @@ public record BuildConfigModel : BuildConfig
 	public BuildConfigStatus Status { get; set; }
 	public BuildInfo? DemoState { get; set; }
 	public List<BuildInMonitor> Monitors { get; set; } = new();
+	public static BuildConfigModel Create() => new();
+
 	public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), Connector.Id);
 	public virtual bool Equals(BuildConfigModel? other) =>
 		(other?.Connector.Id.Equals(Connector.Id) ?? false) && base.Equals(other);

@@ -1,5 +1,7 @@
 using Cimon;
 using Cimon.Auth;
+using Cimon.Contracts.CI;
+using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.Common;
@@ -43,6 +45,7 @@ builder.Services.AddCimonData()
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
+builder.Services.AddKeyedScoped<IBuildConfigProvider, DemoBuildConfigProvider>(CISystem.Demo);
 builder.Services.AddCimonML();
 builder.Services.AddKeyedScoped<IHubAccessor<IUserClientApi>, HubAccessor<UserHub, IUserClientApi>>(nameof(UserHub));
 
