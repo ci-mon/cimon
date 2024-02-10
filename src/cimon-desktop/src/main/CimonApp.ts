@@ -226,7 +226,7 @@ export class CimonApp {
         autoHideMenuBar: true,
         center: true,
         width: 320,
-        height: 300,
+        height: 360,
         minimizable: false,
         maximizable: false,
       });
@@ -500,7 +500,7 @@ export class CimonApp {
       await this._waitForConnection();
       const { token, userName } = await this._initToken();
       this._token = token;
-      if (this._userName !== userName){
+      if (this._userName !== userName) {
         this._userName = userName;
         this._rebuildMenu();
       }
