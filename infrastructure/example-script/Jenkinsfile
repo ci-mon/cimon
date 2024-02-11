@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Run Tests') {
+            steps {
+                script {
+                    def mode = 1
+                    def junitXml = 'test-results.xml'
+
+                    def content = """
+                    <testsuites time="15.682687">
+                    <testsuite name="suiteName" time="6.605871">
+                    """
+
+                    if (mode == 1) {
+                        content += report_test_results("Test1", true)
+                        content += report_test_results("Test2", true)
+                    } else if (mode == 2) {
+                        content += report_test_results("Test1", false)
+                        content += report_test_results("Test2", true)
+                    } else if (mode == 3) {
+                        content += report_test_results("Test1", true)
+                        content += report_test_results("Test2", false)
+                    } else if (mode == 4) {
+                        content += report_test_results("Test1", false)
+                        content += report_test_results("Test2", false)
+                    } else {
+                        error("Build failure.")
+                    }
+
+                    content += """
+                    </testsuite>
+                    </testsuites>
+                    """
+                    writeFile file: junitXml, text: content
+                    def fileContents = readFile file: junitXml
+                    echo fileContents
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit '**/test-results.xml'
+        }
+    }
+}
+
+def report_test_results(testName, isPassed) {
+    if (isPassed) {
+        return """
+        <testcase name="$testName" time="2.113871" />
+        """
+    } else {
+        return """
+        <testcase name="$testName" classname="Tests.Example" time="0.982">
+            <failure message="Assertion error message" type="AssertionError">
+                <!-- Call stack printed here -->
+            </failure> 
+        </testcase>
+        """
+    }
+}

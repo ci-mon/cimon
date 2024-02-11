@@ -111,6 +111,4 @@ services:
     volumes:
       - "gogs-data:/data"
       - "./gogs.ini:/data/gogs/conf/app.ini"
-#      - "./gogs-git:/data/git"
-#      - "gogs_ssh:/data/ssh"
 
