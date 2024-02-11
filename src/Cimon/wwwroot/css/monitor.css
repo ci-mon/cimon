@@ -102,6 +102,8 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     inherits: false;
 }
 .build-info-item {
+    --bg-from: #3e6213;
+    --bg-to: #71a431;
     transition: --bg-from 1s, --bg-to 1s;
     background: var(--bg-from);
     background: linear-gradient(1deg, var(--bg-from) 0%, var(--bg-to) 100%);
