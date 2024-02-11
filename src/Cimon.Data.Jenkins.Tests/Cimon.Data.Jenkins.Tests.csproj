@@ -26,6 +26,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Cimon.Data.Jenkins\Cimon.Data.Jenkins.csproj" />
+      <ProjectReference Include="..\Cimon.Data.Tests\Cimon.Data.Tests.csproj" />
+      <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
     </ItemGroup>
 
 </Project>

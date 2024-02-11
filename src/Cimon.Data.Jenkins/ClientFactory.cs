@@ -3,19 +3,15 @@ using Narochno.Jenkins;
 
 namespace Cimon.Data.Jenkins;
 
-public class ClientFactory
+public class ClientFactory(IOptionsSnapshot<JenkinsSecrets> snapshot)
 {
-	private readonly JenkinsSecrets _options;
-	public ClientFactory(IOptions<JenkinsSecrets> options) {
-		_options = options.Value;
-	}
 
-	public JenkinsClient Create() {
-		var config = new JenkinsConfig
-		{
-			JenkinsUrl = _options.Uri.ToString(),
-			Username = _options.Login,
-			ApiKey = _options.Token
+	public JenkinsClient Create(string connectorKey) {
+		var secrets = snapshot.Get(connectorKey);
+		var config = new JenkinsConfig {
+			JenkinsUrl = secrets.Uri.ToString(),
+			Username = secrets.Login,
+			ApiKey = secrets.Token
 		};
 		return new JenkinsClient(config);
 	}

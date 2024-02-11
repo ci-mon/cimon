@@ -4,15 +4,10 @@ namespace Cimon.Data.Jenkins;
 
 using Contracts.CI;
 
-public class JenkinsBuildConfigProvider : IBuildConfigProvider
+public class JenkinsBuildConfigProvider(ClientFactory clientFactory) : IBuildConfigProvider
 {
-	private readonly ClientFactory _clientFactory;
-	public JenkinsBuildConfigProvider(ClientFactory clientFactory) {
-		_clientFactory = clientFactory;
-	}
-
 	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
-		using var client = _clientFactory.Create();
+		using var client = clientFactory.Create(info.ConnectorKey);
 		var result = new List<BuildConfig>();
 		var master = await client.GetMaster(default);
 		foreach (var job in master.Jobs) {

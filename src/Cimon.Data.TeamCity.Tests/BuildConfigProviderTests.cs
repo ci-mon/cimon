@@ -10,23 +10,15 @@ using Contracts.CI;
 [TestFixture]
 public class BuildConfigProviderTests : BaseTeamCityTest
 {
-	private IBuildConfigProvider _buildConfigProvider = null!;
-
-	public override void Setup() {
-		base.Setup();
-		_buildConfigProvider = ServiceProvider.GetRequiredService<IBuildConfigProvider>();
-	}
-
+	
 	[Test]
 	public async Task Debug() {
-		var res = await _buildConfigProvider.GetAll(EmptyCIConnectorInfo);
+		var res = await BuildConfigProvider.GetAll(DefaultConnector);
 	}
-
-	private static CIConnectorInfo EmptyCIConnectorInfo => new("key", new Dictionary<string, string>());
 
 	[Test]
 	public async Task GetAll() {
-		var res = await _buildConfigProvider.GetAll(EmptyCIConnectorInfo);
+		var res = await BuildConfigProvider.GetAll(DefaultConnector);
 		using var scope = new AssertionScope();
 		res.Should().ContainEquivalentOf(new BuildConfig {
 				Name = "Test1_BuildTest1",

@@ -1,29 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+﻿using Cimon.Contracts.CI;
+using Cimon.Data.Tests;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.TeamCity.Tests;
 
-using Cimon.Contracts.Services;
-using Cimon.Data.Secrets;
-using Microsoft.Extensions.Configuration;
-
-public class BaseTeamCityTest
+public class BaseTeamCityTest() : BaseCIConnectorTest<TeamcitySecrets, 
+	TcBuildInfoProvider, TcBuildConfigProvider>("teamcity_main", CISystem.TeamCity)
 {
-	protected ServiceProvider ServiceProvider = null!;
-
-	protected CIConnectorInfo DefaultConnector { get; set; } = new("teamcity_main", new Dictionary<string, string>());
-
-	[SetUp]
-	public virtual void Setup() {
-		var config = new ConfigurationBuilder().AddUserSecrets("0574c095-3b5d-4b4a-83a0-60bd33381798").Build();
-		ServiceProvider = new ServiceCollection()
-			.AddSingleton<IConfiguration>(config)
-			.ConfigureSecretsFromConfig<TeamcitySecrets>()
-			.AddCimonDataTeamCity()
-			.AddLogging()
-			.BuildServiceProvider();
+	protected override void SetupDI(IServiceCollection serviceCollection) {
+		serviceCollection.AddCimonDataTeamCity();
 	}
-
-	[TearDown]
-	protected virtual void TearDown() => ServiceProvider?.Dispose();
 }

@@ -18,9 +18,8 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 	private TcBuildInfoProvider _buildInfoProvider = null!;
 	private TcClientFactory _clientFactory = null!;
 
-	public override void Setup() {
+	protected override void Setup() {
 		base.Setup();
-		_buildInfoProvider = (ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(CISystem.TeamCity) as TcBuildInfoProvider)!;
 		_clientFactory = ServiceProvider.GetRequiredService<TcClientFactory>();
 	}
 

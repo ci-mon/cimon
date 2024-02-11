@@ -4,7 +4,7 @@ namespace Cimon.Contracts.CI;
 
 public record BuildConfig
 {
-	public Dictionary<string, string> Props { get; set; }
+	public Dictionary<string, string> Props { get; set; } = new();
 	public int Id { get; init; }
 	public string Key { get; init; }
 	public string? Branch { get; init; }

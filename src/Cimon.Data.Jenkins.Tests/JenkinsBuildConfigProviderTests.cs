@@ -6,16 +6,10 @@ namespace Cimon.Data.Jenkins.Tests;
 
 public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 {
-	private JenkinsBuildConfigProvider _provider = null!;
-
-	protected override void Setup() {
-		base.Setup();
-		_provider = new JenkinsBuildConfigProvider(Factory);
-	}
 
 	[Test]
 	public async Task GetAll() {
-		var result = await _provider.GetAll(new CIConnectorInfo("main", new Dictionary<string, string>()));
+		var result = await BuildConfigProvider.GetAll(DefaultConnector);
 		result.Should().Contain(new BuildConfig() {
 			Key = "app.my.multibranch",
 			Branch = "master"
