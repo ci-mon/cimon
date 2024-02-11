@@ -1,4 +1,5 @@
 ﻿using Cimon.Contracts.Services;
+using Cimon.Data.BuildInformation;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +25,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 	}
 
 	[Test]
-	public async Task Debug() {;
+	public async Task Debug() {
 		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, 
 			DefaultConnector.ConnectorKey);//5711671,5738602
 		info.Should().NotBeNull();
@@ -34,17 +35,35 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 	}
 
 	[Test]
-	public async Task GetInfo_WhenFailed() {
-		var results = await _buildInfoProvider.GetInfo(new[] {
-			new BuildInfoQuery(DefaultConnector, new BuildConfig())
+	public async Task GetInfo_ShouldLoadFullHistory_WhenLastBuildNumberNotSpecified() {
+		var buildConfig = new BuildConfig {
+			Key = "Test1_BuildConf1"
+		};
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions {
+			LastBuildId = null
 		});
-		using var client = _clientFactory.Create("main");
+		var results = await _buildInfoProvider.FindInfo(query);
+		var history = new BuildInfoHistory();
+		foreach (var result in results) {
+			history.Add(result);
+		}
+		history.Last.Should().NotBeNull();
+	}
+
+	[Test]
+	public async Task GetInfo_WhenFailed() {
+		var buildConfig = new BuildConfig {
+			Key = "Test1_BuildConf1"
+		};
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig);
+		var results = await _buildInfoProvider.FindInfo(query);
+		using var client = _clientFactory.Create(DefaultConnector.ConnectorKey);
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {
 			BuildType = new BuildTypeLocator {
-				Id = "Test1_BuildTest1"
+				Id = buildConfig.Key
 			},
 			Branch = new BranchLocator {
-				Name = "master"
+				Name = "refs/heads/master"
 			}
 		}).GetAsync(1);
 		var build = lastBuild.Build.First();
@@ -53,7 +72,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		info.Url.Should().Be($"http://localhost:8111/viewLog.html?buildId={build.Id}&buildTypeId=Test1_BuildTest1");
 		info.Name.Should().Be($"Build test1");
 		info.Id.Should().Be($"{build.Number}");
-		info.BranchName.Should().Be("master");
+		info.BranchName.Should().Be("refs/heads/master");
 		info.Group.Should().Be("gogs_Test1");
 		info.StatusText.Should().Be("Exit code 1 (Step: Command Line) (new)");
 		info.Status.Should().Be(BuildStatus.Failed);

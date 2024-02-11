@@ -19,4 +19,10 @@ class RingBuffer<T>(int maxSize) where T: class
 
 	public IReadOnlyCollection<T> Items => _queue;
 	public T? Last { get; private set; }
+
+	public IEnumerable<T> IterateReversed() {
+		foreach (var item in _queue.Reverse()) {
+			yield return item;
+		}
+	}
 }

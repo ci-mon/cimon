@@ -23,7 +23,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 			Key = "app.my.test",
 			Branch = "master"
 		});
-		var info = await _provider.FindInfo(query);
+		var info = (await _provider.FindInfo(query)).First();
 		var job = await client.GetJob("app.my.test", default);
 		var number = job.LastBuild.Number;
 		using var scope = new AssertionScope();

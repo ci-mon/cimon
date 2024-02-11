@@ -3,6 +3,7 @@ using Cimon.Contracts.CI;
 using Cimon.Data.Monitors;
 using Cimon.DB.Models;
 using Monitor = Cimon.DB.Models.MonitorModel;
+using User = Cimon.Contracts.User;
 
 namespace Cimon.Data.Tests;
 
@@ -31,7 +32,7 @@ public class MonitorServiceTests
 		var monitor = monitors[0];
 		var id = Guid.NewGuid().ToString();
 		monitor.Key = id;
-		await sut.Save(monitor, new List<BuildConfigModel>());
+		await sut.Save(monitor);
 		monitors = await observable.FirstOrDefaultAsync();
 		monitors.Should().Contain(m => m.Key == id);
 	}
@@ -39,9 +40,9 @@ public class MonitorServiceTests
 	[Test]
 	public async Task Add() {
 		var sut = new MonitorService(TestDbContextFactory.New);
+		await sut.GetMonitors().FirstAsync();
+		var newMon = await sut.Add(new User("test", "test", Array.Empty<string>(), Array.Empty<string>()){Id = 1});
 		var monitors = await sut.GetMonitors().FirstAsync();
-		var newMon = await sut.Add();
-		monitors = await sut.GetMonitors().FirstAsync();
 		monitors.Should().Contain(x=>x.Key == newMon.Key);
 	}
 

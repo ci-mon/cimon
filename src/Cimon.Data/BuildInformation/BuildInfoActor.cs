@@ -16,7 +16,7 @@ class BuildInfoActor : ReceiveActor
 	private readonly int _buildConfigId;
 	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
-	private readonly IActorRef _mlActor = ActorRefs.Nobody;
+	private readonly IActorRef _mlActor;
 
 	record StopIfIdle;
 	record GetBuildInfo;
@@ -28,7 +28,7 @@ class BuildInfoActor : ReceiveActor
 	private IBuildInfoProvider? _provider;
 	private ICancelable? _refreshBuildInfoScheduler;
 	private readonly HashSet<string> _systemUserLogins;
-	private readonly RingBuffer<BuildInfo> _buildInfos = new(50);
+	private readonly BuildInfoHistory _buildInfoHistory = new();
 	private int _commentsCount;
 	private bool _discussionWatched;
 	private bool _discussionOpen;
@@ -52,7 +52,7 @@ class BuildInfoActor : ReceiveActor
 		Receive<BuildInfo>(HandleBuildInfo);
 		Receive<BuildFailureSuspect>(HandleBuildFailureSuspect);
 		Receive<NotifySubscribersMsg>(_ => {
-			if (_buildInfos.Last is not { } buildInfo) return;
+			if (_buildInfoHistory.Last is not { } buildInfo) return;
 			NotifySubscribers(buildInfo);
 		});
 		Receive<Terminated>(_ => {
@@ -64,7 +64,7 @@ class BuildInfoActor : ReceiveActor
 				Context.Watch(Sender);
 			}
 			_commentsCount = state.Comments.Count;
-			NotifySubscribers(_buildInfos.Last);
+			NotifySubscribers(_buildInfoHistory.Last);
 		});
 		var buildConfigStream =
 			buildConfigService.BuildConfigs.Select(x => x.FirstOrDefault(c => c.Id == _buildConfigId));
@@ -78,7 +78,7 @@ class BuildInfoActor : ReceiveActor
 
 	private void OnSubscribe(BuildInfoServiceActorApi.Subscribe msg) {
 		_subscribers.Add(Sender);
-		if (_buildInfos.Last is {} current) {
+		if (_buildInfoHistory.Last is {} current) {
 			Sender.Tell(CreateNotification(current));
 		}
 	}
@@ -99,7 +99,7 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private void HandleBuildFailureSuspect(BuildFailureSuspect suspect) {
-		var buildInfo = _buildInfos.Last;
+		var buildInfo = _buildInfoHistory.Last;
 		if (buildInfo != null) {
 			buildInfo.FailureSuspect = suspect;
 			NotifySubscribers(buildInfo);
@@ -108,13 +108,13 @@ class BuildInfoActor : ReceiveActor
 
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
-		if (_config!.DemoState is null && _buildInfos.Last?.Id.Equals(newInfo.Id) is true) {
+		if (_config!.DemoState is null && _buildInfoHistory.Last?.Id.Equals(newInfo.Id) is true) {
 			return;
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
+		_buildInfoHistory.Add(newInfo);
 		_mlActor.Tell(new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self));
 		HandleDiscussion(newInfo);
-		_buildInfos.Add(newInfo);
 		DelayedNotifySubscribers();
 	}
 
@@ -129,17 +129,23 @@ class BuildInfoActor : ReceiveActor
 		}
 		try {
 			var options = new BuildInfoQueryOptions {
-				LastBuildNumber = _buildInfos.Last?.Id
+				LastBuildId = _buildInfoHistory.Last?.Id
 			};
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
-			var info = await _provider!.FindInfo(query);
-			Self.Tell(info ?? BuildInfo.NoData);
+			var infos = await _provider!.FindInfo(query);
+			if (!infos.Any()) {
+				Self.Tell(BuildInfo.NoData);
+				return;
+			}
+			foreach (var buildInfo in infos) {
+				Self.Tell(buildInfo);
+			}
 		} catch (Exception e) {
 			_log.Error(e, e.Message);
 		}
 	}
 
-	private record NotifySubscribersMsg;
+	private sealed record NotifySubscribersMsg;
 	private readonly NotifySubscribersMsg _notifySubscribersMsg = new();
 	private void DelayedNotifySubscribers() {
 		var delay = _settings.Delay / 2;

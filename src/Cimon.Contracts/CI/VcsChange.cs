@@ -2,4 +2,5 @@
 
 using System.Collections.Immutable;
 
-public record VcsChange(VcsUser Author, DateTimeOffset? Date, string CommitMessage, ImmutableArray<FileModification> Modifications);
+public record VcsChange(VcsUser Author, DateTimeOffset? Date, string CommitMessage, 
+	ImmutableArray<FileModification> Modifications, bool IsInherited = false);

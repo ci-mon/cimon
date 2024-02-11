@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Globalization;
 using System.Reflection;
 using Cimon.Contracts.Services;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,6 @@ using TeamCityAPI.Locators.Enums;
 public class TcBuildInfoProvider : IBuildInfoProvider
 {
 
-	private readonly ILogger _logger;
 	private readonly TcClientFactory _clientFactory;
 
 	public TcBuildInfoProvider(TcClientFactory clientFactory, ILogger<TcBuildInfoProvider> logger) {
@@ -30,28 +30,52 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		if (string.IsNullOrWhiteSpace(teamcityDate)) {
 			return null;
 		}
-		return DateTimeOffset.ParseExact(teamcityDate, _dateFormat, null);
+		return DateTimeOffset.ParseExact(teamcityDate, _dateFormat, CultureInfo.InvariantCulture);
 	}
 
-	public async Task<IReadOnlyCollection<BuildInfo>> GetInfo(IReadOnlyList<BuildInfoQuery> infoQueries) {
-		List<BuildInfo?> list = new List<BuildInfo?>();
-		foreach (var buildInfoQuery in infoQueries) {
-			var info = await FindInfo(buildInfoQuery);
-			if (info is not null)
-				list.Add(info);
-		}
-		return list.AsReadOnly()!;
-	}
-
-	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
+	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		using var clientTicket = _clientFactory.Create(infoQuery.ConnectorInfo.ConnectorKey);
 		var buildConfig = infoQuery.BuildConfig;
 		var build = await GetBuild(buildConfig, clientTicket);
 		if (build is null)
-			return null;
+			return Array.Empty<BuildInfo>();
 		TcBuildInfo info = await GetBuildInfo(build, clientTicket);
-		//info.AddInvestigationActions(build);
-		return info;
+		var results = new List<BuildInfo> { info };
+		if (info.Status == BuildStatus.Failed) {
+			await LoadBuildHistory(clientTicket, results, infoQuery, build);
+		}
+		return results;
+	}
+
+	private async Task LoadBuildHistory(TeamCityClientTicket clientTicket, List<BuildInfo> results,
+			BuildInfoQuery query, Build sourceBuild) {
+		var lastNumberStr = query.Options?.LastBuildId;
+		var prevBuildId = (int)sourceBuild.Id!;
+		prevBuildId--;
+		if (sourceBuild.Id.ToString() == lastNumberStr || $"{prevBuildId}".Equals(lastNumberStr)) {
+			return;
+		}
+		var buildLocator = GetBuildLocator(query.BuildConfig);
+		buildLocator.Count = 5;
+		buildLocator.LookupLimit = 20;
+		var buildsList = clientTicket.Client.Builds.Include(x => x.Build).WithLocator(buildLocator)
+			.GetAsyncEnumerable<Builds, Build>(5);
+		await foreach (var buildInfoSmall in buildsList) {
+			if (buildInfoSmall.Id == sourceBuild.Id) continue;
+			if (!buildInfoSmall.Id.HasValue || $"{buildInfoSmall.Id}".Equals(lastNumberStr)) {
+				break;
+			}
+			var status = GetStatus(buildInfoSmall.Status);
+			if (status == BuildStatus.Success) {
+				break;
+			}
+			var locator = GetBuildLocator(query.BuildConfig);
+			locator.Id = (int)buildInfoSmall.Id.Value;
+			var build = await GetBuild(clientTicket, locator);
+			if (build is null) break;
+			TcBuildInfo info = await GetBuildInfo(build, clientTicket);
+			results.Insert(0, info);
+		}
 	}
 
 	public async Task<string> GetLogs(LogsQuery logsQuery) {
@@ -184,7 +208,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return res;
 	}
 
-	private static async Task<Build?> GetBuild(BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
+	private static BuildLocator GetBuildLocator(BuildConfig buildConfig) {
 		var buildLocator = new BuildLocator {
 			Count = 1,
 			Canceled = false,
@@ -200,6 +224,11 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 				Name = buildConfig.Branch
 			};
 		}
+		return buildLocator;
+	}
+
+	private static async Task<Build?> GetBuild(BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
+		var buildLocator = GetBuildLocator(buildConfig);
 		return await GetBuild(clientTicket, buildLocator);
 	}
 
@@ -210,6 +239,8 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			.ThenInclude(x => x.Changes, IncludeType.Long).ThenInclude(x => x.Change, IncludeType.Long)
 			.ThenInclude(x => x.User).ThenInclude(x => x.Email).Include(x => x.Build, IncludeType.Long)
 			.ThenInclude(x => x.ProblemOccurrences).ThenInclude(x => x.ProblemOccurrence, IncludeType.Long)
+			.ThenInclude(x=>x.Problem, IncludeType.Long).ThenInclude(x=>x.Investigations)
+			.ThenInclude(x=>x.Investigation, IncludeType.Long)
 			.WithLocator(buildLocator).GetAsync(1);
 		return detailedBuilds.Build.FirstOrDefault();
 	}

@@ -16,10 +16,10 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		_factory = factory;
 	}
 	
-	public async Task<BuildInfo?> FindInfo(BuildInfoQuery infoQuery) {
+	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		var build = await GetBuildInfo(infoQuery);
 		if (build == null) {
-			return null;
+			return Array.Empty<BuildInfo>();
 		}
 		var buildInfo = build.BuildInfo;
 		var buildConfig = infoQuery.BuildConfig;
@@ -37,13 +37,13 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 			Status = GetStatus(buildInfo.Result),
 			Changes = changes
 		};
-		var lastBuildNumber = infoQuery.Options?.LastBuildNumber;
+		var lastBuildNumber = infoQuery.Options?.LastBuildId;
 		if (info.Status ==  BuildStatus.Failed && !string.IsNullOrWhiteSpace(lastBuildNumber) &&
 				!lastBuildNumber.Equals(info.Id, StringComparison.OrdinalIgnoreCase)) {
 			using var client = _factory.Create();
 			info.Log = await client.GetBuildConsole(build.JobName, buildInfo.Id, default);
 		}
-		return info;
+		return new[] { info };
 	}
 
 	public Task<string> GetLogs(LogsQuery logsQuery) {
