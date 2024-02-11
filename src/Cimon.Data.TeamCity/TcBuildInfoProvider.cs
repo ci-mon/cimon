@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Reflection;
 using Cimon.Contracts.Services;
-using Microsoft.Extensions.Logging;
 using TeamCityAPI;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
@@ -19,9 +18,8 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 
 	private readonly TcClientFactory _clientFactory;
 
-	public TcBuildInfoProvider(TcClientFactory clientFactory, ILogger<TcBuildInfoProvider> logger) {
+	public TcBuildInfoProvider(TcClientFactory clientFactory) {
 		_clientFactory = clientFactory;
-		_logger = logger;
 	}
 
 	private readonly string _dateFormat = "yyyyMMdd'T'HHmmsszzz";
