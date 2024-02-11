@@ -9,21 +9,15 @@ using Contracts.CI;
 [TestFixture]
 public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 {
-	private JenkinsBuildInfoProvider _provider = null!;
-		
-	protected override void Setup() {
-		base.Setup();
-		_provider = new JenkinsBuildInfoProvider(Factory);
-	}
 
 	[Test]
 	public async Task GetInfo_WhenFailed() {
-		using var client = Factory.Create();
+		using var client = Factory.Create(DefaultConnector.ConnectorKey);
 		var query = new BuildInfoQuery(ConnectorInfo, new BuildConfig {
 			Key = "app.my.test",
 			Branch = "master"
 		});
-		var info = (await _provider.FindInfo(query)).First();
+		var info = (await BuildInfoProvider.FindInfo(query)).First();
 		var job = await client.GetJob("app.my.test", default);
 		var number = job.LastBuild.Number;
 		using var scope = new AssertionScope();
@@ -48,7 +42,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 
 	[Test]
 	public async Task GetInfo_WhenMultibranch() {
-		var result = await _provider.FindInfo(new BuildInfoQuery(ConnectorInfo, new BuildConfig {
+		var result = await BuildInfoProvider.FindInfo(new BuildInfoQuery(ConnectorInfo, new BuildConfig {
 			Key = "app.my.multibranch",
 			Branch = "master"
 		}));

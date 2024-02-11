@@ -6,6 +6,7 @@
 @inject DialogService DialogService
 @using Cimon.Data.Monitors
 @using Cimon.DB.Models
+@using System.Text.Json
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -49,9 +50,14 @@
         <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.CISystem" Title="CI type" Width="150px" />
         <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.Key" Title="CI Key" Width="150px" />
         <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Name" Title="Name"/>
+        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Key" Title="Key"/>
         <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.IsDefaultBranch" Title="IsDefaultBranch" />
         <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Status" Title="Status" Width="100px"/>
-
+        <RadzenDataGridColumn TItem="BuildInMonitor" Title="Props">
+            <Template Context="item">
+                <RadzenText>@JsonSerializer.Serialize(item.BuildConfig.Props)</RadzenText>
+            </Template>
+        </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
 @code {

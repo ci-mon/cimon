@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Cimon.Contracts.Services;
+using Narochno.Jenkins;
 using Narochno.Jenkins.Entities.Builds;
 
 namespace Cimon.Data.Jenkins;
@@ -17,13 +18,14 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 	}
 	
 	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
-		var build = await GetBuildInfo(infoQuery);
-		if (build == null) {
+		using var client = _factory.Create(infoQuery.ConnectorInfo.ConnectorKey);
+		var build = await GetBuildInfo(infoQuery, client);
+		var buildInfo = build?.BuildInfo;
+		var buildConfig = infoQuery.BuildConfig;
+		if (build is null || buildInfo is null) {
 			return Array.Empty<BuildInfo>();
 		}
-		var buildInfo = build.BuildInfo;
-		var buildConfig = infoQuery.BuildConfig;
-		var changes = await GetChanges(buildInfo);
+		var changes = await GetChanges(buildInfo, client);
 		var name = buildInfo.FullDisplayName.Substring(0,
 			buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal));
 		var info = new BuildInfo {
@@ -37,10 +39,12 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 			Status = GetStatus(buildInfo.Result),
 			Changes = changes
 		};
+		if (buildInfo.Result == "UNSTABLE") {
+			// load tests http://localhost:8080/job/test1/job/master/15/testReport/api/json
+		}
 		var lastBuildNumber = infoQuery.Options?.LastBuildId;
 		if (info.Status ==  BuildStatus.Failed && !string.IsNullOrWhiteSpace(lastBuildNumber) &&
 				!lastBuildNumber.Equals(info.Id, StringComparison.OrdinalIgnoreCase)) {
-			using var client = _factory.Create();
 			info.Log = await client.GetBuildConsole(build.JobName, buildInfo.Id, default);
 		}
 		return new[] { info };
@@ -51,8 +55,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 	}
 
 	record InternalBuildInfo(Narochno.Jenkins.Entities.Builds.BuildInfo? BuildInfo, BuildInfoQuery Query, string? JobName);
-	private async Task<InternalBuildInfo?> GetBuildInfo(BuildInfoQuery buildInfoQuery) {
-		using var client = _factory.Create();
+	private async Task<InternalBuildInfo?> GetBuildInfo(BuildInfoQuery buildInfoQuery, JenkinsClient client) {
 		var buildConfig = buildInfoQuery.BuildConfig;
 		var job = await client.GetJob(buildConfig.Key, default);
 		if (string.IsNullOrEmpty(buildConfig.Branch)) {
@@ -71,14 +74,16 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		return new InternalBuildInfo(branchBuildInfo, buildInfoQuery, branchJobFullName);
 	}
 
-	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(Narochno.Jenkins.Entities.Builds.BuildInfo buildInfo) {
-		if (!buildInfo.ChangeSet.Items.Any()) {
+	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(Narochno.Jenkins.Entities.Builds.BuildInfo buildInfo,
+			JenkinsClient client) {
+		// todo changeset renamed to changesets
+		if (!buildInfo.ChangeSet?.Items.Any() ?? true) {
 			return Array.Empty<VcsChange>();
 		}
 		var res = new List<VcsChange>();
 		foreach (var changeSetItem in buildInfo.ChangeSet.Items) {
 			var modifiedFiles = changeSetItem.Paths.Select(GetFileModification).ToImmutableArray();
-			var userName = await FindUserId(changeSetItem.Author.FullName);
+			var userName = await FindUserId(changeSetItem.Author.FullName, client);
 			// TODO get user email from jenkins
 			var author = new VcsUser(userName, changeSetItem.Author.FullName);
 			var change = new VcsChange(author, changeSetItem.Timestamp.ToDate(),
@@ -88,10 +93,9 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 		return res;
 	}
 
-	private async Task<string> FindUserId(string fullName) {
+	private async Task<string> FindUserId(string fullName, JenkinsClient client) {
 		return await UserNameMap.GetOrAdd(fullName, GetUserIdByName, _factory).ConfigureAwait(false);
-		static async Task<string> GetUserIdByName(string fullName, ClientFactory factory) {
-			using var client = factory.Create();
+		async Task<string> GetUserIdByName(string fullName, ClientFactory factory) {
 			var user = await client.GetUser(fullName, default);
 			return user.Id;
 		}
@@ -110,6 +114,7 @@ public class JenkinsBuildInfoProvider : IBuildInfoProvider
 	private BuildStatus GetStatus(string buildInfoResult) {
 		return buildInfoResult switch {
 			"FAILURE" => BuildStatus.Failed,
+			"UNSTABLE" => BuildStatus.Failed,
 			_ => BuildStatus.Success
 		};
 	}
