@@ -106,6 +106,7 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
+	private ICancelable? _messageToMLActor;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
 		if (_config!.DemoState is null && _buildInfoHistory.Last?.Id.Equals(newInfo.Id) is true) {
@@ -113,7 +114,10 @@ class BuildInfoActor : ReceiveActor
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		_buildInfoHistory.Add(newInfo);
-		_mlActor.Tell(new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self));
+		_messageToMLActor?.Cancel();
+		var mlMsg = new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self);
+		_messageToMLActor = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(3), _mlActor,
+			mlMsg, Self);
 		HandleDiscussion(newInfo);
 		DelayedNotifySubscribers();
 	}
