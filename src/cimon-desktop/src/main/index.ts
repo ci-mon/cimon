@@ -25,6 +25,8 @@ Notifier.ExecutableName = build.notifier_exe_name;
   if (isDev) {
     NotifierWrapper.AppId = process.execPath;
     app.setAppUserModelId(NotifierWrapper.AppId);
+    // if notifications not visible uncomment this and run once
+    // await unRegisterAppId(NotifierWrapper.AppId);
     await registerAppId(NotifierWrapper.AppId);
   } else {
     app.setAppUserModelId(build.appId);

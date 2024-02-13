@@ -11,6 +11,7 @@ interface INotification {
 }
 
 const savedNotifications: Record<string, INotification> = {};
+
 export class NotifierWrapper {
   public static AppId: string = build.appId;
 
