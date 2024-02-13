@@ -51,6 +51,7 @@ export class CimonApp {
   private _mentions: MentionInfo[] = [];
   private _monitorInfo?: MonitorInfo;
   private _updateReady = false;
+  private _isExiting = false;
 
   private _initToken(): Promise<{
     userName: string;
@@ -114,6 +115,7 @@ export class CimonApp {
       autoHideMenuBar: !isDev,
     });
     this._window.on('close', (evt) => {
+      if (this._isExiting) return;
       evt.preventDefault();
       this._window?.hide();
     });
@@ -155,6 +157,7 @@ export class CimonApp {
   }
 
   private _loginPageUrl = '/Login';
+
   private async _onRedirectedToLogin(url: string) {
     if (url.endsWith(this._loginPageUrl)) {
       let windowWasHidden = false;
@@ -379,15 +382,15 @@ export class CimonApp {
         enabled: this._updateReady,
         click: async () => {
           if (this._restartMenuClicked) {
-            app.quit();
+            app.exit();
             return;
           }
           this._restartMenuClicked = true;
           await this._signalR.disconnect();
-          return autoUpdater.quitAndInstall();
+          this.quitAndUpdate();
         },
       },
-      { id: 'exit', label: 'Exit', type: 'normal', click: () => app.exit() },
+      { id: 'exit', label: 'Exit', type: 'normal', click: () => this.quit() },
     ];
     if (this._mentions.length > 0) {
       const submenu: MenuItemConstructorOptions[] = this._mentions.map((mi) => ({
@@ -544,5 +547,19 @@ export class CimonApp {
     const allOk = this._currentState === ConnectionState.Connected && !this._monitorInfo?.failedBuildsCount;
     const image = allOk ? options.icons.green.tray : options.icons.red.tray;
     this._tray.setImage(image);
+  }
+
+  private allowQuit() {
+    this._isExiting = true;
+  }
+
+  public quit() {
+    this.allowQuit();
+    app.quit();
+  }
+
+  public quitAndUpdate() {
+    this.allowQuit();
+    autoUpdater.quitAndInstall();
   }
 }

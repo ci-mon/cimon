@@ -25,8 +25,9 @@ export class AutoUpdater {
           detail: 'A new version has been downloaded. Restart the application to apply the updates.',
         })
         .then((returnValue) => {
-          if (returnValue.response === 0) autoUpdater.quitAndInstall();
-          else updaterLog.info('Update postponed');
+          if (returnValue.response === 0) {
+            cimonApp.quitAndUpdate();
+          } else updaterLog.info('Update postponed');
         });
     });
     autoUpdater.on('error', (message) => {
