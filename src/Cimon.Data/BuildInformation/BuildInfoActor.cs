@@ -66,8 +66,7 @@ class BuildInfoActor : ReceiveActor
 			_commentsCount = state.Comments.Count;
 			NotifySubscribers(_buildInfoHistory.Last);
 		});
-		var buildConfigStream =
-			buildConfigService.BuildConfigs.Select(x => x.FirstOrDefault(c => c.Id == _buildConfigId));
+		var buildConfigStream = buildConfigService.Get(_buildConfigId);
 		Context.Observe(buildConfigStream);
 	}
 
@@ -87,11 +86,15 @@ class BuildInfoActor : ReceiveActor
 
 	private async Task InitBuildConfig(BuildConfigModel config) {
 		try {
+			var mlWasEnabled = _config?.AllowML ?? true;
 			_config = config;
 			_provider = _scope.ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(config.Connector.CISystem);
 			_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
 			_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
 				TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
+			if (_buildInfoHistory.Last is { } buildInfo && !mlWasEnabled) {
+				RunMl(buildInfo);
+			}
 		} catch (Exception e) {
 			_log.Error("Failed to InitBuildConfig", e);
 			Context.Stop(Self);
@@ -114,12 +117,19 @@ class BuildInfoActor : ReceiveActor
 		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		_buildInfoHistory.Add(newInfo);
+		RunMl(newInfo);
+		HandleDiscussion(newInfo);
+		DelayedNotifySubscribers();
+	}
+
+	private void RunMl(BuildInfo newInfo) {
+		if (!_config!.AllowML) {
+			return;
+		}
 		_messageToMLActor?.Cancel();
 		var mlMsg = new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self);
 		_messageToMLActor = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(3), _mlActor,
 			mlMsg, Self);
-		HandleDiscussion(newInfo);
-		DelayedNotifySubscribers();
 	}
 
 	private async Task OnGetBuildInfo(GetBuildInfo _) {

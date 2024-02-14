@@ -1,84 +1,18 @@
-﻿@using Cimon.DB.Models
-@using System.Text.Json
-@using Microsoft.EntityFrameworkCore
-@inherits DbContextComponent<BuildConfigModel>
-@inject DialogService DialogService
+﻿@inject DialogService DialogService
 
-<RadzenButton Text="Add" Icon="add" Click="OnSaveClick" />
-<RadzenTabs SelectedIndex="@_selectedTabIndex" SelectedIndexChanged="@OnTabChanged" class="rz-mt-2">
-    <Tabs>
-        @foreach (var system in _ciSystems) {
-            var tabName = $"{system.CISystem}:{system.Key}";
-            <RadzenTabsItem Text="@tabName" Style="padding: 0">
-                <RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
-                                AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
-                                FilterMode="FilterMode.SimpleWithMenu"
-                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                AllowSorting="true" AllowColumnResize="true"
-                                PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
-                                Data="@Items" TItem="BuildConfigModel" ColumnWidth="200px"
-                                SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@_selectedLocators">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
-                            <HeaderTemplate>
-                                <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
-                            </HeaderTemplate>
-                            <Template Context="data">
-                                <RadzenCheckBox TriState="false" Value="@(_selectedLocators.Contains(data))"
-                                                TValue="bool"/>
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Name" Title="Name"/>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch" />
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status" Width="100px"/>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
-                            <Template Context="item">
-                                <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+<RadzenButton Text="Save" Icon="save" Click="OnSaveClick" />
 
-            </RadzenTabsItem>
-        }
-    </Tabs>
-</RadzenTabs>
-
+<BuildConfigList @ref="_list" SelectedBuildConfigIds="@SelectedBuildConfigIds"></BuildConfigList>
 @code {
-    int _selectedTabIndex;
 
-    private IList<CIConnector> _ciSystems = Array.Empty<CIConnector>();
-    private int CIConnectorId => _ciSystems is {Count:>0} ? _ciSystems[_selectedTabIndex].Id : 0;
-    IList<BuildConfigModel> _selectedLocators = new List<BuildConfigModel>();
+    private BuildConfigList _list = null!;
 
     [Parameter]
     public IEnumerable<int>? SelectedBuildConfigIds { get; set; }
 
-    protected override IQueryable<BuildConfigModel> GetItems() {
-        return DbContext.BuildConfigurations.Include(x => x.Connector)
-            .Where(x => x.Connector.Id == CIConnectorId)
-            .Where(x => SelectedBuildConfigIds == null || !SelectedBuildConfigIds.Contains(x.Id));
-    }
-
-    protected override async Task InitializeReactiveValues() {
-        await base.InitializeReactiveValues();
-        _ciSystems = await DbContext.CIConnectors.ToListAsync();
-    }
-
-    private void OnSelectAllChanged(bool arg) {
-        _selectedLocators = arg ? Items.ToList() : Array.Empty<BuildConfigModel>();
-    }
-
     private void OnSaveClick() {
-        DialogService.Close(_selectedLocators?.Select(x => x.Id));
+        DialogService.Close(_list.SelectedLocators?.Select(x => x.Id));
     }
 
-    private void OnTabChanged(int index) {
-        _selectedTabIndex = index;
-        RefreshItems();
-        StateHasChanged();
-    }
 
 }

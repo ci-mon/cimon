@@ -31,8 +31,10 @@ public class ReactiveRepository<T>
 		_bufferedItems.OnNext(newItem);
 	}
 
-	public async Task Refresh() {
+	public async Task Refresh(bool silent = false) {
 		var data = await _api.LoadData(default);
-		_bufferedItems.OnNext(data);
+		if (!silent) {
+			_bufferedItems.OnNext(data);
+		}
 	}
 }

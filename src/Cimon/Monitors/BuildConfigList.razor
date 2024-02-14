@@ -1,0 +1,112 @@
+﻿@using Cimon.DB.Models
+@using System.Text.Json
+@using Cimon.Data.CIConnectors
+@using Microsoft.EntityFrameworkCore
+@inherits DbContextComponent<BuildConfigModel>
+@inject BuildConfigService BuildConfigService
+
+<RadzenTabs SelectedIndex="@_selectedTabIndex" SelectedIndexChanged="@OnTabChanged" class="rz-mt-2">
+    <Tabs>
+        @foreach (var system in _ciSystems) {
+            var tabName = $"{system.CISystem}:{system.Key}";
+            <RadzenTabsItem Text="@tabName" Style="padding: 0">
+                <RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
+                                AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                FilterMode="FilterMode.SimpleWithMenu"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowSorting="true" AllowColumnResize="true"
+                                PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
+                                Data="@Items" TItem="BuildConfigModel" ColumnWidth="200px"
+                                SelectionMode="DataGridSelectionMode.Multiple">
+                    <Columns>
+                        <RadzenDataGridColumn Visible="@(!DisableSelection)" TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
+                            <HeaderTemplate>
+                                <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
+                            </HeaderTemplate>
+                            <Template Context="data">
+                                <RadzenCheckBox TriState="false" Value="@(SelectedLocators.Contains(data))"
+                                                TValue="bool"/>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Name" Title="Name"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status" Width="100px"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
+                            <Template Context="item">
+                                <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Title="Allow ML" Width="60px" Sortable="false" Filterable="false">
+                            <Template Context="data">
+                                <AuthorizeView Roles="admin">
+                                    <RadzenSwitch Value="@(data.AllowML)" TValue="bool" ValueChanged="@((value) => OnChangeAllowMl(value, data))"/>
+                                </AuthorizeView>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                    </Columns>
+                </RadzenDataGrid>
+
+            </RadzenTabsItem>
+        }
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int _selectedTabIndex;
+
+    private IList<CIConnector> _ciSystems = Array.Empty<CIConnector>();
+    private CIConnector? _ciConnector;
+    private int CIConnectorId => _ciSystems is { Count: > 0 } ? _ciSystems[_selectedTabIndex].Id : 0;
+
+    [Parameter] public IList<BuildConfigModel> SelectedLocators { get; set; } = new List<BuildConfigModel>();
+
+    [Parameter] public IEnumerable<int>? SelectedBuildConfigIds { get; set; }
+
+    [Parameter] public bool DisableSelection { get; set; }
+
+    [Parameter]
+    public CIConnector? CIConnector {
+        get => _ciConnector;
+        set {
+            var old = _ciConnector;
+            _ciConnector = value;
+            if (old is { }) {
+                RefreshItems();
+            }
+        }
+    }
+
+    protected override IQueryable<BuildConfigModel> GetItems() {
+        return DbContext.BuildConfigurations.Include(x => x.Connector)
+            .Where(x => x.Connector.Id == CIConnectorId)
+            .Where(x => SelectedBuildConfigIds == null || !SelectedBuildConfigIds.Contains(x.Id));
+    }
+
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        if (CIConnector is { }) {
+            _ciSystems = new[] { CIConnector };
+        } else {
+            _ciSystems = await DbContext.CIConnectors.ToListAsync();
+        }
+    }
+
+    private void OnSelectAllChanged(bool arg) {
+        SelectedLocators = arg ? Items.ToList() : Array.Empty<BuildConfigModel>();
+    }
+
+    private void OnTabChanged(int index) {
+        _selectedTabIndex = index;
+        RefreshItems();
+        StateHasChanged();
+    }
+
+    private async Task OnChangeAllowMl(bool value, BuildConfigModel data) {
+        data.AllowML = value;
+        await BuildConfigService.Edit(data.Id, x => x.AllowML = value);
+    }
+
+}

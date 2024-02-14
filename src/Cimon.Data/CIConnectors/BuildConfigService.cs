@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
@@ -7,6 +8,7 @@ using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
 using Optional;
 
@@ -25,11 +27,20 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		_state = new ReactiveRepository<IImmutableList<BuildConfigModel>>(this);
 	}
 
+	private readonly Subject<BuildConfigModel> _singleItemsChanges = new();
 	public IObservable<IImmutableList<BuildConfigModel>> BuildConfigs => _state.Items;
+	public IObservable<BuildConfigModel> Get(int id) => _singleItemsChanges
+		.Merge(_state.Items.SelectMany(x => x))
+		.Where(x => x.Id == id);
+
 	public async Task<IImmutableList<BuildConfigModel>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
-		var result = await ctx.BuildConfigurations.Include(x => x.Connector).ToListAsync(cancellationToken: token);
+		var result = await ConfigureItems(ctx).ToListAsync(cancellationToken: token);
 		return result.ToImmutableList();
+	}
+
+	private static IIncludableQueryable<BuildConfigModel, CIConnector> ConfigureItems(CimonDbContext ctx) {
+		return ctx.BuildConfigurations.Include(x => x.Connector);
 	}
 
 	private readonly ConcurrentDictionary<int, ReplaySubject<Option<int>>> _refreshProgress = new();
@@ -73,6 +84,16 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		var settings = settingsInDb.ToDictionary(x => x.Key, x => x.Value);
 		var ciConnectorInfo = new CIConnectorInfo(connector.Key, settings);
 		return ciConnectorInfo;
+	}
+
+	public async Task Edit(int id, Action<BuildConfigModel> editAction) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		var item = await ConfigureItems(ctx).FirstOrDefaultAsync(x => x.Id == id);
+		if (item is null) return;
+		editAction(item);
+		await ctx.SaveChangesAsync();
+		await _state.Refresh(true);
+		_singleItemsChanges.OnNext(item);
 	}
 
 	private static async Task Synchronize(CIConnector connector, IReadOnlyCollection<BuildConfig> newItems, ReplaySubject<Option<int>> progress,

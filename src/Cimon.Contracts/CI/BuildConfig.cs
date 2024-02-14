@@ -10,6 +10,7 @@ public record BuildConfig
 	public string? Branch { get; init; }
 	public string? Name { get; init; }
 	public bool IsDefaultBranch { get; init; }
+	public bool AllowML { get; set; } = true;
 	public bool IsSame(BuildConfig? other) {
 		return Key == other?.Key && Branch == other.Branch;
 	}

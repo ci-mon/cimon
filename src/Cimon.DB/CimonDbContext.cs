@@ -37,5 +37,6 @@ public class CimonDbContext : DbContext
 		modelBuilder.Entity<BuildConfigModel>().Property(x => x.DemoState).HasJsonConversion(Database.ProviderName);
 		modelBuilder.Entity<Team>().HasMany(x => x.ChildTeams).WithMany();
 		modelBuilder.Entity<BuildInMonitor>().HasKey(x => new { x.MonitorId, x.BuildConfigId });
+		modelBuilder.Entity<BuildConfigModel>().Property(x => x.AllowML).HasDefaultValue(true);
 	}
 }

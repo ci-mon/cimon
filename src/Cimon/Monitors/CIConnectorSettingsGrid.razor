@@ -64,7 +64,10 @@
 @code {
     private CIConnector? _connector;
     private ReactiveValue<Option<int>> _progress;
-    private ReactiveValue<int> _loadedConfigurationsCount; 
+    private ReactiveValue<int> _loadedConfigurationsCount;
+
+    [Parameter]
+    public EventCallback<EventArgs> Synchronized { get; set; }
 
     [Parameter]
     public CIConnector? Connector {
@@ -96,6 +99,7 @@
         StateHasChanged();
         try {
             await BuildConfigService.RefreshBuildConfigs(Connector!);
+            await Synchronized.InvokeAsync();
         }  catch (Exception e) {
             NotificationService.Notify(new NotificationMessage() {
                 Summary = e.Message,

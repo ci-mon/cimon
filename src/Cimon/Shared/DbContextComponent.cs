@@ -29,6 +29,8 @@ public class DbContextComponent<TItem> : ReactiveComponent where TItem : class, 
 		Items = GetItems();
 	}
 
+	public void Refresh() => RefreshItems();
+
 	protected virtual IQueryable<TItem> GetItems() {
 		return DbContext.Set<TItem>();
 	}

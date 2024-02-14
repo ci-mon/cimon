@@ -1,6 +1,6 @@
 ﻿@page "/SetupCIConnectors"
 @inherits DbContextComponent<Cimon.DB.Models.CIConnector>;
-@attribute [Authorize(Roles = "monitor-editor")]
+@attribute [Authorize(Roles = "admin")]
 @inject IMediator Mediator
 
 @using Cimon.DB.Models
@@ -66,15 +66,16 @@
             </RadzenDataGrid>
             <RadzenStack Orientation="Orientation.Vertical" class="col-md-6"
                          Visible="@(SelectedConnector is not null)">
-                <CIConnectorSettingsGrid Connector="SelectedConnector"></CIConnectorSettingsGrid>
+                <CIConnectorSettingsGrid Connector="SelectedConnector" Synchronized="() => _buildConfigList.Refresh()"></CIConnectorSettingsGrid>
             </RadzenStack>
         </RadzenStack>
 
     </RadzenStack>
-
+    <BuildConfigList @ref="_buildConfigList" DisableSelection="true" CIConnector="@SelectedConnector"></BuildConfigList>
 </RadzenPanel>
 
 @code{
+    private BuildConfigList _buildConfigList;
     private IList<CIConnector> _selectedConnectors = new List<CIConnector>();
 
     private IList<CIConnector> SelectedConnectors {
