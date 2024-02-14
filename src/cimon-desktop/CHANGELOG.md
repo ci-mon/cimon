@@ -1,7 +1,8 @@
 # cimon-desktop changelog
 
 ## 1.0.12
-1. [bug] Restart button is not working after autoupdate occured
+1. [bug] Restart button is not working after autoupdate occurred
+2. [bug] `Escape` button stolen by cimon
 
 ## 1.0.11
 1. login window fixes

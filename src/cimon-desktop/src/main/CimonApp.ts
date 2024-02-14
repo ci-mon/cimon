@@ -1,4 +1,3 @@
-import * as electron from 'electron';
 import {
   app,
   autoUpdater,
@@ -129,6 +128,7 @@ export class CimonApp {
     this._window.on('hide', () => {
       this._updateContextMenuVisibility();
     });
+    this._hideWindowOnEsc(this._window);
     this._window.webContents.on('will-navigate', async (e, url) => {
       if (this._getIsDiscussionUrl(url)) {
         e.preventDefault();
@@ -233,6 +233,7 @@ export class CimonApp {
         minimizable: false,
         maximizable: false,
       });
+      this._hideWindowOnEsc(this._loginWindow);
     }
     await this._loginWindow.loadURL(options.baseUrl + this._loginPageUrl);
     this._loginWindow.center();
@@ -255,26 +256,27 @@ export class CimonApp {
         modal: true,
         parent: this._window,
       });
-    }
-    this._discussionWindow.on('closed', () => {
-      this._discussionWindow = undefined;
-    });
-    this._discussionWindow.webContents.on('will-navigate', async (e, url) => {
-      e.preventDefault();
-      if (this._getIsDiscussionUrl(url)) {
-        await this._discussionWindow?.loadURL(url);
-        return;
-      }
-      await shell.openExternal(url);
-    });
-    this._discussionWindow.webContents.setWindowOpenHandler(({ url }) => {
-      if (this._getIsDiscussionUrl(url)) {
-        this._discussionWindow?.loadURL(url);
+      this._hideWindowOnEsc(this._discussionWindow);
+      this._discussionWindow.on('closed', () => {
+        this._discussionWindow = undefined;
+      });
+      this._discussionWindow.webContents.on('will-navigate', async (e, url) => {
+        e.preventDefault();
+        if (this._getIsDiscussionUrl(url)) {
+          await this._discussionWindow?.loadURL(url);
+          return;
+        }
+        await shell.openExternal(url);
+      });
+      this._discussionWindow.webContents.setWindowOpenHandler(({ url }) => {
+        if (this._getIsDiscussionUrl(url)) {
+          this._discussionWindow?.loadURL(url);
+          return { action: 'deny' };
+        }
+        shell.openExternal(url);
         return { action: 'deny' };
-      }
-      shell.openExternal(url);
-      return { action: 'deny' };
-    });
+      });
+    }
     await this._discussionWindow.loadURL(options.baseUrl + url);
     this._discussionWindow.show();
   }
@@ -346,7 +348,6 @@ export class CimonApp {
     this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
     this._signalR.onMonitorInfoChanged = this._onMonitorInfoChanged.bind(this);
     await this._startSignalR();
-    this._subscribeForKeyboardShortcuts();
   }
 
   private _restartMenuClicked = false;
@@ -528,18 +529,15 @@ export class CimonApp {
     this._rebuildMenu();
   }
 
-  private _tryHideWindow(window?: Electron.CrossProcessExports.BrowserWindow) {
+  private _hideWindowOnEsc(window?: Electron.CrossProcessExports.BrowserWindow) {
     if (!window || window.isDestroyed()) return;
-    if (window.isVisible() && window.isFocused()) {
-      window.hide();
-    }
-  }
-
-  private _subscribeForKeyboardShortcuts() {
-    electron.globalShortcut.register('Escape', () => {
-      this._tryHideWindow(this._discussionWindow);
-      this._tryHideWindow(this._loginWindow);
-      this._tryHideWindow(this._window);
+    window.webContents.on('input-event', (event, input: Electron.InputEvent) => {
+      if (input.type == 'rawKeyDown' && input['key'] === 'Escape') {
+        if (window.isVisible()) {
+          window.hide();
+          event.preventDefault();
+        }
+      }
     });
   }
 
