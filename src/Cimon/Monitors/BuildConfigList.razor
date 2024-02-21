@@ -17,7 +17,7 @@
                                 AllowSorting="true" AllowColumnResize="true"
                                 PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
                                 Data="@Items" TItem="BuildConfigModel" ColumnWidth="200px"
-                                SelectionMode="DataGridSelectionMode.Multiple">
+                                SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@SelectedLocators">
                     <Columns>
                         <RadzenDataGridColumn Visible="@(!DisableSelection)" TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
                             <HeaderTemplate>
