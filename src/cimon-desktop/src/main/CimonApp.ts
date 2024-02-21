@@ -241,7 +241,7 @@ export class CimonApp {
   }
 
   private async _onOpenDiscussionWindow(url: string) {
-    if (this._discussionWindow == null) {
+    if (!this._discussionWindow) {
       this._discussionWindow = new BrowserWindow({
         webPreferences: {
           session: this._session,
@@ -256,9 +256,9 @@ export class CimonApp {
         modal: true,
         parent: this._window,
       });
-      this._hideWindowOnEsc(this._discussionWindow);
+      this._hideWindowOnEsc(this._discussionWindow, 'close');
       this._discussionWindow.on('closed', () => {
-        this._discussionWindow = undefined;
+        delete this._discussionWindow;
       });
       this._discussionWindow.webContents.on('will-navigate', async (e, url) => {
         e.preventDefault();
@@ -529,12 +529,16 @@ export class CimonApp {
     this._rebuildMenu();
   }
 
-  private _hideWindowOnEsc(window?: Electron.CrossProcessExports.BrowserWindow) {
+  private _hideWindowOnEsc(window?: Electron.CrossProcessExports.BrowserWindow, action?: 'hide' | 'close') {
     if (!window || window.isDestroyed()) return;
     window.webContents.on('input-event', (event, input: Electron.InputEvent) => {
       if (input.type == 'rawKeyDown' && input['key'] === 'Escape') {
         if (window.isVisible()) {
-          window.hide();
+          if (action === 'close'){
+            window.close();
+          } else {
+            window.hide();
+          }
           event.preventDefault();
         }
       }

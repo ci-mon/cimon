@@ -1,7 +1,7 @@
 {
   "name": "cimon-desktop",
   "productName": "cimon-desktop",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "desktop client for ci monitoring tool",
   "main": "./dist/main/index.js",
   "keywords": [],
@@ -27,7 +27,7 @@
     "package": "npm run build && electron-forge package",
     "make": "npm run build && electron-forge make",
     "make:mac": "npm run build && electron-forge make -- --platform=darwin",
-    "publish": "npm run build && electron-forge publish",
+    "publish": "npm i && npm run build && electron-forge publish",
     "build": "npm run typecheck && electron-vite build"
   },
   "dependencies": {
