@@ -9,5 +9,11 @@
     <ItemGroup>
       <ProjectReference Include="..\Cimon.DB\Cimon.DB.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <SonarQubeSetting Include="sonar.exclusions">
+            <Value>Migrations/**/*.*</Value>
+        </SonarQubeSetting>
+    </ItemGroup>
 
 </Project>
