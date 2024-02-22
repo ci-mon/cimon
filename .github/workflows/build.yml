@@ -14,6 +14,9 @@ jobs:
         with:
           fetch-depth: '0'
       - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
       - name: SonarScanner for .NET 8 with pull request decoration support
         uses: highbyte/sonarscan-dotnet@v2.3.1
         with:
