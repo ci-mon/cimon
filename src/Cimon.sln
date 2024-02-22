@@ -30,8 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Build", "build\Build.csproj
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{FBB2DA39-3FFB-44C6-BCCC-C51E99ED7A80}"
 	ProjectSection(SolutionItems) = preProject
-		..\.sonarcloud.properties = ..\.sonarcloud.properties
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
+		..\sonar-project.properties = ..\sonar-project.properties
 	EndProjectSection
 EndProject
 Global
