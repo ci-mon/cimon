@@ -16,7 +16,7 @@ jobs:
           sonarProjectKey: ci-mon_cimon
           sonarProjectName: cimon
           sonarOrganization: ci-mon
-          dotnetBuildArguments: ./src
+          dotnetBuildArguments: ./src/Cimon.sln
           dotnetDisableTests: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
