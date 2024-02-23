@@ -181,7 +181,7 @@ public class DiscussionActor : ReceiveActor
 		var users = buildInfo.Changes.Select(x=>x.Author).Distinct();
 		var values = users.Select(u => GetUserMention(u.Name, u.FullName)).ToArray();
 		var message = values.Any() ? $"Build failed by: {string.Join(", ", values)}" : "Who failed the build?";
-		return $"<p>{message}</p>";;
+		return $"<p>{message}</p>";
 	}
 	
 	private async Task OpenDiscussion(BuildInfo buildInfo) {
