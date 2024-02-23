@@ -216,9 +216,9 @@ public class UserManager : ITechnicalUsers
 	
 	public User MonitoringBot { get; } = User.Create("monitoring.bot", "Monitoring bot", -2);
 
-	public async Task SaveLastViewedMonitorId(UserName name, string monitorId) {
+	public async Task SaveLastViewedMonitorId(UserName name, string? monitorId) {
 		await EditUser(name, user => {
-			if (monitorId.Equals(user.DefaultMonitorId, StringComparison.OrdinalIgnoreCase)) {
+			if (user.DefaultMonitorId?.Equals(monitorId, StringComparison.OrdinalIgnoreCase) == true) {
 				return false;
 			}
 			user.DefaultMonitorId = monitorId;

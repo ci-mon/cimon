@@ -5,7 +5,7 @@ using MediatR;
 namespace Cimon.Data.Users;
 
 
-public record MonitorOpenedNotification(User User, string MonitorId) : INotification;
+public record MonitorOpenedNotification(User User, string? MonitorId) : INotification;
 
 public record GetDefaultMonitorRequest(User User) : IRequest<string?>, IRequest;
 

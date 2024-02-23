@@ -53,7 +53,7 @@ public static class ActorsApi
 	public record UnSubscribeOnMentions(User User) : UserMessage<User>(User.Name.Name, User);
 	public record SubscribeToMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
 	public record UnSubscribeFromMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
-	public record UpdateLastMonitor(User User, string MonitorId) : UserMessage<User>(User.Name.Name, User);
+	public record UpdateLastMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
 
 	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
 			this BuildConfigService buildConfigService, User user) {
