@@ -111,7 +111,7 @@ public class DiscussionActor : ReceiveActor
 	
 	private string ExtractText(BuildComment comment) {
 		var context = BrowsingContext.New(Configuration.Default);
-		var parser = context.GetService<IHtmlParser>() ?? throw new Exception("Can't get parser");
+		var parser = context.GetService<IHtmlParser>() ?? throw new InvalidOperationException("Can't get parser");
 		var document = parser.ParseDocument(comment.Comment);
 		return document.DocumentElement.TextContent;
 	}
@@ -179,7 +179,7 @@ public class DiscussionActor : ReceiveActor
 	}
 	private string BuildCommentMessage(BuildInfo buildInfo) {
 		var users = buildInfo.Changes.Select(x=>x.Author).Distinct();
-		var values = users?.Select(u => GetUserMention(u.Name, u.FullName)).ToArray() ?? new[] { "somebody" };
+		var values = users.Select(u => GetUserMention(u.Name, u.FullName)).ToArray();
 		var message = values.Any() ? $"Build failed by: {string.Join(", ", values)}" : "Who failed the build?";
 		return $"<p>{message}</p>";;
 	}
