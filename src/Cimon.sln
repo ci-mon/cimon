@@ -31,6 +31,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{FBB2DA39-3FFB-44C6-BCCC-C51E99ED7A80}"
 	ProjectSection(SolutionItems) = preProject
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
+		..\readme.md = ..\readme.md
 	EndProjectSection
 EndProject
 Global
