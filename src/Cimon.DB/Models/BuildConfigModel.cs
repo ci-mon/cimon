@@ -25,6 +25,5 @@ public record BuildConfigModel : BuildConfig, IEntityCreator<BuildConfigModel>
 	public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), Connector.Id);
 	public virtual bool Equals(BuildConfigModel? other) =>
 		(other?.Connector.Id.Equals(Connector.Id) ?? false) && base.Equals(other);
-	public Dictionary<string, string> Props { get; set; }
 
 }
