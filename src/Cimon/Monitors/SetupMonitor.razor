@@ -11,23 +11,22 @@
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
 <RadzenCard Visible="_monitor.HasValue">
-    <RadzenButton Text="Close" Icon="close" Click="Close"/>
-    <RadzenButton Text="Save" Icon="save" Click="Save"/>
+    <RadzenButton data-qa="close" Text="Close" Icon="close" Click="Close"/>
+    <RadzenButton data-qa="save" Text="Save" Icon="save" Click="Save"/>
     <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
     <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
         <RadzenStack Orientation="Orientation.Vertical">
             <RadzenFormField Text="Title" >
-               <RadzenTextBox @bind-Value="@Monitor.Title" class="w-100"/>
+               <RadzenTextBox aria-label="edit-title" @bind-Value="@Monitor.Title" class="w-100"/>
             </RadzenFormField>
             <RadzenStack Orientation="Orientation.Horizontal">
                 <RadzenLabel Text="Share with others:" />
-                <RadzenSwitch @bind-Value="@Monitor.Shared" InputAttributes="@(new Dictionary<string, object>() { { "aria-label", "Switch value" } })"/>
+                <RadzenSwitch @bind-Value="@Monitor.Shared" Attributes="@(new Dictionary<string, object>{{"aria-label","edit-share"}})"/>
             </RadzenStack>
-           
         </RadzenStack>
     </RadzenCard>
-    <RadzenButton Text="Add" Icon="add" Click="Add"/>
-    <RadzenButton Text="Remove" Icon="remove" Click="Remove"/>
+    <RadzenButton data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
+    <RadzenButton data-qa="rm-build-config" Text="Remove" Icon="remove" Click="Remove"/>
 </RadzenCard>
 <RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
                 AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"

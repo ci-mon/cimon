@@ -1,8 +1,10 @@
 ﻿@inject DialogService DialogService
 
-<RadzenButton Text="Save" Icon="save" Click="OnSaveClick" />
-
-<BuildConfigList @ref="_list" SelectedBuildConfigIds="@SelectedBuildConfigIds"></BuildConfigList>
+<div data-qa="build-config-dialog">
+    <RadzenButton aria-label="save-build-configs" Text="Save" Icon="save" Click="OnSaveClick" />
+    
+    <BuildConfigList @ref="_list" SelectedBuildConfigIds="@SelectedBuildConfigIds"></BuildConfigList>
+</div>
 @code {
 
     private BuildConfigList _list = null!;

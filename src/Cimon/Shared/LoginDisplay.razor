@@ -9,10 +9,10 @@
         <ProfileComponent />
     </Authorized>
     <NotAuthorized>
-        <RadzenMenu >
+        <RadzenMenu aria-label="login-menu">
             <RadzenMenuItem Text="Login" Icon="login">
                 <RadzenMenuItem Icon="login" Text="Auto" Path="/auth/autologin?returnUrl=/"></RadzenMenuItem>
-                <RadzenMenuItem Icon="password"
+                <RadzenMenuItem aria-label="login-via-password" Icon="password"
                                 Text="Password"
                                 Path="/Login"></RadzenMenuItem>
             </RadzenMenuItem>

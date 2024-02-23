@@ -2,11 +2,13 @@
 @using Cimon.Data.Monitors
 @using Cimon.Data.Users
 @using Cimon.DB.Models
+@using MediatR
 @using Microsoft.AspNetCore.Http.Extensions
 @using User = Cimon.Contracts.User
 @inject ICurrentUserAccessor CurrentUserAccessor 
 @inject MonitorService MonitorService
-@inject NavigationManager NavigationManager 
+@inject NavigationManager NavigationManager
+@inject IMediator Mediator; 
 @inherits ReactiveComponent
 
 <RadzenCard class="rz-mt-4 main-panel">
@@ -19,14 +21,14 @@
                 </RadzenRow>
                 <div>
                     <RadzenRow>
-                        <RadzenText TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
+                        <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                     </RadzenRow>
                     <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
                         <AuthorizeView Policy="EditMonitor" Resource="monitor">
-                            <RadzenButton Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
-                            <RadzenButton Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
+                            <RadzenButton data-qa="remove" Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
+                            <RadzenButton data-qa="setup" Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
                         </AuthorizeView>
-                        <RadzenButton Variant="Variant.Text" Text="Open" Click="() => ViewMonitor(monitor)"/>
+                        <RadzenButton data-qa="view" Variant="Variant.Text" Text="Open" Click="() => ViewMonitor(monitor)"/>
                     </RadzenRow>
                 </div>
             </RadzenCard>
@@ -36,7 +38,7 @@
 </RadzenCard>
 <RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
     <AuthorizeView>
-        <RadzenButton Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
+        <RadzenButton aria-label="add-monitor" Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
     </AuthorizeView>
 </RadzenStack>
 <style>
@@ -107,6 +109,7 @@
     }
 
     private async Task Remove(MonitorModel monitor) {
+        await Mediator.Publish(new MonitorOpenedNotification(_user!, null));
         await MonitorService.Remove(monitor);
     }
 

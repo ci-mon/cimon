@@ -21,21 +21,25 @@
                     <Columns>
                         <RadzenDataGridColumn Visible="@(!DisableSelection)" TItem="BuildConfigModel" Width="60px" Sortable="false" Filterable="false">
                             <HeaderTemplate>
-                                <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
+                                <RadzenCheckBox aria-label="select-all" TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
                             </HeaderTemplate>
                             <Template Context="data">
                                 <RadzenCheckBox TriState="false" Value="@(SelectedLocators.Contains(data))"
                                                 TValue="bool"/>
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key"/>
+                        <RadzenDataGridColumn TItem="BuildConfigModel" Property="Key" Title="Key">
+                            <Template Context="item">
+                                <span data-qa="key">@item.Key</span>
+                            </Template>
+                        </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Property="Name" Title="Name"/>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Property="Branch" Title="Branch"/>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Property="IsDefaultBranch" Title="IsDefaultBranch"/>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Property="Status" Title="Status" Width="100px"/>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Title="Props">
                             <Template Context="item">
-                                <RadzenText>@JsonSerializer.Serialize(item.Props)</RadzenText>
+                                <span>@JsonSerializer.Serialize(item.Props)</span>
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="BuildConfigModel" Title="Allow ML" Width="60px" Sortable="false" Filterable="false">
