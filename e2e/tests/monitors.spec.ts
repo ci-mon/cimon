@@ -1,7 +1,7 @@
 import {expect, test} from "@playwright/test";
 import {authAsUser} from "./auth";
 
-authAsUser(null);
+authAsUser();
 test.beforeEach(async ({page}) => {
     await page.goto('/');
 });
@@ -23,13 +23,15 @@ test('add monitor', async ({page}) => {
     await page.getByTestId('add-build-config').click();
     const dialog = page.getByTestId('build-config-dialog');
     await expect(dialog).toBeVisible();
-    //await page.getByRole('tablist').getByText('Demo:demo_main').click();
-    await dialog.getByTestId('key').getByText('Unit', {exact: true}).click();
-    await dialog.getByTestId('key').getByText('Integration (MSSQL)').click();
+    const demoTab = page.getByRole('tablist').getByLabel('demo_main').getByRole('tab');
+    await demoTab.click();
+    await dialog.getByTestId('key').getByText('Cake_CakeMaster').click();
+    await dialog.getByTestId('key').getByText('app.scope2.app3').click();
     await dialog.getByLabel('save-build-configs').click();
     await expect(dialog).not.toBeVisible();
     await page.getByTestId('add-build-config').click();
     await expect(dialog).toBeVisible();
+    await demoTab.click();
     await dialog.getByLabel('select-all').click();
     await dialog.getByLabel('save-build-configs').click();
     await expect(dialog).not.toBeVisible();
@@ -40,7 +42,7 @@ test('add monitor', async ({page}) => {
     await card.getByTestId('view').click();
     await page.waitForURL(/monitor/);
     await expect(page.locator('.monitor .build-info-item').getByTestId('build-info-name')
-        .getByText('Unit', {exact: true})).toBeVisible({timeout: 15000});
+        .getByText('Cake Develop')).toBeVisible({timeout: 15000});
     await expect(page.locator('.monitor .build-info-item.failed.with-committers')
         .getByText('Integration (PostgreSQL)', {exact: true})).toBeVisible({timeout: 15000});
     await page.getByLabel('monitor-list').click();

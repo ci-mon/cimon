@@ -74,18 +74,18 @@ public class DbInitializer
 				allEditorRole.Entity
 			}
 		});
-		var teamcityConnector = await context.AddAsync(new CIConnector {
+		await context.AddAsync(new CIConnector {
 			Key = "teamcity_main",
 			CISystem = CISystem.TeamCity
 		});
-		var jenkinsConnector = await context.AddAsync(new CIConnector {
+		await context.AddAsync(new CIConnector {
 			Key = "jenkins_main",
 			CISystem = CISystem.Jenkins
 		});
 		if (!_options.UseTestData) {
 			return;
 		}
-		await context.AddAsync(new CIConnector {
+		var demoConnector = await context.AddAsync(new CIConnector {
 			Key = "demo_main",
 			CISystem = CISystem.Demo
 		});
@@ -96,53 +96,52 @@ public class DbInitializer
 			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
 			Teams = { adminTeam.Entity }
 		});
-		await InitDemoMonitors(context, teamcityConnector, jenkinsConnector);
+		await InitDemoMonitors(context, demoConnector);
 	}
 
-	private static async Task InitDemoMonitors(CimonDbContext context, EntityEntry<CIConnector> teamcityConnector,
-			EntityEntry<CIConnector> jenkinsConnector) {
-		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "BpmsPlatformWorkDiagnostic") {
+	private static async Task InitDemoMonitors(CimonDbContext context, EntityEntry<CIConnector> demoConnector) {
+		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Cake_CakeMaster") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=BpmsPlatformWorkDiagnostic&tab=buildTypeStatusDiv",
-				Group = "Team Diagnostics",
-				Name = "BpmsPlatformWorkDiagnostic",
-				Id = "8.1.0.0",
+				Url = "https://teamcity.jetbrains.com/buildConfiguration/Cake_CakeMaster/4486115",
+				Group = "Cake",
+				Name = "Cake Develop",
+				Id = "42",
 				StatusText = "Tests passed: 339, ignored: 10, muted: 2",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 			}
 		});
-		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit") {
+		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "TeamCityPluginsByJetBrains_NUnitTeamCity_NUnitIntegration") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
-				Group = "Core",
-				Name = "Unit",
-				Id = "8.1.0.0 ",
+				Url = "https://teamcity.jetbrains.com/buildConfiguration/TeamCityPluginsByJetBrains_NUnitTeamCity_NUnitIntegration/4342886",
+				Group = "Unit",
+				Name = "NUnit Integration",
+				Id = "42 ",
 				StatusText = "Tests passed: 23760, ignored: 31, muted: 3",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 			}
 		});
-		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Unit (.Net 6)") {
+		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Unit (.Net 6)") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Url = "https://teamcity.jetbrains.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
 				Group = "Core",
 				Name = "Unit (.Net 6)",
-				Id = "8.1.0.0 ",
+				Id = "42 ",
 				StatusText = "Tests passed: 21343, ignored: 384, muted: 4",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 			}
 		});
-		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (MSSQL)") {
+		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (MSSQL)") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Url = "https://teamcity.jetbrains.com/viewType.html?buildTypeId=int_tests&tab=buildTypeStatusDiv",
 				Group = "Core",
 				Name = "Integration (MSSQL)",
-				Id = "8.1.0.610 ProductBase Softkey ENU",
+				Id = "42",
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
@@ -153,12 +152,12 @@ public class DbInitializer
 				new VcsChange(new VcsUser($"test{i}", $"Test {i}", $"user{i}@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.ToArray();
-		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (PostgreSQL)") {
+		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (PostgreSQL)") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Url = "https://teamcity.jetbrains.com/viewType.html?buildTypeId=tests&tab=buildTypeStatusDiv",
 				Group = "Core",
 				Name = "Integration (PostgreSQL)",
-				Id = "8.1.0.610 ProductBase Softkey ENU",
+				Id = "42",
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
@@ -168,36 +167,36 @@ public class DbInitializer
 				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
 			}
 		});
-		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(teamcityConnector.Entity, "Integration (Oracle)") {
+		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (Oracle)") {
 			DemoState = new BuildInfo {
-				Url = "https://teamcity-rnd.bpmonline.com/viewType.html?buildTypeId=ContinuousIntegration_UnitTest_780_PreCommitUnitTest&tab=buildTypeStatusDiv",
+				Url = "https://teamcity.jetbrains.com/viewType.html?buildTypeId=oracle_tests&tab=buildTypeStatusDiv",
 				Group = "Core",
 				Name ="Integration (Oracle)",
-				Id = "8.1.0.601 ProductBase Softkey ENU",
+				Id = "42",
 				StatusText = "Tests passed: 1710, ignored: 55, muted: 7",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 			}
 		});
-		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.shell") {
+		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "app.scope1.app1") {
 			DemoState = new BuildInfo {
-				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.shell/job/master/4850/",
+				Url = "https://localhost:8080/job/app.scope1.app1/job/master/4850/",
 				Group = "Core",
-				Name = "app.studio-enterprise.shell",
-				Id = "",
+				Name = "app.scope1.app1",
+				Id = "1",
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				Changes = manyChanges,
 			}
 		});
-		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.schema-view") {
+		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "jen_proj2") {
 			DemoState = new BuildInfo {
-				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Url = "https://localhost:8080/job/jen_proj2/job/master/9248/",
 				Group = "Core",
-				Name = "app.studio-enterprise.schema-view",
-				Id = "",
+				Name = "jen_proj2",
+				Id = "2",
 				Status = BuildStatus.Failed,
 				BranchName = "",
 				Changes = new[] {
@@ -206,12 +205,12 @@ public class DbInitializer
 				},
 			}
 		});
-		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "app.studio-enterprise.process-designer") {
+		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "app.scope2.app3") {
 			DemoState = new BuildInfo {
-				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Url = "https://localhost:8080/job/app.scope2.schema-view/job/master/9248/",
 				Group = "Core",
-				Name = "app.studio-enterprise.process-designer",
-				Id = "",
+				Name = "app.scope2.app3",
+				Id = "3",
 				Status = BuildStatus.Success,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
@@ -221,15 +220,16 @@ public class DbInitializer
 				},
 			}
 		});
-		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(jenkinsConnector.Entity, "lib.studio-enterprise.process") {
+		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "lib.scope2.app4") {
 			DemoState = new BuildInfo {
-				Url = "https://ts1-infr-jenkins.bpmonline.com/job/app.studio-enterprise.schema-view/job/master/9248/",
+				Url = "https://localhost:8080/job/app.scope2.schema-view/job/master/9248/",
 				Group = "Core",
-				Name = "lib.studio-enterprise.process",
-				Id = "",
+				Name = "lib.scope2.app4",
+				Id = "4",
 				Status = BuildStatus.Success,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
+				StatusText = "something works, something not (not stable)",
 				Changes = new[] {
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
@@ -250,6 +250,7 @@ public class DbInitializer
 		var mon1 = await context.Monitors.AddAsync(new Monitor() {
 			Key = "Test 1",
 			Title = "Test mon 1",
+			Shared = true
 		});
 		await AddBuildsToMonitor(mon1.Entity, 
 			buildConfig1.Entity,
@@ -261,17 +262,15 @@ public class DbInitializer
 		var mon2 = await context.Monitors.AddAsync(new Monitor() {
 			Key = "All",
 			Title = "All",
-			Builds = {
-				
-			}
+			Shared = true
 		});
 		await AddBuildsToMonitor(mon2.Entity, 
 			buildConfig1.Entity, 
 			buildConfig2.Entity, 
-			buildConfig3.Entity, 
-			buildConfig4.Entity, 
-			buildConfig5.Entity, 
-			buildConfig6.Entity, 
+			buildConfig3.Entity,
+			buildConfig4.Entity,
+			buildConfig5.Entity,
+			buildConfig6.Entity,
 			buildConfig7.Entity, 
 			buildConfig8.Entity, 
 			buildConfig9.Entity, 

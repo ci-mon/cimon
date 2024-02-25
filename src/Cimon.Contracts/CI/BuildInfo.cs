@@ -11,7 +11,7 @@ public record BuildInfo
 	public string? Log { get; set; }
 	public BuildStatus Status { get; set; }
 	public DateTimeOffset? StartDate { get; set; }
-	public DateTimeOffset? EndDate => StartDate + Duration; 
+	public DateTimeOffset? EndDate => StartDate + Duration;
 	public TimeSpan? Duration { get; set; }
 	public IReadOnlyCollection<VcsChange> Changes { get; set; } = Array.Empty<VcsChange>();
 	public IReadOnlyCollection<CIBuildProblem> Problems { get; set; } = Array.Empty<CIBuildProblem>();

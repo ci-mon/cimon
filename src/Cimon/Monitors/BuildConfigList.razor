@@ -9,7 +9,7 @@
     <Tabs>
         @foreach (var system in _ciSystems) {
             var tabName = $"{system.CISystem}:{system.Key}";
-            <RadzenTabsItem Text="@tabName" Style="padding: 0">
+            <RadzenTabsItem aria-label="@system.Key" Text="@tabName" Style="padding: 0">
                 <RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
                                 AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                                 FilterMode="FilterMode.SimpleWithMenu"

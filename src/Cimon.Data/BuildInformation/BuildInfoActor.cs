@@ -13,7 +13,6 @@ namespace Cimon.Data.BuildInformation;
 
 class BuildInfoActor : ReceiveActor
 {
-	private readonly int _buildConfigId;
 	private readonly BuildConfigService _buildConfigService;
 	private readonly BuildInfoMonitoringSettings _settings;
 	private readonly IActorRef _mlActor;
@@ -40,7 +39,6 @@ class BuildInfoActor : ReceiveActor
 			BuildInfoMonitoringSettings settings) {
 		_mlActor = mlActor;
 		_scope = serviceProvider.CreateScope();
-		_buildConfigId = buildConfigId;
 		_buildConfigService = buildConfigService;
 		_settings = settings;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
@@ -66,7 +64,7 @@ class BuildInfoActor : ReceiveActor
 			_commentsCount = state.Comments.Count;
 			NotifySubscribers(_buildInfoHistory.Last);
 		});
-		var buildConfigStream = buildConfigService.Get(_buildConfigId);
+		var buildConfigStream = buildConfigService.Get(buildConfigId);
 		Context.Observe(buildConfigStream);
 	}
 
@@ -112,9 +110,6 @@ class BuildInfoActor : ReceiveActor
 	private ICancelable? _messageToMLActor;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
-		if (_config!.DemoState is null && _buildInfoHistory.Last?.Id.Equals(newInfo.Id) is true) {
-			return;
-		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		_buildInfoHistory.Add(newInfo);
 		RunMl(newInfo);
@@ -133,14 +128,6 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private async Task OnGetBuildInfo(GetBuildInfo _) {
-		if (_config!.DemoState is not null) {
-			var buildInfo = _config.DemoState with {
-				Duration = TimeSpan.FromMinutes(Random.Shared.Next(120)),
-				Id = Random.Shared.Next(1000).ToString()
-			};
-			Self.Tell(buildInfo);
-			return;
-		}
 		try {
 			var options = new BuildInfoQueryOptions {
 				LastBuildId = _buildInfoHistory.Last?.Id

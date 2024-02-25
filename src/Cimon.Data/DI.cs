@@ -1,5 +1,7 @@
-﻿using Cimon.Contracts.Services;
+﻿using Cimon.Contracts.CI;
+using Cimon.Contracts.Services;
 using Cimon.Data.CIConnectors;
+using Cimon.Data.DemoData;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
 using Cimon.Data.Users;
@@ -18,7 +20,8 @@ public static class DI
 			.AddSingleton<BuildConfigService>()
 			.AddSingleton<IList<IBuildInfoProvider>>(sp => sp.GetServices<IBuildInfoProvider>().ToList())
 			.AddSingleton<MonitorService>()
-			.AddScoped<IUserNameProvider, UserNameProvider>();
+			.AddScoped<IUserNameProvider, UserNameProvider>()
+			.AddKeyedTransient<IBuildInfoProvider, DemoBuildInfoProvider>(CISystem.Demo);
 	}
 
 	public static MediatRServiceConfiguration AddCimonData(this MediatRServiceConfiguration configuration) {
