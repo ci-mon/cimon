@@ -1,5 +1,5 @@
 import {test, expect, type Page,} from '@playwright/test';
-import {admin_storage_state, authAsAdmin, authAsUser, doLogin, simple_user_storage_state} from "./auth";
+import {admin_storage_state, simple_user_storage_state} from "./auth";
 
 test.describe.configure({ mode: 'serial' });
 

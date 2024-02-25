@@ -1,4 +1,4 @@
-import {test as setup, expect, type Page} from '@playwright/test';
+import {test as setup} from '@playwright/test';
 import {admin_storage_state, doLogin, simple_user_storage_state} from "./auth";
 import * as fs from "fs";
 

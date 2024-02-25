@@ -1,12 +1,12 @@
-import {expect, type Page, test, TestType} from '@playwright/test';
+import {expect, type Page, test} from '@playwright/test';
 
 export const admin_storage_state = 'playwright/.auth/admin.json';
 export const simple_user_storage_state = 'playwright/.auth/test.json';
 
-export function authAsAdmin(test: TestType<any, any>) {
+export function authAsAdmin() {
     test.use({ storageState:  admin_storage_state});
 }
-export function authAsUser(test1: TestType<any, any>) {
+export function authAsUser() {
     test.use({ storageState:  simple_user_storage_state});
 }
 
