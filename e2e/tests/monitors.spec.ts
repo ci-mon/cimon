@@ -1,4 +1,4 @@
-import {expect, test} from "@playwright/test";
+import {expect, Page, test} from "@playwright/test";
 import {authAsUser} from "./auth";
 
 authAsUser();
@@ -6,6 +6,9 @@ test.beforeEach(async ({page}) => {
     await page.goto('/');
 });
 
+async function allBuildInfosLoaded(page: Page){
+    await Promise.all((await page.locator('.monitor .build-info-item.loading').all()).map(locator => expect(locator).toBeHidden({timeout: 15000})));
+}
 test('add monitor', async ({page}) => {
     const testRunId = Math.floor(Math.random()*1000);
     await page.getByLabel('monitor-list').click();
@@ -29,6 +32,20 @@ test('add monitor', async ({page}) => {
     await dialog.getByTestId('key').getByText('app.scope2.app3').click();
     await dialog.getByLabel('save-build-configs').click();
     await expect(dialog).not.toBeVisible();
+    await page.getByTestId('close').click();
+    cardCaption = page.getByTestId('monitor-item-title').getByText(monitorName);
+    card = page.locator('.monitor-item').filter({has: cardCaption}).first();
+    await expect(card).toBeVisible();
+    await card.getByTestId('view').click();
+    await page.waitForURL(/monitor/);
+    await allBuildInfosLoaded(page);
+    const greenBuildInfo = page.locator('.monitor .build-info-item').getByTestId('build-info-name')
+        .getByText('Cake Develop');
+    await expect(greenBuildInfo).toBeVisible({timeout: 15000});
+    expect(await page.locator('.monitor .build-info-item').count()).toBe(2);
+    await page.getByLabel('monitor-list').click();
+    await card.getByTestId('setup').click();
+    await page.waitForURL(/setupMonitor/);
     await page.getByTestId('add-build-config').click();
     await expect(dialog).toBeVisible();
     await demoTab.click();
@@ -36,15 +53,15 @@ test('add monitor', async ({page}) => {
     await dialog.getByLabel('save-build-configs').click();
     await expect(dialog).not.toBeVisible();
     await page.getByTestId('close').click();
-    cardCaption = page.getByTestId('monitor-item-title').getByText(monitorName);
-    card = page.locator('.monitor-item').filter({has: cardCaption}).first();
-    await expect(card).toBeVisible();
     await card.getByTestId('view').click();
     await page.waitForURL(/monitor/);
-    await expect(page.locator('.monitor .build-info-item').getByTestId('build-info-name')
-        .getByText('Cake Develop')).toBeVisible({timeout: 15000});
-    await expect(page.locator('.monitor .build-info-item.failed.with-committers')
-        .getByText('Integration (PostgreSQL)', {exact: true})).toBeVisible({timeout: 15000});
+    await allBuildInfosLoaded(page);
+    await expect(greenBuildInfo).toBeVisible({timeout: 15000});
+    const redBuildInfo = page.locator('.monitor .build-info-item.failed.with-committers')
+        .getByText('Integration (PostgreSQL)', {exact: true});
+    await expect(redBuildInfo).toBeVisible({timeout: 15000});
+    await expect(redBuildInfo).toBeVisible({timeout: 15000});
+    expect(await page.locator('.monitor .build-info-item').count()).toBe(10);
     await page.getByLabel('monitor-list').click();
     await card.getByTestId('remove').click();
     await expect(card).not.toBeVisible();
