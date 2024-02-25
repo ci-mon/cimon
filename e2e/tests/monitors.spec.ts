@@ -1,31 +1,13 @@
-import {test, expect, type Page,} from '@playwright/test';
+import {expect, test} from "@playwright/test";
+import {authAsUser} from "./auth";
 
-test.describe.configure({ mode: 'serial' });
-
+authAsUser(null);
 test.beforeEach(async ({page}) => {
     await page.goto('/');
-})
-
-async function login(page: Page, name: string, pass: string) {
-    await page.getByLabel('login-menu').click();
-    await page.getByLabel('login-via-password').click();
-    await page.waitForURL(/\/Login/);
-    await page.locator('input[name="Username"]').fill(name);
-    await page.locator('input[name="Password"]').fill(pass);
-    await page.locator('.rz-login-buttons button[type="submit"]').click();
-    await expect(page.getByLabel('profile-user-name')).toBeVisible();
-}
-
-test("login as simple user", async ({page}) => {
-    await login(page, 'test', 'test');
-    await expect(page.getByLabel('monitor-list')).toBeVisible();
-    await expect(page.getByLabel('last-monitor')).toBeVisible();
-    await expect(page.getByLabel('native-app')).toBeVisible();
 });
 
 test('add monitor', async ({page}) => {
     const testRunId = Math.floor(Math.random()*1000);
-    await login(page, 'test', 'test');
     await page.getByLabel('monitor-list').click();
     await page.getByLabel('add-monitor').click();
     let cardCaption = page.getByTestId('monitor-item-title').getByText('Untitled').last();
