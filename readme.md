@@ -37,12 +37,7 @@ dotnet ef migrations add migration_name --startup-project Cimon/Cimon.csproj --p
 ```
 
 ### e2e tests
-To run e2e tests: 
-```
-cd e2e
-npm i
-npm test
-```
+To run e2e tests look for [readme.md](e2e/readme.md)
 
 ### Desktop app
 Desktop app located in `src/cimon-desktop` folder.
