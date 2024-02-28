@@ -9,7 +9,7 @@ setup('authenticate as admin', async ({ page }) => {
 });
 
 setup('authenticate as user', async ({ page }) => {
-    if (fs.existsSync(admin_storage_state)) return;
+    if (fs.existsSync(simple_user_storage_state)) return;
     await doLogin(page, 'test', 'test');
     await page.context().storageState({ path: simple_user_storage_state });
 });

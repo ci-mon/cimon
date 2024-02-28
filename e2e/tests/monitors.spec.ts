@@ -2,6 +2,7 @@ import {expect, Page, test} from "@playwright/test";
 import {authAsUser} from "./auth";
 
 authAsUser();
+
 test.beforeEach(async ({page}) => {
     await page.goto('/');
 });
