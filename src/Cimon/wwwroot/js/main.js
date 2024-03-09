@@ -37,3 +37,18 @@ class AuthApi {
     }
 }
 window.authAPI = new AuthApi(); 
+
+class UIApi{
+    resetIcon() {
+        this.setIcon('green');
+    }
+    setIcon(name){
+        const icon = Array.from(document.head.childNodes).find(x=>x.rel === 'icon');
+        if (icon) {
+            const url = new URL(icon.href);
+            icon.href = `/${name}.ico?${url.searchParams}`;
+        }
+    }
+}
+
+window.uiApi = new UIApi();

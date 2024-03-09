@@ -3,10 +3,14 @@
 @using Cimon.Data.Users
 @using MediatR
 @using Cimon.Data.Common
+@using System.Reactive.Linq
+@using System.Text
+@using Cimon.Contracts.CI
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
 @inject ICurrentUserAccessor CurrentUserAccessor
+@inject IJSRuntime JSRuntime;
 
 <PageTitle>CI @GetTitle()</PageTitle>
 <div class="monitor">
@@ -29,8 +33,24 @@
     [Parameter]
     public string? MonitorId { get; set; }
     private ReactiveValue<MonitorData> _monitor;
+    private ReactiveValue<IList<BuildInfo>> _buildInfos;
 
-    private string GetTitle() => _monitor.Value?.Monitor.Title ?? MonitorId ?? string.Empty;
+    private string GetTitle() {
+        var result = new StringBuilder();
+        if ((_monitor.Value?.Monitor.Title ?? MonitorId) is { } title) {
+            result.Append(title);
+        }
+        if (_buildInfos.Value is {} infos) {
+            var failed = infos.Count(x => x.IsNotOk());
+            if (failed == 0) {
+                result.Append(" - all good");
+            } else {
+                result.Append($" - {failed} of {infos.Count} builds failed");
+            }
+        }
+        return result.ToString();
+    }
+
     private string? _errorMessage;
 
     protected override async Task OnParametersSetAsync() {
@@ -38,6 +58,9 @@
         var user = await CurrentUserAccessor.Current;
         if (!string.IsNullOrWhiteSpace(MonitorId)) {
             await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
+            NavigationManager.RegisterLocationChangingHandler(async context => {
+                await JSRuntime.InvokeVoidAsync("uiApi.resetIcon");
+            });
         } else {
             MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
             if (!string.IsNullOrWhiteSpace(MonitorId)) {
@@ -59,6 +82,10 @@
             } else {
                 _errorMessage = null;
             }
+            Subscribe(ref _buildInfos, info.Builds.Select(x => x.BuildInfo).Zip()).OnChange(list => {
+                var isSomeFailed = list.Any(x => x.IsNotOk());
+                JSRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
+            });
         });
         if (!_monitor.HasValue) {
             _errorMessage = "Loading...";

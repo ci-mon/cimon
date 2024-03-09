@@ -100,7 +100,6 @@
     public int? MaxCommitters { get; set; }
 
     protected override bool PreloadData => true;
-
     protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;
         await base.OnInitializedAsync();
