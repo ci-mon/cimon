@@ -1,9 +1,12 @@
 pipeline {
     agent any
-
+    parameters {
+            string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+        }
     stages {
         stage('Run Tests') {
             steps {
+                echo "Hello ${params.PERSON}"
                 script {
                     def mode = 1
                     def junitXml = 'test-results.xml'
