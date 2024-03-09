@@ -1,4 +1,5 @@
 ﻿using Cimon.Contracts.Services;
+using Cimon.Jenkins;
 
 namespace Cimon.Data.Jenkins;
 
@@ -9,9 +10,11 @@ public class JenkinsBuildConfigProvider(ClientFactory clientFactory) : IBuildCon
 	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
 		using var client = clientFactory.Create(info.ConnectorKey);
 		var result = new List<BuildConfig>();
-		var master = await client.GetMaster(default);
+		var master = await client.Query(new JenkinsApi.Master());
+		if (master is null) return result;
 		foreach (var job in master.Jobs) {
-			var jobInfo = await client.GetJob(job.Name, default);
+			var jobInfo = await client.Query(new JenkinsApi.Job(JobLocator.Create(job.Name)));
+			if (jobInfo is null) continue;
 			if (!jobInfo.Jobs.Any()) {
 				if (jobInfo.Buildable) {
 					result.Add(new BuildConfig {

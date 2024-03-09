@@ -7,7 +7,7 @@ public static class CollectionUtils
 
 	public static ItemInfo<T> GetItemWithMaxValue<T>(this IReadOnlyCollection<T> items) where T : struct, IComparable<T> {
 		var value = default(T);
-		int index = -1;
+		int index = 0;
 		int counter = -1;
 		foreach (T item in items) {
 			counter++;

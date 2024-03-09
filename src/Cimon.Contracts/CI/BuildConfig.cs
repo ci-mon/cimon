@@ -16,6 +16,7 @@ public record BuildConfig
 	}
 }
 
-public record BuildInfoQueryOptions(string? LastBuildId = null);
+public record BuildInfoQueryOptions(string? LastBuildId, int LookBackLimit);
+
 public record BuildInfoQuery(CIConnectorInfo ConnectorInfo, BuildConfig BuildConfig,
-	BuildInfoQueryOptions? Options = null);
+	BuildInfoQueryOptions Options);

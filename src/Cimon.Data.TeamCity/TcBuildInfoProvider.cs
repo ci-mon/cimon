@@ -47,14 +47,14 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 
 	private async Task LoadBuildHistory(TeamCityClientTicket clientTicket, List<BuildInfo> results,
 			BuildInfoQuery query, Build sourceBuild) {
-		var lastNumberStr = query.Options?.LastBuildId;
+		var lastNumberStr = query.Options.LastBuildId;
 		var prevBuildId = (int)sourceBuild.Id!;
 		prevBuildId--;
 		if (sourceBuild.Id.ToString() == lastNumberStr || $"{prevBuildId}".Equals(lastNumberStr)) {
 			return;
 		}
 		var buildLocator = GetBuildLocator(query.BuildConfig);
-		buildLocator.Count = 5;
+		buildLocator.Count = query.Options.LookBackLimit;
 		buildLocator.LookupLimit = 20;
 		var buildsList = clientTicket.Client.Builds.Include(x => x.Build).WithLocator(buildLocator)
 			.GetAsyncEnumerable<Builds, Build>(5);

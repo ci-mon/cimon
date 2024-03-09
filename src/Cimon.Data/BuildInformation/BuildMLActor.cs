@@ -78,7 +78,7 @@ class BuildMLActor: ReceiveActor
 					info.Name, info.Id, e.Message);
 			}
 			info.Log = info.Log?.Substring(0, Math.Min(10000, info.Log.Length));
-			if (failureSuspect is not null) {
+			if (failureSuspect is not null && failureSuspect.Confidence > 20) {
 				request.Receiver.Tell(failureSuspect);
 			}
 		});

@@ -1,18 +1,18 @@
-﻿using Microsoft.Extensions.Options;
-using Narochno.Jenkins;
+﻿using Cimon.Jenkins;
+using Microsoft.Extensions.Options;
 
 namespace Cimon.Data.Jenkins;
 
-public class ClientFactory(IOptionsSnapshot<JenkinsSecrets> snapshot)
+public class ClientFactory(IOptionsSnapshot<JenkinsSecrets> snapshot, 
+	Func<JenkinsConfig, IJenkinsClient> factory)
 {
-
-	public JenkinsClient Create(string connectorKey) {
+	public IJenkinsClient Create(string connectorKey) {
 		var secrets = snapshot.Get(connectorKey);
 		var config = new JenkinsConfig {
-			JenkinsUrl = secrets.Uri.ToString(),
+			JenkinsUrl = secrets.Uri,
 			Username = secrets.Login,
 			ApiKey = secrets.Token
 		};
-		return new JenkinsClient(config);
+		return factory(config);
 	}
 }

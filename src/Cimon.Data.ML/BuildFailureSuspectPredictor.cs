@@ -79,11 +79,9 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		}).ToList();
 		var bestFit = probabilities.GetItemWithMaxValue();
 		var totalProbabilities = probabilities.Sum();
-		if (totalProbabilities == 0) {
-			return BestMatch.Empty;
-		}
-		float confidence = bestFit.Value / totalProbabilities * 100;
-		return new BestMatch(bestFit.Index, Convert.ToInt32(confidence));
+		return totalProbabilities == 0
+			? BestMatch.Empty
+			: new BestMatch(bestFit.Index, Convert.ToInt32(Math.Round(bestFit.Value * 100.0)));
 	}
 
 	private class TextData

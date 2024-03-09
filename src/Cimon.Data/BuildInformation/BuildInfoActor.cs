@@ -110,6 +110,10 @@ class BuildInfoActor : ReceiveActor
 	private ICancelable? _messageToMLActor;
 	private void HandleBuildInfo(BuildInfo? newInfo) {
 		if (newInfo is null) return;
+		var lastBuildId = _buildInfoHistory.Last?.Id;
+		if (lastBuildId == newInfo.Id) {
+			return;
+		}
 		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		_buildInfoHistory.Add(newInfo);
 		RunMl(newInfo);
@@ -129,12 +133,11 @@ class BuildInfoActor : ReceiveActor
 
 	private async Task OnGetBuildInfo(GetBuildInfo _) {
 		try {
-			var options = new BuildInfoQueryOptions {
-				LastBuildId = _buildInfoHistory.Last?.Id
-			};
+			var lastBuildId = _buildInfoHistory.Last?.Id;
+			var options = new BuildInfoQueryOptions(lastBuildId, 5);
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
-			if (!infos.Any()) {
+			if (!infos.Any() && _buildInfoHistory.Last is null) {
 				Self.Tell(BuildInfo.NoData);
 				return;
 			}
