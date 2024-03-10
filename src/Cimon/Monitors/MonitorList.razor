@@ -23,6 +23,10 @@
                     <RadzenRow>
                         <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                     </RadzenRow>
+                    <RadzenRow>
+                        <RadzenText data-qa="monitor-item-owner" TextStyle="TextStyle.H6" 
+                                    Text=@($"{monitor.Owner?.FullName}") class="me-1"/>
+                    </RadzenRow>
                     <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
                         <AuthorizeView Policy="EditMonitor" Resource="monitor">
                             <RadzenButton data-qa="remove" Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>

@@ -19,6 +19,9 @@
             <RadzenFormField Text="Title" >
                <RadzenTextBox aria-label="edit-title" @bind-Value="@Monitor.Title" class="w-100"/>
             </RadzenFormField>
+            <RadzenFormField Text="Owner" >
+                <RadzenTextBox Disabled="true" aria-label="view-owner" Value="@Monitor.Owner?.FullName" class="w-100"/>
+            </RadzenFormField>
             <RadzenStack Orientation="Orientation.Horizontal">
                 <RadzenLabel Text="Share with others:" />
                 <RadzenSwitch @bind-Value="@Monitor.Shared" Attributes="@(new Dictionary<string, object>{{"aria-label","edit-share"}})"/>
