@@ -34,6 +34,11 @@ public class SavedMonitorInLocalStoragesBehaviour : IPipelineBehavior<GetDefault
 	public async Task Handle(MonitorOpenedNotification notification, CancellationToken cancellationToken) {
 		var httpContext = _httpContextAccessor.HttpContext;
 		if (httpContext is null) return;
+		var currentValue = await Handle(new GetDefaultMonitorRequest(notification.User),
+			() => Task.FromResult<string>(null), cancellationToken);
+		if (currentValue == notification.MonitorId) {
+			return;
+		}
 		var encoded = HttpUtility.UrlEncode(notification.MonitorId) ?? string.Empty;
 		if (httpContext.WebSockets.IsWebSocketRequest) {
 			await _jsRuntime.InvokeAsync<object>("blazorExtensions.WriteCookie", cancellationToken, Key, encoded);
@@ -41,6 +46,5 @@ public class SavedMonitorInLocalStoragesBehaviour : IPipelineBehavior<GetDefault
 			httpContext.Response.Cookies.Append(Key, encoded);
 		}
 		httpContext.Items[Key] = notification.MonitorId;
-		
 	}
 }
