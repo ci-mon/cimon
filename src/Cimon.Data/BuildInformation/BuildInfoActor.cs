@@ -126,6 +126,9 @@ class BuildInfoActor : ReceiveActor
 			return;
 		}
 		_messageToMLActor?.Cancel();
+		if (!newInfo.IsNotOk()) {
+			return;
+		}
 		var mlMsg = new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self);
 		_messageToMLActor = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(3), _mlActor,
 			mlMsg, Self);

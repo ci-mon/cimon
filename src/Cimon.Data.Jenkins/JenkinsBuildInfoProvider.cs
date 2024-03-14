@@ -68,14 +68,15 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		var minNumber = Math.Max(0, lastBuildNumber - infoQuery.Options.LookBackLimit);
 		while (prevBuild >= minNumber) {
 			var info = await GetFullBuildInfo(infoQuery, prevBuild, client);
-			if (info is not null) {
-				if (info.Id == infoQuery.Options?.LastBuildId) {
-					break;
-				}
-				results.Insert(0, info);
-				if (info.Status == BuildStatus.Success) {
-					break;
-				}
+			if (info is null) {
+				break;
+			}
+			if (info.Id == infoQuery.Options?.LastBuildId) {
+				break;
+			}
+			results.Insert(0, info);
+			if (info.Status == BuildStatus.Success) {
+				break;
 			}
 			prevBuild--;
 		}
@@ -135,7 +136,11 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			: JobLocator.Create(buildConfig.Key);
 		var job = await client.Query(new JenkinsApi.Job(locator));
 		if (job is null) return null;
-		return await GetLastFinishedBuild(number ?? job.LastBuild.Number, locator, client);
+		var jobNumber = number ?? job.LastBuild.Number;
+		if (jobNumber.ToString() == buildInfoQuery.Options.LastBuildId) {
+			return null;
+		}
+		return await GetLastFinishedBuild(jobNumber, locator, client);
 	}
 
 	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(JenkinsBuildInfo buildInfo,
@@ -148,7 +153,9 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			if (changeSetItem.Author.FullName is null) continue;
 			var modifiedFiles = changeSetItem.Paths.Select(GetFileModification).ToImmutableArray();
 			var userInfo = await FindUserId(changeSetItem.Author.FullName, client);
-			var email = userInfo?.Property.Find(x => x.Class == "hudson.tasks.Mailer$UserProperty")?.Props["address"]?.ToString();
+			var email = !string.IsNullOrWhiteSpace(changeSetItem.AuthorEmail)
+				? changeSetItem.AuthorEmail
+				: userInfo?.Property.Find(x => x.Class == "hudson.tasks.Mailer$UserProperty")?.Props["address"]?.ToString();
 			var author = userInfo is null
 				? new VcsUser("UnknownUser", changeSetItem.Author.FullName)
 				: new VcsUser(userInfo.Id, changeSetItem.Author.FullName, email);
