@@ -149,16 +149,25 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			return Array.Empty<VcsChange>();
 		}
 		var res = new List<VcsChange>();
+		VcsUser? FindUserFromChangeSetItem(ChangeSetItem changeSetItem) {
+			var email = changeSetItem.AuthorEmail;
+			if (string.IsNullOrWhiteSpace(email)) return null;
+			User author = changeSetItem.Author;
+			if (author.FullName is null) return null;
+			return new VcsUser(author.UserId, author.FullName, email);
+		}
 		foreach (var changeSetItem in buildInfo.ChangeSets.SelectMany(x=>x.Items)) {
 			if (changeSetItem.Author.FullName is null) continue;
 			var modifiedFiles = changeSetItem.Paths.Select(GetFileModification).ToImmutableArray();
-			var userInfo = await FindUserId(changeSetItem.Author.FullName, client);
-			var email = !string.IsNullOrWhiteSpace(changeSetItem.AuthorEmail)
-				? changeSetItem.AuthorEmail
-				: userInfo?.Property.Find(x => x.Class == "hudson.tasks.Mailer$UserProperty")?.Props["address"]?.ToString();
-			var author = userInfo is null
-				? new VcsUser("UnknownUser", changeSetItem.Author.FullName)
-				: new VcsUser(userInfo.Id, changeSetItem.Author.FullName, email);
+			var author = FindUserFromChangeSetItem(changeSetItem);
+			if (author is null) {
+				var userInfo = await FindUserId(changeSetItem.Author.FullName, client);
+				var email = userInfo?.Property
+					.Find(x => x.Class == "hudson.tasks.Mailer$UserProperty")?.Props["address"]?.ToString();
+				author = userInfo is null
+					? new VcsUser("UnknownUser", changeSetItem.Author.FullName)
+					: new VcsUser(userInfo.Id, changeSetItem.Author.FullName, email);
+			}
 			var change = new VcsChange(author, changeSetItem.Timestamp.ToDate(),
 				changeSetItem.Message, modifiedFiles);
 			res.Add(change);
