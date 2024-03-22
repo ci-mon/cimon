@@ -16,6 +16,7 @@ public static class ActorsApi
 {
 	public abstract record MonitorMessage(string Id);
 	public record WatchMonitor(string Id) : MonitorMessage(Id), IMessageWithResponse<IObservable<MonitorData>>;
+	public record RefreshMonitor(string Id) : MonitorMessage(Id);
 	public record WatchMonitorByActor(string Id) : MonitorMessage(Id);
 	public record UnWatchMonitorByActor(string Id) : MonitorMessage(Id);
 	public record MonitorInfo(MonitorModel MonitorModel, IEnumerable<IBuildInfoSnapshot> BuildInfos);

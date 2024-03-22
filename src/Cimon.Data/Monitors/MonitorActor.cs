@@ -69,10 +69,9 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private void OnMonitorChange(MonitorModel model) {
 		var diff = _builds.CompareWith(model.Builds, build => build.BuildConfigId);
 		var toRemove = new List<int>();
-		foreach (var removed in diff.Removed) {
-			var id = removed.BuildConfigId;
-			Context.Parent.Tell(new BuildInfoServiceActorApi.Unsubscribe(id));
-			toRemove.Add(id);
+		foreach (var monitor in diff.Removed) {
+			Context.Parent.Tell(new BuildInfoServiceActorApi.Unsubscribe(monitor.BuildConfigId));
+			toRemove.Add(monitor.BuildConfigId);
 		}
 		var toAdd = new List<WatchedBuildInfo>();
 		foreach (var added in diff.Added) {
@@ -116,7 +115,14 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 				watcher.Tell(new ActorsApi.MonitorInfo(_model, _buildInfos.Values));
 			}
 		});
+		Receive<ActorsApi.RefreshMonitor>(Refresh);
 		Stash.UnstashAll();
+	}
+
+	private void Refresh(ActorsApi.RefreshMonitor obj) {
+		foreach (var build in _builds!) {
+			Context.Parent.Tell(new BuildInfoServiceActorApi.Refresh(build.BuildConfig));
+		}
 	}
 
 	public IStash Stash { get; set; }

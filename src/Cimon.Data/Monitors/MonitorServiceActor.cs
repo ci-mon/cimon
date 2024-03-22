@@ -13,9 +13,11 @@ class MonitorServiceActor : ReceiveActor
 		var resolver = Context.System.GetExtension<DependencyResolver>().Resolver;
 		_monitorService = resolver.GetService<MonitorService>();
 		Receive<ActorsApi.WatchMonitor>(ForwardToMonitor);
+		Receive<ActorsApi.RefreshMonitor>(ForwardToMonitor);
 		Receive<ActorsApi.WatchMonitorByActor>(ForwardToMonitor);
 		Receive<ActorsApi.UnWatchMonitorByActor>(ForwardToMonitor);
 		Receive<BuildInfoServiceActorApi.Subscribe>(buildInfoService.Forward);
+		Receive<BuildInfoServiceActorApi.Refresh>(buildInfoService.Forward);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(buildInfoService.Forward);
 	}
 

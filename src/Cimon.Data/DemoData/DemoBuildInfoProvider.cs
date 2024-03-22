@@ -6,15 +6,18 @@ namespace Cimon.Data.DemoData;
 
 public class DemoBuildInfoProvider : IBuildInfoProvider
 {
+	private long _callsCount;
 	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		IReadOnlyCollection<BuildInfo> result = Array.Empty<BuildInfo>();
 		if (infoQuery.BuildConfig is BuildConfigModel { DemoState: {} demoState }) {
-			await Task.Delay(TimeSpan.FromSeconds(1)); 
+			if (Interlocked.Increment(ref _callsCount) < 10) {
+				await Task.Delay(TimeSpan.FromSeconds(1));
+			}
 			var status = demoState.StatusText?.Contains("(not stable)") is true
 				? Enum.GetValues<BuildStatus>()[Random.Shared.Next(3)]
 				: demoState.Status;
 			var newState = demoState with {
-				Id = int.TryParse(demoState.Id, out var num) ? $"{num+1}" : 0.ToString(),
+				Id = int.TryParse(demoState.Id, out var num) ? $"{num + _callsCount}" : _callsCount.ToString(),
 				Duration = TimeSpan.FromMinutes(Random.Shared.Next(120)),
 				StartDate = DateTimeOffset.UtcNow.AddMinutes(-1 * Random.Shared.Next(120)),
 				Status = status

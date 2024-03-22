@@ -5,14 +5,20 @@
 @using Cimon.Data.Common
 @using System.Reactive.Linq
 @using System.Text
+@using Akka.Actor
 @using Cimon.Contracts.CI
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
 @inject ICurrentUserAccessor CurrentUserAccessor
 @inject IJSRuntime JSRuntime;
+@inject NotificationService NotificationService
 
 <PageTitle>CI @GetTitle()</PageTitle>
+<SectionContent SectionName="right-toolbar">
+    <RadzenButton Icon="sync" Click="() => RefreshMonitor()" />
+</SectionContent>
+
 <div class="monitor">
     @if (_errorMessage != null) {
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
@@ -90,6 +96,14 @@
         if (!_monitor.HasValue) {
             _errorMessage = "Loading...";
         }
+    }
+
+    private void RefreshMonitor() {
+        AppActors.Instance.MonitorService.Tell(new ActorsApi.RefreshMonitor(MonitorId!));
+        NotificationService.Notify(new NotificationMessage() {
+            Summary = "Data refresh started",
+            Severity = NotificationSeverity.Success
+        });
     }
 
 }

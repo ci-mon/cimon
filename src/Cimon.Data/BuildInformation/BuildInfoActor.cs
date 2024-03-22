@@ -43,6 +43,7 @@ class BuildInfoActor : ReceiveActor
 		_settings = settings;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
 		Receive<BuildInfoServiceActorApi.Subscribe>(OnSubscribe);
+		ReceiveAsync<BuildInfoServiceActorApi.Refresh>(OnGetBuildInfo);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
 		Receive<StopIfIdle>(OnStopIfIdle);
 		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
@@ -134,7 +135,7 @@ class BuildInfoActor : ReceiveActor
 			mlMsg, Self);
 	}
 
-	private async Task OnGetBuildInfo(GetBuildInfo _) {
+	private async Task OnGetBuildInfo<T>(T _) {
 		try {
 			var lastBuildId = _buildInfoHistory.Last?.Id;
 			var options = new BuildInfoQueryOptions(lastBuildId, 5);
