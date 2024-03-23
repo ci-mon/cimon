@@ -67,3 +67,6 @@ article.content {
 .blazor-error-boundary::after {
     content: "An error has occurred."
 }
+div.rz-notification-message > div {
+    border-radius: 0.6em;
+}

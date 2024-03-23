@@ -11,31 +11,31 @@
     <ItemGroup>
         <PackageReference Include="Colourful" Version="3.2.0" />
         <PackageReference Include="MarkdownSharp" Version="2.0.5" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Optional" Version="4.0.0" />
-        <PackageReference Include="Radzen.Blazor" Version="4.23.3" />
-        <PackageReference Include="Roslynator.Analyzers" Version="4.11.0">
+        <PackageReference Include="Radzen.Blazor" Version="4.28.5" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.12.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.11.0">
+        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CodeFixes" Version="4.11.0">
+        <PackageReference Include="Roslynator.CodeFixes" Version="4.12.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.11.0">
+        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="System.Reactive" Version="6.0.0" />
     </ItemGroup>

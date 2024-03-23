@@ -2,6 +2,7 @@
 <project version="4">
   <component name="UserContentModel">
     <attachedFolders>
+      <Path>../e2e</Path>
       <Path>cimon-desktop</Path>
     </attachedFolders>
     <explicitIncludes />
