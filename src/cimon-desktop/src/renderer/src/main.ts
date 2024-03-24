@@ -8,6 +8,7 @@ import App from './App.vue';
 
 import { createRouter, createWebHashHistory } from 'vue-router';
 import WarnComponent from './components/warn.component.vue';
+import SetupComponent from './components/setup.component.vue';
 
 const vuetify = createVuetify({
   components,
@@ -23,6 +24,11 @@ const router = createRouter({
       path: '/warn/:messageCode',
       name: 'warnPage',
       component: WarnComponent,
+    },
+    {
+      path: '/setup',
+      name: 'setup',
+      component: SetupComponent,
     },
   ],
 });

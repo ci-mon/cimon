@@ -21,8 +21,8 @@ import { options } from './options';
 
 import process from 'process';
 
-declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-declare const MAIN_WINDOW_VITE_NAME: string;
+declare const MAIN_VITE_DEV_SERVER_URL: string;
+declare const MAIN_VITE_NAME: string;
 
 interface MentionInfo {
   buildConfigId: number;
@@ -45,6 +45,7 @@ export class CimonApp {
   private _window!: Electron.CrossProcessExports.BrowserWindow;
   private _discussionWindow?: Electron.CrossProcessExports.BrowserWindow;
   private _loginWindow?: Electron.CrossProcessExports.BrowserWindow;
+  private _optionsWindow?: Electron.CrossProcessExports.BrowserWindow;
 
   private tokenDataReceiver?: TokenDataReceiver;
   private _mentions: MentionInfo[] = [];
@@ -86,10 +87,10 @@ export class CimonApp {
   }
 
   private async _loadHash(window: BrowserWindow | WebContents, hash: string) {
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      await window.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}#${hash}`);
+    if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+      await window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${hash}`);
     } else {
-      await window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html#${hash}`));
+      await window.loadFile(path.join(__dirname, `../renderer/index.html#${hash}`));
     }
   }
 
@@ -391,6 +392,7 @@ export class CimonApp {
           this.quitAndUpdate();
         },
       },
+      { id: 'options', label: 'Options', type: 'normal', click: () => this.showOptions() },
       { id: 'exit', label: 'Exit', type: 'normal', click: () => this.quit() },
     ];
     if (this._mentions.length > 0) {
@@ -534,7 +536,7 @@ export class CimonApp {
     window.webContents.on('input-event', (event, input: Electron.InputEvent) => {
       if (input.type == 'rawKeyDown' && input['key'] === 'Escape') {
         if (window.isVisible()) {
-          if (action === 'close'){
+          if (action === 'close') {
             window.close();
           } else {
             window.hide();
@@ -563,5 +565,21 @@ export class CimonApp {
   public quitAndUpdate() {
     this.allowQuit();
     autoUpdater.quitAndInstall();
+  }
+
+  private async showOptions() {
+    if (this._optionsWindow) {
+      this._optionsWindow.focus();
+      return;
+    }
+    this._optionsWindow = new BrowserWindow({
+      maximizable: false,
+      width: 800,
+      height: 600,
+    });
+    this._optionsWindow.on('close', () => {
+      this._optionsWindow = undefined;
+    });
+    await this._loadHash(this._optionsWindow, 'setup');
   }
 }
