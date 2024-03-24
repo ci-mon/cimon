@@ -306,7 +306,7 @@ export class CimonApp {
         return { action: 'deny' };
       });
     }
-    await this._discussionWindow.loadURL(options.baseUrl + url);
+    await this._discussionWindow.loadURL(options.discussionUrl(url));
     this._discussionWindow.show();
   }
 

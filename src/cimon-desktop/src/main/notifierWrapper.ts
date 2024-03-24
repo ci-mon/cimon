@@ -70,7 +70,10 @@ export class NotifierWrapper {
     return NotifierWrapper._notifier;
   }
 
+  private _lastMentionsNotification?: { remove: () => Promise<void> };
   public async showCommentMentionNotificationOnWindows(title: string, comment: string, commentAuthorEmail?: string) {
+    await this._lastMentionsNotification?.remove();
+    delete this._lastMentionsNotification;
     const notifier = await NotifierWrapper._getNotifier();
     const body: NotificationBody = [];
     if (commentAuthorEmail) {
@@ -142,6 +145,7 @@ export class NotifierWrapper {
         },
       ],
     });
+    this._lastMentionsNotification = notification;
     return new Promise<StatusMessage>((res) => {
       notification.onChange((statusMessage) => {
         res(statusMessage);

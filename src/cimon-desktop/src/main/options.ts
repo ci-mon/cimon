@@ -27,6 +27,11 @@ export const options = {
   monitorUrl(key: string): string {
     return this.baseUrl + `/monitor/${key}?full-screen=true`;
   },
+  discussionUrl(urlPart: string) {
+    const url = new URL(this.baseUrl + urlPart);
+    url.searchParams.append('full-screen', 'true');
+    return url.href;
+  },
   get entrypoint() {
     return `${options.baseUrl}`;
   },
