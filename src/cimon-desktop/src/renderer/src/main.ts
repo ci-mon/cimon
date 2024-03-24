@@ -15,8 +15,6 @@ const vuetify = createVuetify({
   directives,
 });
 
-window.CimonDesktop?.skipInit();
-
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [

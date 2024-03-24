@@ -1,9 +1,15 @@
+// @ts-ignore esm problems.
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+// @ts-ignore esm problems.
 import { MakerZIP } from '@electron-forge/maker-zip';
-import { PublisherCimon } from './publisher-cimon';
-import { CimonConfig } from './cimon-config';
-import RemoveNodeModulesFoldersPlugin from './remove-unneded-modules.forge.plugin';
+import RemoveNodeModulesFoldersPlugin from './remove-node-modules-folders.plugin';
+import PublisherCimon from './publisher-cimon';
 
+// @ts-ignore not imported properly.
+const publisherCimon = new PublisherCimon({
+  host: process.env.CIMON_PUBLISH_URL ?? 'http://localhost:5001',
+  token: process.env.CIMON_PUBLISH_TOKEN ?? 'changeme',
+});
 const config = {
   packagerConfig: {
     icon: './icons/green/icon.ico',
@@ -11,12 +17,7 @@ const config = {
     ignore: [/^\/src/, /(.eslintrc.json)|(.gitignore)|(electron.vite.config.ts)|(forge.config.ts)|(tsconfig.*)/],
   },
   rebuildConfig: {},
-  publishers: [
-    new PublisherCimon({
-      host: CimonConfig.url,
-      token: process.env.CIMON_PUBLISH_TOKEN ?? 'changeme',
-    }),
-  ],
+  publishers: [publisherCimon],
   makers: [
     new MakerSquirrel(
       {

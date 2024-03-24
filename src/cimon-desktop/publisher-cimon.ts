@@ -1,15 +1,16 @@
 import { PublisherBase, PublisherOptions } from '@electron-forge/publisher-base';
 import { createReadStream, statSync } from 'fs';
 import { basename } from 'path';
-import * as FormData from 'form-data';
-import * as fetch from 'node-fetch';
-import * as parseChangelog from 'changelog-parser';
+import FormData from 'form-data';
+import fetch from 'node-fetch';
+import parseChangelog from 'changelog-parser';
 
 export interface PublisherCimonConfig {
   host: string;
   token: string;
 }
-export class PublisherCimon extends PublisherBase<PublisherCimonConfig> {
+
+export default class PublisherCimon extends PublisherBase<PublisherCimonConfig> {
   name = 'cimon';
 
   private collapseMakeResults = (makeResults: PublisherOptions['makeResults']) => {
@@ -51,9 +52,7 @@ export class PublisherCimon extends PublisherBase<PublisherCimonConfig> {
         artifactIdx += 1;
       }
       const changelog = await parseChangelog('./CHANGELOG.md');
-      const currentVersionInfo = changelog?.versions?.find(
-        (v: { version: string }) => v.version === makeResult.packageJSON.version
-      )?.body;
+      const currentVersionInfo = changelog?.versions?.find((v) => v.version === makeResult.packageJSON.version)?.body;
       if (currentVersionInfo) {
         setStatusLine(`Found changes for current version`);
         data.append('changes', currentVersionInfo, { contentType: 'text/plain' });

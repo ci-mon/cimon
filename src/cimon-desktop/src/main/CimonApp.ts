@@ -11,6 +11,7 @@ import {
   shell,
   Tray,
   WebContents,
+  dialog,
 } from 'electron';
 import { ConnectionState, MonitorInfo, SignalRClient } from './SignalRClient';
 import log from 'electron-log';
@@ -20,16 +21,16 @@ import path from 'path';
 import { options } from './options';
 
 import process from 'process';
-
-declare const MAIN_VITE_DEV_SERVER_URL: string;
-declare const MAIN_VITE_NAME: string;
+import Store from 'electron-store';
+import AutoLaunch from 'auto-launch';
+import { NativeAppSettings } from '../shared/interfaces';
+import fs from 'fs';
 
 interface MentionInfo {
   buildConfigId: number;
   commentsCount: number;
   buildConfigKey: string;
 }
-
 type TokenInfo = {
   userName: string;
   token: string;
@@ -52,6 +53,38 @@ export class CimonApp {
   private _monitorInfo?: MonitorInfo;
   private _updateReady = false;
   private _isExiting = false;
+  private _tray!: Tray;
+  private _trayContextMenu!: Electron.Menu;
+  private _session!: Electron.Session;
+  private _signalR!: SignalRClient;
+  private _autoLaunch: AutoLaunch;
+  private _store: Store<NativeAppSettings> = new Store<NativeAppSettings>({
+    schema: {
+      autoRun: { type: 'boolean' },
+      screenshots: {
+        type: 'object',
+        properties: {
+          width: {
+            type: 'number',
+          },
+          height: {
+            type: 'number',
+          },
+          quality: {
+            type: 'number',
+          },
+          save: {
+            type: 'boolean',
+          },
+          path: {
+            type: 'string',
+          },
+        },
+      },
+    },
+    accessPropertiesByDotNotation: true,
+    watch: true,
+  });
 
   private _initToken(): Promise<{
     userName: string;
@@ -90,7 +123,7 @@ export class CimonApp {
     if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
       await window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${hash}`);
     } else {
-      await window.loadFile(path.join(__dirname, `../renderer/index.html#${hash}`));
+      await window.loadFile(path.join(__dirname, `../renderer/index.html`), {hash: hash});
     }
   }
 
@@ -106,7 +139,7 @@ export class CimonApp {
     });
     this._window = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, '..', 'preload', 'index.js'),
+        preload: path.join(__dirname, '..', 'preload', 'cimon.cjs'),
         session: this._session,
         allowRunningInsecureContent: true,
       },
@@ -213,11 +246,6 @@ export class CimonApp {
     this._tray.setToolTip(`cimon - continuous integration monitoring [${options.baseUrl}]`);
   }
 
-  private _tray!: Tray;
-  private _trayContextMenu!: Electron.Menu;
-  private _session!: Electron.Session;
-  private _signalR!: SignalRClient;
-
   private async _openLoginWindow() {
     if (this._loginWindow == null || this._loginWindow.isDestroyed()) {
       this._loginWindow = new BrowserWindow({
@@ -242,7 +270,7 @@ export class CimonApp {
   }
 
   private async _onOpenDiscussionWindow(url: string) {
-    if (!this._discussionWindow) {
+    if (!this._discussionWindow || this._discussionWindow.isDestroyed()) {
       this._discussionWindow = new BrowserWindow({
         webPreferences: {
           session: this._session,
@@ -325,7 +353,26 @@ export class CimonApp {
   }
 
   public async init() {
+    this._autoLaunch = new AutoLaunch({
+      name: 'cimon',
+    });
+    this._autoLaunch.opts.appName = 'cimon';
+    await this._initSettings();
     this._subscribeForEvents();
+    await this._initTray();
+    await this._initSignalR();
+  }
+
+  private async _initSignalR() {
+    this._signalR = new SignalRClient(options.baseUrl, (error) => this._getToken(error));
+    this._signalR.onConnectionStateChanged = this._onConnectionStateChanged.bind(this);
+    this._signalR.onOpenDiscussionWindow = this._onOpenDiscussionWindow.bind(this);
+    this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
+    this._signalR.onMonitorInfoChanged = this._onMonitorInfoChanged.bind(this);
+    await this._startSignalR();
+  }
+
+  private async _initTray() {
     this._tray = new Tray(options.icons.red.tray);
     this._rebuildMenu();
     this._trayContextMenuVisibilityConfigs.push({
@@ -343,12 +390,6 @@ export class CimonApp {
     this._tray.setToolTip('cimon - connecting...');
     this._tray.on('click', async () => this.showMonitors());
     await this._initMainWindow();
-    this._signalR = new SignalRClient(options.baseUrl, (error) => this._getToken(error));
-    this._signalR.onConnectionStateChanged = this._onConnectionStateChanged.bind(this);
-    this._signalR.onOpenDiscussionWindow = this._onOpenDiscussionWindow.bind(this);
-    this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);
-    this._signalR.onMonitorInfoChanged = this._onMonitorInfoChanged.bind(this);
-    await this._startSignalR();
   }
 
   private _restartMenuClicked = false;
@@ -424,6 +465,9 @@ export class CimonApp {
   private async _onMonitorInfoChanged(monitorInfo: MonitorInfo) {
     this._monitorInfo = monitorInfo;
     this._refreshTrayIcon();
+    if (this._store.store.screenshots?.save) {
+      await this._makeScreenshot(monitorInfo);
+    }
   }
 
   private async _startSignalR() {
@@ -491,6 +535,30 @@ export class CimonApp {
     ipcMain.on('cimon-token-ready', (_: IpcMainEvent, tokenData: TokenInfo) => {
       this.tokenDataReceiver?.resolve(tokenData);
       this.tokenDataReceiver = undefined;
+    });
+    ipcMain.handle('dialog:selectDir', (_, defPath) => this.selectDirectory(defPath));
+    ipcMain.handle('options:read', () => this._store.store);
+    ipcMain.handle('options:save', (_, options) => this._updateOptions(options));
+  }
+
+  private _updateOptions(settings: NativeAppSettings) {
+    try {
+      this._store.set(settings);
+      return {};
+    } catch (e) {
+      return {
+        error: e,
+      };
+    }
+  }
+
+  private _subscribeForSettingsChanges() {
+    this._store.onDidChange('autoRun', (newValue, oldValue) => {
+      if (oldValue && !newValue) {
+        this._autoLaunch.disable();
+      } else if (newValue) {
+        this._autoLaunch.enable();
+      }
     });
   }
 
@@ -568,18 +636,84 @@ export class CimonApp {
   }
 
   private async showOptions() {
-    if (this._optionsWindow) {
+    if (this._optionsWindow && !this._optionsWindow.isDestroyed()) {
       this._optionsWindow.focus();
       return;
     }
     this._optionsWindow = new BrowserWindow({
       maximizable: false,
-      width: 800,
-      height: 600,
+      minimizable: false,
+      title: 'cimon - settings',
+      width: 640,
+      height: 450,
+      center: true,
+      autoHideMenuBar: !isDev,
+      webPreferences: {
+        preload: path.join(__dirname, '..', 'preload', 'internal.cjs'),
+        webSecurity: false,
+      },
     });
     this._optionsWindow.on('close', () => {
       this._optionsWindow = undefined;
     });
     await this._loadHash(this._optionsWindow, 'setup');
+  }
+
+  private async selectDirectory(defPath?: string) {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      defaultPath: defPath,
+      properties: ['openDirectory'],
+    });
+    if (!canceled) {
+      return filePaths[0];
+    }
+    return undefined;
+  }
+
+  private async _initSettings() {
+    const autorun = this._store.store.autoRun;
+    const isAutorunEnabled = await this._autoLaunch.isEnabled();
+    if (autorun !== isAutorunEnabled) {
+      this._store.set('autoRun', isAutorunEnabled);
+    }
+    this._subscribeForSettingsChanges();
+  }
+
+  private async _makeScreenshot(monitorInfo: MonitorInfo) {
+    const destPath = this._store.store.screenshots?.path;
+    if (!destPath) {
+      return;
+    }
+    const currentDate = new Date();
+    const formattedDate = currentDate.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+    const filePath = path.join(
+      destPath,
+      `${monitorInfo.monitorKey}_${formattedDate}_failed_${monitorInfo.failedBuildsCount}.jpeg`
+    );
+    const width = this._store.store.screenshots?.width ?? 800;
+    const height = this._store.store.screenshots?.height ?? 600;
+    const quality = this._store.store.screenshots?.quality ?? 80;
+    const win = new BrowserWindow({
+      width: width,
+      height: height,
+      show: false,
+      webPreferences: {
+        offscreen: true,
+        session: this._session,
+      },
+    });
+    await win.loadURL(options.monitorUrl(monitorInfo.monitorKey));
+    let firstFrame: number | undefined;
+    win.webContents.on('paint', (_, __, image) => {
+      if (!firstFrame) {
+        firstFrame = Number(new Date());
+        return;
+      }
+      if (Number(new Date()) - firstFrame > 5000) {
+        fs.writeFileSync(filePath, image.toJPEG(quality));
+        win.close();
+      }
+    });
+    win.webContents.setFrameRate(1);
   }
 }

@@ -24,6 +24,9 @@ class IconLocator {
 export const options = {
   baseUrl: CimonConfig.url,
   waitForConnectionRetryDelay: 10000,
+  monitorUrl(key: string): string {
+    return this.baseUrl + `/monitor/${key}?full-screen=true`;
+  },
   get entrypoint() {
     return `${options.baseUrl}`;
   },

@@ -4,12 +4,14 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.vue",
-    "src/preload/*.d.ts"
+    "src/internal-preload/index.d.ts",
+    "src/shared/*",
   ],
   "compilerOptions": {
     "allowJs": true,
     "composite": true,
     "baseUrl": ".",
+    "sourceMap": true,
     "paths": {
       "@renderer/*": [
         "src/renderer/src/*"

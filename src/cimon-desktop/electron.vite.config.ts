@@ -38,7 +38,18 @@ export default defineConfig(
         plugins: [externalizeDepsPlugin(), copyNotifierPlugin],
       },
       preload: {
-        build: { outDir: 'dist/preload' },
+        build: {
+          outDir: 'dist/preload',
+          rollupOptions: {
+            input: {
+              cimon: resolve(__dirname, 'src/preload/index.ts'),
+              internal: resolve(__dirname, 'src/internal-preload/index.ts'),
+            },
+            output: {
+              format: 'cjs',
+            },
+          },
+        },
         plugins: [externalizeDepsPlugin()],
       },
       renderer: {

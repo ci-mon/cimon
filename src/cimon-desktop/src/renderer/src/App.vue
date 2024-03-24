@@ -1,7 +1,21 @@
-<script setup></script>
+<script setup lang="ts"></script>
 
 <template>
-  <router-view></router-view>
+  <RouterView v-slot="{ Component }">
+    <template v-if="Component">
+      <Transition mode="out-in">
+        <KeepAlive>
+          <Suspense>
+            <!-- main content -->
+            <component :is="Component"></component>
+
+            <!-- loading state -->
+            <template #fallback> Loading... </template>
+          </Suspense>
+        </KeepAlive>
+      </Transition>
+    </template>
+  </RouterView>
 </template>
 
 <style scoped></style>

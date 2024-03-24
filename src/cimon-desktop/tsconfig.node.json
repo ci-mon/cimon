@@ -1,8 +1,12 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/*", "src/preload/*", "cimon-config.*"],
+  "include": ["electron.vite.config.*", "src/main/*", "src/preload/*", "src/internal-preload/*", "cimon-config.*", "src/shared/*", "publisher-cimon.ts"],
   "compilerOptions": {
     "composite": true,
-    "types": ["electron-vite/node"]
+    "sourceMap": true,
+    "types": ["electron-vite/node"],
+    "module": "ES2022",
+    "moduleResolution": "Node",
+    "esModuleInterop": true
   }
 }

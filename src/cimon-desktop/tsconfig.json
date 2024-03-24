@@ -2,7 +2,17 @@
   "files": [],
   "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
   "compilerOptions": {
-    "target": "ES2022",
-    "sourceMap": true
+    "target": "ES2022"
+  },
+  "ts-node": {
+    "moduleTypes": {
+      "forge.config.ts": "cjs",
+      "remove-node-modules-folders.plugin.ts": "cjs",
+      "publisher-cimon.ts": "cjs"
+    },
+    "compilerOptions": {
+      "esModuleInterop": true,
+      "moduleResolution": "NodeNext"
+    }
   }
 }

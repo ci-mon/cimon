@@ -1,5 +1,9 @@
 # cimon-desktop changelog
 
+## 1.0.14
+1. Auto launch setup
+2. Ability to save monitor screenshots
+
 ## 1.0.13
 1. [bug]  Discussion window not visible when opened from notification #28
 
