@@ -11,7 +11,14 @@ using TeamCityAPI.Queries.Common;
 namespace Cimon.Data.TeamCity;
 
 using Contracts.CI;
+using Newtonsoft.Json;
 using TeamCityAPI.Locators.Enums;
+
+class AdvancedBuildLocator : BuildLocator
+{
+	[JsonProperty("sinceBuild", Required = Required.Default, NullValueHandling = NullValueHandling.Ignore)]
+	public BuildLocator? SinceBuild { get; set; }
+}
 
 public class TcBuildInfoProvider : IBuildInfoProvider
 {
@@ -33,9 +40,8 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 
 	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		using var clientTicket = _clientFactory.Create(infoQuery.ConnectorInfo.ConnectorKey);
-		var buildConfig = infoQuery.BuildConfig;
-		var build = await GetBuild(buildConfig, clientTicket);
-		if (build is null)
+		var build = await GetBuild(infoQuery, clientTicket);
+		if (build is null || infoQuery.Options.LastBuildId == build.Id.ToString())
 			return Array.Empty<BuildInfo>();
 		TcBuildInfo info = await GetBuildInfo(build, clientTicket);
 		var results = new List<BuildInfo> { info };
@@ -206,8 +212,8 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return res;
 	}
 
-	private static BuildLocator GetBuildLocator(BuildConfig buildConfig) {
-		var buildLocator = new BuildLocator {
+	private static AdvancedBuildLocator GetBuildLocator(BuildConfig buildConfig) {
+		var buildLocator = new AdvancedBuildLocator {
 			Count = 1,
 			Canceled = false,
 			BuildType = new BuildTypeLocator {
@@ -225,8 +231,14 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return buildLocator;
 	}
 
-	private static async Task<Build?> GetBuild(BuildConfig buildConfig, TeamCityClientTicket clientTicket) {
+	private static async Task<Build?> GetBuild(BuildInfoQuery infoQuery, TeamCityClientTicket clientTicket) {
+		var buildConfig = infoQuery.BuildConfig;
 		var buildLocator = GetBuildLocator(buildConfig);
+		if (infoQuery.Options.LastBuildId is { Length: > 0 } idStr && int.TryParse(idStr, out var id)) {
+			buildLocator.SinceBuild = new BuildLocator() {
+				Id = id
+			};
+		}
 		return await GetBuild(clientTicket, buildLocator);
 	}
 
