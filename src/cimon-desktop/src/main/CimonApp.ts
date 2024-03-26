@@ -123,7 +123,7 @@ export class CimonApp {
     if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
       await window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${hash}`);
     } else {
-      await window.loadFile(path.join(__dirname, `../renderer/index.html`), {hash: hash});
+      await window.loadFile(path.join(__dirname, `../renderer/index.html`), { hash: hash });
     }
   }
 
