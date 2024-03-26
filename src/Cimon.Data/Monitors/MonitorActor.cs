@@ -101,6 +101,9 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			Interlocked.Increment(ref _subscriptionsCount);
 			Context.Watch(Sender);
 			_watchers.Add(Sender);
+			if (_buildInfos.Count > 0) {
+				Sender.Tell(new ActorsApi.MonitorInfo(_model, _buildInfos.Values));
+			}
 		});
 		Receive<Terminated>(msg => {
 			OnWatcherRemoved(Context.System.Scheduler, Self);

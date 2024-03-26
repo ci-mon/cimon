@@ -6,6 +6,7 @@ using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
 using Cimon.Data.Monitors;
+using Cimon.Data.Users;
 using Cimon.DB.Models;
 using Optional.Collections;
 using User = Cimon.Contracts.User;
@@ -50,7 +51,7 @@ public static class ActorsApi
 	public record GetMentions;
 	public record GetUserMentions(string UserName) : UserMessage<GetMentions>(UserName, new GetMentions()),
 		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
-	public record SubscribeToMentions(User User) : UserMessage<User>(User.Name.Name, User);
+	public record SubscribeToMentions(User User, IUserClientApi Caller) : UserMessage<User>(User.Name.Name, User);
 	public record UnSubscribeOnMentions(User User) : UserMessage<User>(User.Name.Name, User);
 	public record SubscribeToMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
 	public record UnSubscribeFromMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);

@@ -1,5 +1,6 @@
 ﻿@page
 @model Cimon.Pages.SignalTest
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     Layout = null;
@@ -12,7 +13,7 @@
     <title>Signals test</title>
 </head>
 <body>
-<script src="/js/signalr.js"></script>
+<script src="/js/signalr.js" asp-append-version="true" ></script>
 <div id="app">
     {{ state }}
     <p>{{ UserName }}</p>
@@ -26,6 +27,9 @@
     <li v-for="item in mentions">
         <a v-bind:href="getDiscussionUrl(item)" target="_blank">You were mentioned {{ item.commentsCount }} in build {{ item.buildId }}</a>
     </li>
+    <div>Monitor info</div>
+    <div>monitorKey: {{ monitorInfo?.monitorKey }}</div>
+    <div>failedBuildsCount: {{ monitorInfo?.failedBuildsCount }}</div>
 </div>
 <script type="module" src="/js/SignalTest.js"></script>
 </body>

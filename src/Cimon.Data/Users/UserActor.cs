@@ -58,7 +58,7 @@ public class UserActor : ReceiveActor
         Receive<ActorsApi.SubscribeToMonitor>(SubscribeToMonitor);
         Receive<ActorsApi.UnSubscribeFromMonitor>(UnSubscribeFromMonitor);
         Receive<ActorsApi.UpdateLastMonitor>(UpdateLastMonitor);
-        var delay = monitoringSettings.Delay / 2;
+        var delay = TimeSpan.FromMilliseconds(500);
         var monitorInfoDebounce =
             Context.ActorOf(Props.Create<Debouncer<ActorsApi.MonitorInfo, MonitorInfo>>(delay, Convert));
         Receive<ActorsApi.MonitorInfo>(m => monitorInfoDebounce.Forward(m));
@@ -104,7 +104,7 @@ public class UserActor : ReceiveActor
         }
         _monitorActor.Tell(new ActorsApi.WatchMonitorByActor(msg.MonitorId));
     }
-    
+
     private void UpdateLastMonitor(ActorsApi.UpdateLastMonitor msg) {
         if (msg.MonitorId == _lastMonitorId) return;
         if (!_watchLastMonitor) return;
@@ -149,20 +149,24 @@ public class UserActor : ReceiveActor
     private string? _lastMonitorId;
     private bool _watchLastMonitor;
     private MonitorInfo? _latestMonitorInfo;
-
+    private readonly BehaviorSubject<IReadOnlyCollection<ExtendedMentionInfo>> _mentionsWithBuildConfig =
+        new(new List<ExtendedMentionInfo>());
     private void SubscribeToMentions(ActorsApi.SubscribeToMentions msg) {
         _mentionSubscriptionCount++;
         if (_subscription is not null) {
+            msg.Caller.UpdateMentions(_mentionsWithBuildConfig.Value);
             return;
         }
         var userName = GetUserName();
         var mentions = _buildConfigService.GetMentionsWithBuildConfig(_mentionsSubject);
-        _subscription = mentions.Select(m => {
-            return _hubAccessor.Group(userName).UpdateMentions(m.Select(x =>
-                new ExtendedMentionInfo(x.Mention.BuildConfigId, x.Mention.CommentsCount,
-                    x.BuildConfig.Map(c => c.Key).ValueOr(string.Empty))));
-        })
-        .Subscribe();
+        var multicast = mentions.Select(m => m.Select(x => new ExtendedMentionInfo(x.Mention.BuildConfigId,
+                x.Mention.CommentsCount, x.BuildConfig.Map(c => c.Key).ValueOr(string.Empty))).ToList())
+            .Multicast(_mentionsWithBuildConfig);
+        _subscription = multicast.Subscribe(infos => {
+                var clients = _hubAccessor.Group(userName);
+                clients.UpdateMentions(infos);
+            });
+        multicast.Connect();
     }
 
     private string GetUserName() => Self.Path.Name;

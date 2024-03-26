@@ -67,7 +67,7 @@ public class UserHub : Hub<IUserClientApi>
 
 	public async Task SubscribeForMentions() {
 		var user = await _userAccessor.Current;
-		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMentions(user));
+		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.SubscribeToMentions(user, Clients.Caller));
 		Context.Items[MentionsSubscriptionKey] = true;
 	}
 

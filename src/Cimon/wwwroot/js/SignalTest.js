@@ -11,7 +11,11 @@ createApp({
             state: 'none',
             UserName: '',
             messages: [],
-            mentions: []
+            mentions: [],
+            monitorInfo: {
+                monitorKey: '',
+                failedBuildsCount: 0
+            }
         }
     },
     mounted() {
@@ -65,6 +69,9 @@ createApp({
             });
             connection.on('CheckForUpdates', (mentions)=>{
                 this.messages.push({header: 'CheckForUpdates signal received'})
+            });
+            connection.on('UpdateMonitorInfo', (monitorInfo) => {
+                this.monitorInfo = monitorInfo;
             });
             await connection.start();
             this.state = 'connected';
