@@ -1,6 +1,8 @@
 ﻿namespace Cimon.Data.Common;
 
-class RingBuffer<T>(int maxSize) where T: class
+using System.Collections;
+
+class RingBuffer<T>(int maxSize) : IEnumerable<T> where T: class
 {
 	private readonly Queue<T> _queue = new();
 
@@ -25,4 +27,8 @@ class RingBuffer<T>(int maxSize) where T: class
 			yield return item;
 		}
 	}
+
+	public IEnumerator<T> GetEnumerator() => _queue.GetEnumerator();
+
+	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

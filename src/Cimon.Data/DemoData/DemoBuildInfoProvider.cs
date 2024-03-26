@@ -7,8 +7,8 @@ namespace Cimon.Data.DemoData;
 public class DemoBuildInfoProvider : IBuildInfoProvider
 {
 	private long _callsCount;
-	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
-		IReadOnlyCollection<BuildInfo> result = Array.Empty<BuildInfo>();
+	public async Task<IReadOnlyList<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
+		IReadOnlyList<BuildInfo> result = Array.Empty<BuildInfo>();
 		if (infoQuery.BuildConfig is BuildConfigModel { DemoState: {} demoState }) {
 			if (Interlocked.Increment(ref _callsCount) < 10) {
 				await Task.Delay(TimeSpan.FromSeconds(1));

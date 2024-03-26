@@ -20,7 +20,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 	record InternalBuildInfo(JenkinsBuildInfo BuildInfo, JobLocator JobLocator);
 	private static readonly ConcurrentDictionary<string, UserInfo?> UserNameMap = new();
 
-	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
+	public async Task<IReadOnlyList<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		using var client = factory.Create(infoQuery.ConnectorInfo.ConnectorKey);
 		var info = await GetFullBuildInfo(infoQuery, null, client);
 		if (info is null) {
@@ -112,9 +112,12 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 	}
 
 	private async Task<InternalBuildInfo?> GetLastFinishedBuild(long number, JobLocator locator,
-			IJenkinsClient client) {
+			IJenkinsClient client, string? lastBuildId) {
 		while (number > 0) {
 			var lastBuildNumber = number.ToString();
+			if (lastBuildNumber == lastBuildId) {
+				return null;
+			}
 			var buildInfo = await client.Query(new JenkinsApi.BuildInfo(lastBuildNumber, locator));
 			if (buildInfo == null) {
 				return null;
@@ -136,11 +139,8 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			: JobLocator.Create(buildConfig.Key);
 		var job = await client.Query(new JenkinsApi.Job(locator));
 		if (job is null) return null;
-		var jobNumber = number ?? job.LastBuild.Number;
-		if (jobNumber.ToString() == buildInfoQuery.Options.LastBuildId) {
-			return null;
-		}
-		return await GetLastFinishedBuild(jobNumber, locator, client);
+		var jobNumber = number ?? job.LastCompletedBuild.Number;
+		return await GetLastFinishedBuild(jobNumber, locator, client, buildInfoQuery.Options.LastBuildId);
 	}
 
 	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(JenkinsBuildInfo buildInfo,

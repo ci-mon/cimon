@@ -17,6 +17,9 @@ public class BuildInfoHistory
 		var currentFailedTests = newInfo.FailedTests.Select(x => x.TestId).ToHashSet();
 		var currentProblems = newInfo.Problems.Select(x => (x.Type, x.Details)).ToHashSet();
 		foreach (var infoItem in _buffer.IterateReversed()) {
+			if (infoItem.Info.Status == BuildStatus.Success) {
+				break;
+			}
 			if (!infoItem.Resolved) {
 				if (TryResolveOldBuilds(infoItem, currentProblems, currentFailedTests)) continue;
 				changes.InsertRange(0,
@@ -45,5 +48,22 @@ public class BuildInfoHistory
 			}
 		}
 		return false;
+	}
+
+	public bool SetFailureSuspect(string buildInfoId, BuildFailureSuspect failureSuspect) {
+		bool suspectFound = false;
+		foreach (var infoItem in _buffer) {
+			if (suspectFound) {
+				if (infoItem.Info.Status == BuildStatus.Success) {
+					break;
+				}
+				infoItem.Info.FailureSuspect = failureSuspect;
+			}
+			if (infoItem.Info.Id == buildInfoId) {
+				infoItem.Info.FailureSuspect = failureSuspect;
+				suspectFound = true;
+			}
+		}
+		return Last?.Id == buildInfoId;
 	}
 }

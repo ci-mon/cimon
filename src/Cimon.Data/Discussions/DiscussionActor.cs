@@ -218,7 +218,7 @@ public class DiscussionActor : ReceiveActor
 	}
 
 	protected override void PostStop() {
-		_discussionData.Subject.OnCompleted();
-		_discussionData.Subject.Dispose();
+		_discussionData?.Subject.OnCompleted();
+		_discussionData?.Subject.Dispose();
 	}
 }

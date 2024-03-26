@@ -41,16 +41,18 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		var testFailures = string.Join(Environment.NewLine,
 			buildInfo.FailedTests.Select(t => $"{t.Name}{Environment.NewLine}{t.Details}"));
 		var status = $"{buildInfo.StatusText}{Environment.NewLine}{problems}{Environment.NewLine}{testFailures}";
-		var changes = buildInfo.Changes.GroupBy(x => x.Author).Select(x => {
-			var changesText = new StringBuilder();
-			foreach (VcsChange change in x) {
-				changesText.AppendLine(change.CommitMessage);
-				foreach (var modification in change.Modifications) {
-					changesText.AppendLine(modification.Path);
+		var changes = buildInfo.Changes
+			.Where(x => !x.IsInherited)
+			.GroupBy(x => x.Author).Select(x => {
+				var changesText = new StringBuilder();
+				foreach (VcsChange change in x) {
+					changesText.AppendLine(change.CommitMessage);
+					foreach (var modification in change.Modifications) {
+						changesText.AppendLine(modification.Path);
+					}
 				}
-			}
-			return (x.Key, changesText.ToString());
-		});
+				return (x.Key, changesText.ToString());
+			});
 		return new BuildInfoTextData(status, changes.ToList());
 	}
 

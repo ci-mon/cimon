@@ -38,7 +38,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return DateTimeOffset.ParseExact(teamcityDate, _dateFormat, CultureInfo.InvariantCulture);
 	}
 
-	public async Task<IReadOnlyCollection<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
+	public async Task<IReadOnlyList<BuildInfo>> FindInfo(BuildInfoQuery infoQuery) {
 		using var clientTicket = _clientFactory.Create(infoQuery.ConnectorInfo.ConnectorKey);
 		var build = await GetBuild(infoQuery, clientTicket);
 		if (build is null || infoQuery.Options.LastBuildId == build.Id.ToString())
@@ -64,7 +64,12 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		buildLocator.LookupLimit = 20;
 		var buildsList = clientTicket.Client.Builds.Include(x => x.Build).WithLocator(buildLocator)
 			.GetAsyncEnumerable<Builds, Build>(5);
+		var count = 0;
 		await foreach (var buildInfoSmall in buildsList) {
+			count++;
+			if (count > query.Options.LookBackLimit) {
+				break;
+			}
 			if (buildInfoSmall.Id == sourceBuild.Id) continue;
 			if (!buildInfoSmall.Id.HasValue || $"{buildInfoSmall.Id}".Equals(lastNumberStr)) {
 				break;

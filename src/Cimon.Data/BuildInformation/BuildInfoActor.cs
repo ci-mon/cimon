@@ -48,8 +48,7 @@ class BuildInfoActor : ReceiveActor
 		Receive<StopIfIdle>(OnStopIfIdle);
 		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
-		Receive<BuildInfo>(HandleBuildInfo);
-		Receive<BuildFailureSuspect>(HandleBuildFailureSuspect);
+		Receive<MlResponse>(HandleMlResponse);
 		Receive<NotifySubscribersMsg>(_ => {
 			if (_buildInfoHistory.Last is not { } buildInfo) return;
 			NotifySubscribers(buildInfo);
@@ -92,7 +91,7 @@ class BuildInfoActor : ReceiveActor
 			_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
 				TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
 			if (_buildInfoHistory.Last is { } buildInfo && !mlWasEnabled) {
-				RunMl(buildInfo);
+				TryRunMl(buildInfo);
 			}
 		} catch (Exception e) {
 			_log.Error("Failed to InitBuildConfig", e);
@@ -100,56 +99,62 @@ class BuildInfoActor : ReceiveActor
 		}
 	}
 
-	private void HandleBuildFailureSuspect(BuildFailureSuspect suspect) {
-		var buildInfo = _buildInfoHistory.Last;
-		if (buildInfo != null) {
-			buildInfo.FailureSuspect = suspect;
-			NotifySubscribers(buildInfo);
+	private void HandleMlResponse(MlResponse response) {
+		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspect)) {
+			NotifySubscribers(_buildInfoHistory.Last);
 		}
 	}
 
-	private ICancelable? _messageToMLActor;
-	private void HandleBuildInfo(BuildInfo? newInfo) {
-		if (newInfo is null) return;
+	private bool AddBuildInfoToHistory(BuildInfo? newInfo) {
+		if (newInfo is null) return true;
 		var lastBuildId = _buildInfoHistory.Last?.Id;
 		if (lastBuildId == newInfo.Id) {
-			return;
+			return false;
 		}
-		newInfo.Changes = newInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 		_buildInfoHistory.Add(newInfo);
-		RunMl(newInfo);
-		HandleDiscussion(newInfo);
-		DelayedNotifySubscribers();
+		return true;
 	}
 
-	private void RunMl(BuildInfo newInfo) {
+	private void TryRunMl(BuildInfo newInfo) {
 		if (!_config!.AllowML) {
 			return;
 		}
-		_messageToMLActor?.Cancel();
 		if (!newInfo.IsNotOk()) {
 			return;
 		}
 		var mlMsg = new MlRequest(_connectorInfo, _config, _provider!, newInfo, Self);
-		_messageToMLActor = Context.System.Scheduler.ScheduleTellOnceCancelable(TimeSpan.FromSeconds(3), _mlActor,
-			mlMsg, Self);
+		_mlActor.Tell(mlMsg);
 	}
 
 	private async Task OnGetBuildInfo<T>(T _) {
 		try {
-			var lastBuildId = _buildInfoHistory.Last?.Id;
+			string? lastBuildId = _buildInfoHistory.Last?.Id;
 			var options = new BuildInfoQueryOptions(lastBuildId, 5);
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
-			if (!infos.Any() && _buildInfoHistory.Last is null) {
+			if (!infos.Any() && lastBuildId is null) {
 				Self.Tell(BuildInfo.NoData);
 				return;
 			}
-			foreach (var buildInfo in infos) {
-				Self.Tell(buildInfo);
-			}
+			AddBuildInfos(infos);
 		} catch (Exception e) {
 			_log.Error(e, e.Message);
+		}
+	}
+
+	private void AddBuildInfos(IReadOnlyList<BuildInfo> infos) {
+		int lastId = infos.Count - 1;
+		for (var index = 0; index <= lastId; index++) {
+			BuildInfo buildInfo = infos[index];
+			buildInfo.Changes = buildInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
+			if (!AddBuildInfoToHistory(buildInfo)) {
+				continue;
+			}
+			if (index == lastId) {
+				TryRunMl(buildInfo);
+				HandleDiscussion(buildInfo);
+				DelayedNotifySubscribers();
+			}
 		}
 	}
 

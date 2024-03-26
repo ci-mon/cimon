@@ -15,6 +15,8 @@ record MlRequest(
 	BuildInfo BuildInfo,
 	IActorRef Receiver);
 
+record MlResponse(MlRequest Request, BuildFailureSuspect Suspect);
+
 
 class BuildMLActor: ReceiveActor
 {
@@ -57,7 +59,7 @@ class BuildMLActor: ReceiveActor
 	private void DownloadingLogs() {
 		Receive<MlRequest>(request => {
 			if (_active?.BuildConfig.Id == request.BuildConfig.Id) {
-				_cts.Cancel();
+				_cts?.Cancel();
 				UnbecomeStacked();
 				Context.Self.Forward(request);
 				return;
@@ -79,16 +81,13 @@ class BuildMLActor: ReceiveActor
 			}
 			info.Log = info.Log?.Substring(0, Math.Min(10000, info.Log.Length));
 			if (failureSuspect is not null && failureSuspect.Confidence > 20) {
-				request.Receiver.Tell(failureSuspect);
+				request.Receiver.Tell(new MlResponse(request, failureSuspect));
 			}
 		});
 	}
 
 	private void EnqueueRequest(MlRequest request) {
-		var newItems = _requests
-			.Where(x => x.BuildConfig.Id != request.BuildConfig.Id)
-			.ToArray();
-		_requests = ImmutableQueue.Create(newItems).Enqueue(request);
+		_requests = _requests.Enqueue(request);
 	}
 
 	public override void AroundPostStop() {
