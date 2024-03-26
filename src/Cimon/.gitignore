@@ -1,3 +1,4 @@
 nativeApps/
 secrets.local.json
 wwwroot/js/node_modules/
+db/*
