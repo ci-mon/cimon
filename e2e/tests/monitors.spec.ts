@@ -1,4 +1,4 @@
-import {expect, Page, test} from "@playwright/test";
+import {expect, Page, test} from "./../test";
 import {authAsUser} from "./auth";
 
 authAsUser();
@@ -6,21 +6,20 @@ authAsUser();
 test.beforeEach(async ({page}) => {
     await page.goto('/');
 });
-
-async function allBuildInfosLoaded(page: Page){
+async function allBuildInfosLoaded(page: Page) {
     await Promise.all((await page.locator('.monitor .build-info-item.loading').all()).map(locator => expect(locator).toBeHidden({timeout: 15000})));
 }
-test('add monitor', async ({page}) => {
+test('add monitor', async ({page, blazorPage}) => {
+    await blazorPage.waitForBlazor();
     const testRunId = Math.floor(Math.random()*1000);
     await page.getByLabel('monitor-list').click();
+    await blazorPage.waitForBlazor();
     await page.getByLabel('add-monitor').click();
     let cardCaption = page.getByTestId('monitor-item-title').getByText('Untitled').last();
-    if (! await cardCaption.isVisible()) {
-        await page.getByLabel('add-monitor').click();
-    }
     let card = page.locator('.monitor-item').filter({has: cardCaption}).first();
     await card.getByTestId('setup').click();
     await page.waitForURL(/setupMonitor/);
+    await blazorPage.waitForBlazor();
     const titleEdit = page.getByLabel('edit-title');
     await expect(titleEdit).toHaveValue('Untitled');
     const monitorName = `My test monitor ${testRunId}`;

@@ -3,8 +3,8 @@
 @using Cimon.Contracts
 @using Cimon.Data.Users
 @inject ICurrentUserAccessor CurrentUserAccessor
-<RadzenStack Orientation="Orientation.Horizontal">
-    <RadzenProfileMenu>
+<RadzenStack aria-label="login-menu"  Orientation="Orientation.Horizontal">
+    <RadzenProfileMenu aria-label="show-login-options">
         <Template>
             <RadzenLabel aria-label="profile-user-name">@_user.FullName</RadzenLabel>
             <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user?.Email"></RadzenGravatar>
@@ -13,7 +13,7 @@
             @if (_user.IsGuest()) {
                 <RadzenProfileMenuItem Icon="login" Text="Login: Auto" 
                                        Path="/Login?autologin=true"></RadzenProfileMenuItem>
-                <RadzenProfileMenuItem Icon="password"
+                <RadzenProfileMenuItem Icon="password" aria-label="login-via-password"
                                        Text="Login: Password"
                                        Path="/Login"></RadzenProfileMenuItem>
             } else {
