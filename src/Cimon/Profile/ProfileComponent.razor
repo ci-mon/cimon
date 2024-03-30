@@ -21,7 +21,9 @@
             }
         </ChildContent>
     </RadzenProfileMenu>
-    <MentionsInfoComponent />
+     @if (!_user.IsGuest()) {
+        <MentionsInfoComponent />
+    }
 </RadzenStack>
 <style>
     .rz-menu.rz-profile-menu{

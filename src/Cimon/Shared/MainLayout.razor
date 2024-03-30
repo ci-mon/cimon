@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using Optional
 @using Optional.Linq
+@using Cimon.Profile
 @inherits Microsoft.AspNetCore.Components.LayoutComponentBase
 @inject UnprotectedLocalStorage BrowserStorage
 @inject NavigationManager NavManager
@@ -35,7 +36,7 @@
             <RadzenColumn>
                 <RadzenStack class="right-toolbar" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0">
                     <div class="rz-mr-2 login-info">
-                        <LoginDisplay/>
+                        <ProfileComponent />
                     </div>
                     <SectionOutlet SectionName="right-toolbar" />
                     <RadzenButton Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" 

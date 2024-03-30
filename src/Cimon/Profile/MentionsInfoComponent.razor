@@ -26,10 +26,10 @@
 
     void ShowTooltip(ElementReference elementReference) {
         var message = $"You were mentioned {_mentionsCount} times";
-        var color = _mentionsCount.Value > 0 ? "--rz-danger" : "--rz-primary";
+        string color = _mentionsCount.Value > 0 ? "--rz-danger" : "--rz-primary";
         TooltipService.Open(elementReference, message, new TooltipOptions {
             Style = $"background-color: var({color}); color: var(--rz-text-contrast-color)",
-            Position = TooltipPosition.Bottom,
+            Position = TooltipPosition.Left
         });
     }
 
