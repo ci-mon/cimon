@@ -32,6 +32,7 @@ interface MentionInfo {
   commentsCount: number;
   buildConfigKey: string;
 }
+
 type TokenInfo = {
   userName: string;
   token: string;
@@ -201,10 +202,13 @@ export class CimonApp {
         windowWasHidden = true;
       }
       await this._openLoginWindow();
-      this._loginWindow!.webContents.once('did-redirect-navigation', async () => {
+      this._loginWindow!.webContents.on('did-redirect-navigation', async (_, url) => {
+        if (url.endsWith('Login?error')) {
+          return;
+        }
         this._loginWindow?.destroy();
         this._loginWindow = undefined;
-        await this._window.loadURL(options.entrypoint);
+        await this._window.loadURL(options.lastMonitor);
         if (windowWasHidden) {
           this._window.show();
         }
@@ -259,7 +263,7 @@ export class CimonApp {
         autoHideMenuBar: true,
         center: true,
         width: 320,
-        height: 360,
+        height: 370,
         minimizable: false,
         maximizable: false,
       });

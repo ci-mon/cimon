@@ -78,7 +78,7 @@ public class AuthController : Controller
 	public async Task<IActionResult> Login([FromForm]string userName, [FromForm]string password) {
 		var loginResult = await _userManager.SignInAsync(userName, password);
 		if (!loginResult) {
-			return BadRequest("User with such name and/or password is not found");
+			return Redirect("/Login?error");
 		}
 		return await SignInUsingCookie("/api/users/openLastMonitor", userName);
 	}

@@ -7,15 +7,25 @@
         <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
             <RadzenLogin AllowRegister="false" AllowResetPassword="false"/>
         </RadzenTemplateForm>
-        <RadzenAlert  AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
-            cimon doesn't store your password
-        </RadzenAlert>
+        @if (Error != null) {
+            <RadzenAlert Style="max-width: 25em;" Close="() => { Error = null;}" AllowClose="true" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+                User with such name and/or password is not found
+            </RadzenAlert>
+        } else {
+            <RadzenAlert  AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
+                cimon doesn't store your password
+            </RadzenAlert>
+        }
     </RadzenCard>
 </RadzenStack>
 @code {
 
     private bool _showProgressBar;
+    
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
     private void OnSubmit() {
+        Error = null;
         _showProgressBar = true;
     }
 
