@@ -49,10 +49,6 @@ class BuildInfoActor : ReceiveActor
 		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<MlResponse>(HandleMlResponse);
-		Receive<NotifySubscribersMsg>(_ => {
-			if (_buildInfoHistory.Last is not { } buildInfo) return;
-			NotifySubscribers(buildInfo);
-		});
 		Receive<Terminated>(_ => {
 			_discussionOpen = false;
 		});
@@ -153,20 +149,9 @@ class BuildInfoActor : ReceiveActor
 			if (index == lastId) {
 				TryRunMl(buildInfo);
 				HandleDiscussion(buildInfo);
-				DelayedNotifySubscribers();
+				NotifySubscribers(buildInfo);
 			}
 		}
-	}
-
-	private sealed record NotifySubscribersMsg;
-	private readonly NotifySubscribersMsg _notifySubscribersMsg = new();
-	private void DelayedNotifySubscribers() {
-		var delay = _settings.Delay / 2;
-		var tenSeconds = TimeSpan.FromSeconds(10);
-		if (delay > tenSeconds) {
-			delay = tenSeconds;
-		}
-		Context.System.Scheduler.ScheduleTellOnce(delay, Self, _notifySubscribersMsg, Self);
 	}
 
 	private void NotifySubscribers(BuildInfo? current) {
