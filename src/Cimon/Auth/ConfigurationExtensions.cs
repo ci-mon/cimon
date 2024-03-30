@@ -101,13 +101,7 @@ public static class ConfigurationExtensions
 	public static void AddAuth(this IServiceCollection services) {
 		services.AddSingleton<TokenService>();
 		services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-			.AddNegotiate(options => {
-				options.Events = new NegotiateEvents {
-					OnAuthenticationFailed = AuthController.TryHandleOnAuthenticationFailed,
-					OnAuthenticated = AuthController.TryHandleOnAuthenticated,
-					OnChallenge = AuthController.TryHandleOnChallenge
-				};
-			})
+			.AddNegotiate()
 			.AddCookie(options => {
 				options.LoginPath = "/Login";
 				options.AccessDeniedPath = "/Login";

@@ -1,43 +1,104 @@
 ﻿@page "/Login"
 @layout EmptyLayout
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
-<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center">
-    <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px; margin: 2em !important;">
-        <RadzenProgressBar Visible="@_showProgressBar" ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-        <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
-            <RadzenLogin AllowRegister="false" ResetPasswordText="Autologin" AllowResetPassword="true" ResetPassword="s => DoAutologin()"/>
-        </RadzenTemplateForm>
-        @if (Error != null) {
-            <RadzenAlert Style="max-width: 25em;" Close="() => { Error = null;}" AllowClose="true" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
-                @if (Error.Equals("autologinFailed", StringComparison.OrdinalIgnoreCase)) {
-                    <p>Automatic login failed </p>
-                } else {
-                    <p>User with such name and/or password is not found</p>
+<RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Center" Style="height: 100%;">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center">
+        <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px; margin: 2em !important;">
+            <RadzenProgressBar Visible="@_showProgressBar" ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"/>
+            <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
+                <RadzenLogin AllowRegister="false" ResetPasswordText="Autologin" AllowResetPassword="true" ResetPassword="() => OnAutologin()"/>
+                @if (ReturnUrl is {}) {
+                    <input id="returnUrl" style="display: none" name="returnUrl" value="@ReturnUrl" />
                 }
-            </RadzenAlert>
-        } else {
-            <RadzenAlert  AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
-                cimon doesn't store your password
-            </RadzenAlert>
-        }
-    </RadzenCard>
+                </RadzenTemplateForm>
+            <RadzenStack Visible="_autologinInProcess" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center">
+                <RadzenLabel>Automatic login attempt</RadzenLabel>
+            </RadzenStack>
+            @if (Error != null) {
+                <RadzenAlert Style="max-width: 25em;" Close="() => { Error = null; }" AllowClose="true" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    @if (Error.Equals("autologinFailed", StringComparison.OrdinalIgnoreCase)) {
+                        <p>Automatic login failed </p>
+                    } else {
+                        <p>User with such name and/or password is not found</p>
+                    }
+                </RadzenAlert>
+            } else {
+                <RadzenAlert AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    cimon doesn't store your password
+                </RadzenAlert>
+            }
+        </RadzenCard>
+    </RadzenStack>
 </RadzenStack>
+
 @code {
 
     private bool _showProgressBar;
-    
+    private bool _autologinInProcess;
+    private IJSObjectReference? _authModule;
+
     [SupplyParameterFromQuery(Name = "error")]
     public string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "autologin")]
+    public bool Autologin { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    protected override void OnParametersSet() {
+        base.OnParametersSet();
+        ReturnUrl ??= "/api/users/openLastMonitor";
+    }
+
     private void OnSubmit() {
         Error = null;
         _showProgressBar = true;
     }
 
-    private void DoAutologin() {
+    private async Task OnAutologin() {
         Error = null;
         StateHasChanged();
-        NavigationManager.NavigateTo("auth/retry-autologin", true);
+        await DoAutologin();
+    }
+
+    private async Task DoAutologin() {
+        if (_authModule is null) return;
+        Error = null;
+        _autologinInProcess = true;
+        _showProgressBar = true;
+        StateHasChanged();
+        var result = await _authModule.InvokeAsync<bool>("LoginManager.doAutologin");
+        _showProgressBar = false;
+        if (result) {
+            NavigationManager.NavigateTo(ReturnUrl ?? "/");
+        } else {
+            _autologinInProcess = false;
+            Error = "autologinFailed";
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            _authModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./Auth/Login.razor.js");
+            if (Autologin) {
+                await DoAutologin();
+            }
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync() {
+        try {
+            if (_authModule is not null) {
+                await _authModule.DisposeAsync();
+            }
+        } catch (JSDisconnectedException) {
+        }
     }
 
 }

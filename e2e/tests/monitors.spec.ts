@@ -15,6 +15,9 @@ test('add monitor', async ({page}) => {
     await page.getByLabel('monitor-list').click();
     await page.getByLabel('add-monitor').click();
     let cardCaption = page.getByTestId('monitor-item-title').getByText('Untitled').last();
+    if (! await cardCaption.isVisible()) {
+        await page.getByLabel('add-monitor').click();
+    }
     let card = page.locator('.monitor-item').filter({has: cardCaption}).first();
     await card.getByTestId('setup').click();
     await page.waitForURL(/setupMonitor/);

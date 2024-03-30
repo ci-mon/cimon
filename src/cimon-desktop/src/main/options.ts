@@ -40,7 +40,7 @@ export const options = {
     return `${this.baseUrl}/auth/token`;
   },
   get autologin() {
-    return `${this.baseUrl}/auth/robotAutologin`;
+    return `${this.baseUrl}/auth/autologin`;
   },
   get lastMonitor() {
     return `${this.baseUrl}/api/users/openLastMonitor?full-screen=true`;

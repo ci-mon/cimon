@@ -38,6 +38,7 @@ type TokenInfo = {
 
 export class CimonApp {
   private _window?: Electron.CrossProcessExports.BrowserWindow;
+  private _loginWindow?: Electron.CrossProcessExports.BrowserWindow;
   private _discussionWindow?: Electron.CrossProcessExports.BrowserWindow;
   private _optionsWindow?: Electron.CrossProcessExports.BrowserWindow;
 
@@ -161,7 +162,13 @@ export class CimonApp {
     return await result.json();
   }
 
+  private _onLogin: Array<() => void> = [];
   private async _doLogin() {
+    if (this._loginWindow) {
+      this._loginWindow.show();
+      this._loginWindow.focus();
+      return new Promise<void>((r) => this._onLogin.push(r));
+    }
     await this._waitForConnection();
     try {
       const response = await this._session.fetch(options.autologin);
@@ -170,6 +177,11 @@ export class CimonApp {
       }
     } catch {
       await this._loginManually();
+    }
+    const callbacks = this._onLogin;
+    this._onLogin = [];
+    for (const callback of callbacks) {
+      callback();
     }
     this._loggedIn = true;
   }
@@ -190,7 +202,13 @@ export class CimonApp {
       minimizable: false,
       maximizable: false,
     });
+    this._loginWindow = loginWindow;
     this._hideWindowOnEsc(loginWindow);
+    loginWindow.on('close', (e) => {
+      if (this._isExiting) return;
+      e.preventDefault();
+      loginWindow.hide();
+    });
     await loginWindow.loadURL(options.loginPageUrl);
     loginWindow.center();
     loginWindow.show();
@@ -211,6 +229,7 @@ export class CimonApp {
           return;
         }
         loginWindow.destroy();
+        delete this._loginWindow;
         resolve();
       });
     });
@@ -384,7 +403,11 @@ export class CimonApp {
     });
     this._trayContextMenuVisibilityConfigs.push({
       id: 'showMonitor',
-      fn: () => this._currentState === ConnectionState.Connected && !this._window?.isVisible(),
+      fn: () => this._loggedIn && this._currentState === ConnectionState.Connected && !this._window?.isVisible(),
+    });
+    this._trayContextMenuVisibilityConfigs.push({
+      id: 'login',
+      fn: () => !this._loggedIn,
     });
     this._trayContextMenuVisibilityConfigs.push({
       id: 'reload',
@@ -399,7 +422,7 @@ export class CimonApp {
   private _rebuildMenu() {
     const versionMenuLabel = this._updateReady
       ? `Restart to update`
-      : `Version: ${app.getVersion()}. User ${this._userName ?? 'not connected yet'}`;
+      : `Version: ${app.getVersion()}. ${this._userName ?? 'not connected yet'}`;
     const template: MenuItemConstructorOptions[] = [
       {
         id: 'showMonitor',
@@ -407,6 +430,13 @@ export class CimonApp {
         type: 'normal',
         visible: false,
         click: async () => await this.showMonitors(),
+      },
+      {
+        id: 'login',
+        label: 'Login',
+        type: 'normal',
+        visible: false,
+        click: async () => await this._doLogin(),
       },
       {
         id: 'reconnect',
