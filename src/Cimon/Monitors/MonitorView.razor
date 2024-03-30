@@ -16,7 +16,9 @@
 
 <PageTitle>CI @GetTitle()</PageTitle>
 <SectionContent SectionName="right-toolbar">
-    <RadzenButton Icon="sync" Click="() => RefreshMonitor()" />
+    <AuthorizeView>
+        <RadzenButton Icon="sync" Click="() => RefreshMonitor()" />
+    </AuthorizeView>
 </SectionContent>
 
 <div class="monitor">
@@ -64,7 +66,7 @@
         var user = await CurrentUserAccessor.Current;
         if (!string.IsNullOrWhiteSpace(MonitorId)) {
             await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
-            NavigationManager.RegisterLocationChangingHandler(async context => {
+            NavigationManager.RegisterLocationChangingHandler(async _ => {
                 await JSRuntime.InvokeVoidAsync("uiApi.resetIcon");
             });
         } else {
