@@ -74,7 +74,7 @@
         var result = await _authModule.InvokeAsync<bool>("LoginManager.doAutologin");
         _showProgressBar = false;
         if (result) {
-            NavigationManager.NavigateTo(ReturnUrl ?? "/");
+            NavigationManager.NavigateTo(ReturnUrl ?? "/", true);
         } else {
             _autologinInProcess = false;
             Error = "autologinFailed";
