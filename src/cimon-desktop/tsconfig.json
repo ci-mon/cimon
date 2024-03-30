@@ -2,7 +2,8 @@
   "files": [],
   "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
   "compilerOptions": {
-    "target": "ES2022"
+    "target": "ES2022",
+    "sourceMap": true
   },
   "ts-node": {
     "moduleTypes": {

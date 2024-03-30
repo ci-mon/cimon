@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
 using RouteData = Microsoft.AspNetCore.Components.RouteData;
 
@@ -93,15 +94,24 @@ public static class ConfigurationExtensions
 	
 	public static IServiceCollection AddAuthorization(this IServiceCollection services,
 		Action<AuthorizationOptions, IServiceProvider> configure) {
-		services.AddOptions<AuthorizationOptions>().Configure<IServiceProvider>(configure);
+		services.AddOptions<AuthorizationOptions>().Configure(configure);
 		return services.AddAuthorization();
 	}
 
 	public static void AddAuth(this IServiceCollection services) {
 		services.AddSingleton<TokenService>();
 		services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-			.AddNegotiate()
-			.AddCookie()
+			.AddNegotiate(options => {
+				options.Events = new NegotiateEvents {
+					OnAuthenticationFailed = AuthController.TryHandleOnAuthenticationFailed,
+					OnAuthenticated = AuthController.TryHandleOnAuthenticated,
+					OnChallenge = AuthController.TryHandleOnChallenge
+				};
+			})
+			.AddCookie(options => {
+				options.LoginPath = "/Login";
+				options.AccessDeniedPath = "/Login";
+			})
 			.AddJwtBearer();
 		services.AddAuthorization((options, sp) => {
 			options.AddPolicy("LocalhostPolicy", policy =>

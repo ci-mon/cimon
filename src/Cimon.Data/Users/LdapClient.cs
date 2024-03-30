@@ -1,5 +1,6 @@
 ﻿using System.DirectoryServices.Protocols;
 using System.Net;
+using System.Security;
 using Cimon.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -63,10 +64,13 @@ public class LdapClient
 	}
 
 	[SupportedOSPlatform("windows")]
-	public LdapUserInfo FindUserInfo(string name) {
+	public LdapUserInfo GetUserInfo(string name) {
+		if (string.IsNullOrWhiteSpace(_options.Host)) {
+			throw new NotSupportedException("Ldap is not configured");
+		}
 		var context = new PrincipalContext(ContextType.Domain, _options.Host);
 		UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, name) ??
-			throw new Exception($"User {name} is not found in {_options.Host}");
+			throw new SecurityException($"User {name} is not found in {_options.Host}");
 		var user = new LdapUserInfo {
 			SamAccountName = userPrincipal.SamAccountName,
 			DisplayName = userPrincipal.DisplayName,

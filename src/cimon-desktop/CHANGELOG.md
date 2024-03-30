@@ -1,5 +1,8 @@
 # cimon-desktop changelog
 
+## 1.0.16
+1. Login flow improvements
+
 ## 1.0.15
 1. Use tray guid to preserve settings
 

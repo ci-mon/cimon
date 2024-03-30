@@ -1,15 +1,20 @@
 ﻿@page "/Login"
 @layout EmptyLayout
+@inject NavigationManager NavigationManager
 
 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center">
     <RadzenCard class="rz-my-12 rz-mx-auto rz-p-4 rz-p-md-12" style="max-width: 600px; margin: 2em !important;">
         <RadzenProgressBar Visible="@_showProgressBar" ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
         <RadzenTemplateForm Visible="@(!_showProgressBar)" Data=@("SimpleLogin") Submit="@((string _) => OnSubmit())" Action="/auth/login" Method="POST">
-            <RadzenLogin AllowRegister="false" AllowResetPassword="false"/>
+            <RadzenLogin AllowRegister="false" ResetPasswordText="Autologin" AllowResetPassword="true" ResetPassword="s => DoAutologin()"/>
         </RadzenTemplateForm>
         @if (Error != null) {
             <RadzenAlert Style="max-width: 25em;" Close="() => { Error = null;}" AllowClose="true" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
-                User with such name and/or password is not found
+                @if (Error.Equals("autologinFailed", StringComparison.OrdinalIgnoreCase)) {
+                    <p>Automatic login failed </p>
+                } else {
+                    <p>User with such name and/or password is not found</p>
+                }
             </RadzenAlert>
         } else {
             <RadzenAlert  AllowClose="false" AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter">
@@ -27,6 +32,12 @@
     private void OnSubmit() {
         Error = null;
         _showProgressBar = true;
+    }
+
+    private void DoAutologin() {
+        Error = null;
+        StateHasChanged();
+        NavigationManager.NavigateTo("auth/retry-autologin", true);
     }
 
 }

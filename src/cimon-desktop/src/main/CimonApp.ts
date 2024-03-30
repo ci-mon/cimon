@@ -2,16 +2,14 @@ import {
   app,
   autoUpdater,
   BrowserWindow,
+  dialog,
   ipcMain,
-  IpcMainEvent,
   Menu,
   MenuItemConstructorOptions,
-  net,
   session,
   shell,
   Tray,
   WebContents,
-  dialog,
 } from 'electron';
 import { ConnectionState, MonitorInfo, SignalRClient } from './SignalRClient';
 import log from 'electron-log';
@@ -37,20 +35,13 @@ type TokenInfo = {
   userName: string;
   token: string;
 };
-type PromiseInfo<T> = {
-  resolve: (value: T) => void;
-  reject: () => void;
-};
-
-type TokenDataReceiver = PromiseInfo<TokenInfo>;
 
 export class CimonApp {
-  private _window!: Electron.CrossProcessExports.BrowserWindow;
+  private _window?: Electron.CrossProcessExports.BrowserWindow;
   private _discussionWindow?: Electron.CrossProcessExports.BrowserWindow;
-  private _loginWindow?: Electron.CrossProcessExports.BrowserWindow;
   private _optionsWindow?: Electron.CrossProcessExports.BrowserWindow;
 
-  private tokenDataReceiver?: TokenDataReceiver;
+  private _loggedIn = false;
   private _mentions: MentionInfo[] = [];
   private _monitorInfo?: MonitorInfo;
   private _updateReady = false;
@@ -88,37 +79,18 @@ export class CimonApp {
     watch: true,
   });
 
-  private _initToken(): Promise<{
-    userName: string;
-    token: string;
-  }> {
-    return new Promise((resolve, reject) => {
-      (async () => {
-        try {
-          if (this.tokenDataReceiver) {
-            this.tokenDataReceiver.reject();
-          }
-          this.tokenDataReceiver = {
-            resolve: (tokenData) => resolve(tokenData),
-            reject: reject,
-          };
-          this._window.hide();
-          await this._window.loadURL(options.autologin);
-        } catch (e) {
-          this.tokenDataReceiver?.reject();
-          this.tokenDataReceiver = undefined;
-          const code = e?.['code'];
-          if (['ERR_CONNECTION_REFUSED', 'ERR_FAILED'].includes(code)) {
-            this._onDisconnected();
-          } else {
-            this._refreshTrayIcon();
-            await this._loadHash(this._window, `warn/${code ?? 'unavailable'}`);
-            this._window.show();
-          }
-          reject(e);
-        }
-      })();
-    });
+  private async _initToken(): Promise<TokenInfo> {
+    try {
+      return await this._getTokenFromServer();
+    } catch (e) {
+      const code = e?.['code'];
+      if (['ERR_CONNECTION_REFUSED', 'ERR_FAILED'].includes(code)) {
+        this._onDisconnected();
+      } else {
+        this._refreshTrayIcon();
+      }
+      throw e;
+    }
   }
 
   private async _loadHash(window: BrowserWindow | WebContents, hash: string) {
@@ -130,18 +102,8 @@ export class CimonApp {
   }
 
   private async _initMainWindow() {
-    this._session = session.fromPartition('persist:cimon', { cache: true });
-    this._session.allowNTLMCredentialsForDomains('*');
-    await this._session.clearStorageData();
-    await this._session.clearCache();
-    await this._session.cookies.set({
-      name: 'Cimon-ClientType',
-      value: 'Electron',
-      url: options.baseUrl,
-    });
     this._window = new BrowserWindow({
       webPreferences: {
-        preload: path.join(__dirname, '..', 'preload', 'cimon.cjs'),
         session: this._session,
         allowRunningInsecureContent: true,
       },
@@ -149,10 +111,10 @@ export class CimonApp {
       paintWhenInitiallyHidden: false,
       autoHideMenuBar: !isDev,
     });
-    this._window.on('close', (evt) => {
+    this._window.on('close', () => {
       if (this._isExiting) return;
-      evt.preventDefault();
-      this._window?.hide();
+      delete this._window;
+      this._rebuildMenu();
     });
     this._window.on('minimize', (evt) => {
       evt.preventDefault();
@@ -192,27 +154,80 @@ export class CimonApp {
     this._window.webContents.on('did-navigate', (_, url) => this._onRedirectedToLogin(url));
   }
 
-  private _loginPageUrl = '/Login';
+  private async _getTokenFromServer() {
+    const result = await this._session.fetch(options.tokenUrl, {
+      credentials: 'same-origin',
+    });
+    return await result.json();
+  }
+
+  private async _doLogin() {
+    await this._waitForConnection();
+    try {
+      const response = await this._session.fetch(options.autologin);
+      if (!response.ok) {
+        await this._loginManually();
+      }
+    } catch {
+      await this._loginManually();
+    }
+    this._loggedIn = true;
+  }
+
+  private async _loginManually() {
+    const loginWindow = new BrowserWindow({
+      webPreferences: {
+        session: this._session,
+        allowRunningInsecureContent: true,
+        preload: path.join(__dirname, '..', 'preload', 'cimon.cjs'),
+      },
+      show: false,
+      paintWhenInitiallyHidden: true,
+      autoHideMenuBar: true,
+      center: true,
+      width: 320,
+      height: 370,
+      minimizable: false,
+      maximizable: false,
+    });
+    this._hideWindowOnEsc(loginWindow);
+    await loginWindow.loadURL(options.loginPageUrl);
+    loginWindow.center();
+    loginWindow.show();
+    loginWindow.webContents.on('did-navigate', async (_, url, status) => {
+      if (status !== 200) {
+        let pageUrl = options.loginPageUrl;
+        if (url.includes('autologin')) {
+          pageUrl += '?error=autologinFailed';
+        }
+        await loginWindow.loadURL(pageUrl);
+      }
+    });
+    await new Promise<void>((resolve) => {
+      loginWindow.webContents.on('did-redirect-navigation', async (_, url) => {
+        const path = new URL(url).pathname;
+        const authPaths = [/^\/login$/i, /^\/auth\//i];
+        if (authPaths.find((p) => p.exec(path))) {
+          return;
+        }
+        loginWindow.destroy();
+        resolve();
+      });
+    });
+  }
 
   private async _onRedirectedToLogin(url: string) {
-    if (url.endsWith(this._loginPageUrl)) {
+    if (options.isLoginPage(url)) {
       let windowWasHidden = false;
-      if (this._window.isVisible()) {
+      if (this._window?.isVisible()) {
         this._window.hide();
         windowWasHidden = true;
       }
-      await this._openLoginWindow();
-      this._loginWindow!.webContents.on('did-redirect-navigation', async (_, url) => {
-        if (url.endsWith('Login?error')) {
-          return;
-        }
-        this._loginWindow?.destroy();
-        this._loginWindow = undefined;
-        await this._window.loadURL(options.lastMonitor);
-        if (windowWasHidden) {
-          this._window.show();
-        }
-      });
+      await this._doLogin();
+      if (windowWasHidden) {
+        this._window?.show();
+      }
+      await this._window?.loadURL(options.lastMonitor);
     }
   }
 
@@ -249,29 +264,6 @@ export class CimonApp {
   private _onConnected() {
     this._refreshTrayIcon();
     this._tray.setToolTip(`cimon - continuous integration monitoring [${options.baseUrl}]`);
-  }
-
-  private async _openLoginWindow() {
-    if (this._loginWindow == null || this._loginWindow.isDestroyed()) {
-      this._loginWindow = new BrowserWindow({
-        webPreferences: {
-          session: this._session,
-          allowRunningInsecureContent: true,
-        },
-        show: false,
-        paintWhenInitiallyHidden: true,
-        autoHideMenuBar: true,
-        center: true,
-        width: 320,
-        height: 370,
-        minimizable: false,
-        maximizable: false,
-      });
-      this._hideWindowOnEsc(this._loginWindow);
-    }
-    await this._loginWindow.loadURL(options.baseUrl + this._loginPageUrl);
-    this._loginWindow.center();
-    this._loginWindow.show();
   }
 
   private async _onOpenDiscussionWindow(url: string) {
@@ -315,28 +307,33 @@ export class CimonApp {
     this._discussionWindow.show();
   }
 
-  private _currentState?: ConnectionState;
+  private _currentState = ConnectionState.Disconnected;
+
+  private _hadConnection = false;
 
   private async _onConnectionStateChanged(state: ConnectionState) {
     if (this._currentState == state) {
       return;
     }
     this._monitorInfo = undefined;
-    log.info(`SignalR state ${state}`);
+    log.info(`State ${state}`);
     const previousState = this._currentState;
     this._currentState = state;
     this._updateContextMenuVisibility();
     if (state === ConnectionState.Connected) {
       await NotifierWrapper.hide('connection');
       this._onConnected();
-      if (previousState == ConnectionState.Disconnected || previousState == ConnectionState.FailedToConnect) {
+      if (
+        this._hadConnection &&
+        (previousState == ConnectionState.Disconnected || previousState == ConnectionState.FailedToConnect)
+      ) {
         await NotifierWrapper.notify('connection', {
           title: 'All good',
           subtitle: `Connected`,
         });
       }
-      await new Promise<void>((r) => setTimeout(r, 5000));
-      await NotifierWrapper.hide('connection');
+      this._hadConnection = true;
+      setTimeout(() => NotifierWrapper.hide('connection'), 5000);
       return;
     }
     if (ConnectionState.Disconnected === state) {
@@ -353,7 +350,6 @@ export class CimonApp {
         title: 'Oops',
         subtitle: "Can't connect",
       });
-      return;
     }
   }
 
@@ -364,7 +360,9 @@ export class CimonApp {
     this._autoLaunch.opts.appName = 'cimon';
     await this._initSettings();
     this._subscribeForEvents();
+    await this._initSession();
     await this._initTray();
+    await this._doLogin();
     await this._initSignalR();
   }
 
@@ -382,19 +380,18 @@ export class CimonApp {
     this._rebuildMenu();
     this._trayContextMenuVisibilityConfigs.push({
       id: 'reconnect',
-      fn: () => this._currentState !== ConnectionState.Connected && !this._waitForConnectionTimeout,
+      fn: () => this._currentState !== ConnectionState.Connected,
     });
     this._trayContextMenuVisibilityConfigs.push({
       id: 'showMonitor',
-      fn: () => this._currentState === ConnectionState.Connected && !this._window.isVisible(),
+      fn: () => this._currentState === ConnectionState.Connected && !this._window?.isVisible(),
     });
     this._trayContextMenuVisibilityConfigs.push({
       id: 'reload',
-      fn: () => this._currentState === ConnectionState.Connected && this._window.isVisible(),
+      fn: () => this._currentState === ConnectionState.Connected && !!this._window?.isVisible(),
     });
     this._tray.setToolTip('cimon - connecting...');
     this._tray.on('click', async () => this.showMonitors());
-    await this._initMainWindow();
   }
 
   private _restartMenuClicked = false;
@@ -402,7 +399,7 @@ export class CimonApp {
   private _rebuildMenu() {
     const versionMenuLabel = this._updateReady
       ? `Restart to update`
-      : `Version: ${app.getVersion()}. User ${this._userName}`;
+      : `Version: ${app.getVersion()}. User ${this._userName ?? 'not connected yet'}`;
     const template: MenuItemConstructorOptions[] = [
       {
         id: 'showMonitor',
@@ -410,12 +407,6 @@ export class CimonApp {
         type: 'normal',
         visible: false,
         click: async () => await this.showMonitors(),
-      },
-      {
-        id: 'reload',
-        label: 'Reload',
-        type: 'normal',
-        role: 'reload',
       },
       {
         id: 'reconnect',
@@ -484,62 +475,31 @@ export class CimonApp {
     }
   }
 
-  private _waitForConnectionTimeout?: NodeJS.Timeout;
-
-  private _connectionWaiter?: PromiseInfo<void>;
-
-  private _waitForConnection() {
+  private async _waitForConnection() {
     if (this._currentState === ConnectionState.Connected) {
       return;
     }
-    if (this._connectionWaiter) {
-      this._connectionWaiter.reject();
-    }
-    return new Promise<void>((resolve, reject) => {
-      this._connectionWaiter = {
-        reject: reject,
-        resolve: resolve,
-      };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      this._tryToConnect().then((_) => {
-        /*empty*/
-      });
-    });
-  }
-
-  private async _tryToConnect() {
-    try {
-      const request = net.request(options.baseUrl);
-      await new Promise<void>((res, rej) => {
-        request.on('response', (response) => {
-          if (response.statusCode === 200) {
-            clearTimeout(this._waitForConnectionTimeout);
-            this._connectionWaiter?.resolve();
-            this._connectionWaiter = undefined;
-            res();
-          } else {
-            rej(response.statusMessage);
-          }
-        });
-        request.on('error', (error) => rej(error));
-        request.end();
-      });
-    } catch (e) {
-      console.warn('Failed to connect to baseUrl', e);
-      this._waitForConnectionTimeout = setTimeout(() => this._tryToConnect(), options.waitForConnectionRetryDelay);
-      this._onConnectionStateChanged(ConnectionState.FailedToConnect);
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      try {
+        const response = await this._session.fetch(options.baseUrl);
+        if (response.ok) {
+          await this._onConnectionStateChanged(ConnectionState.Connected);
+          break;
+        } else {
+          log.warn(`Failed to connect to ${options.baseUrl}`);
+        }
+      } catch (e) {
+        log.warn(`Failed to connect to ${options.baseUrl}`, e);
+      }
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
 
   private _subscribeForEvents() {
     ipcMain.handle('cimon-get-base-url', () => options.baseUrl);
-    /*ipcMain.handle('cimon-show-window', async (event, code: 'login' | string) => { });*/
     ipcMain.handle('cimon-load', async (event, relativeUrl) => {
       await this._loadHash(event.sender, relativeUrl);
-    });
-    ipcMain.on('cimon-token-ready', (_: IpcMainEvent, tokenData: TokenInfo) => {
-      this.tokenDataReceiver?.resolve(tokenData);
-      this.tokenDataReceiver = undefined;
     });
     ipcMain.handle('dialog:selectDir', (_, defPath) => this.selectDirectory(defPath));
     ipcMain.handle('options:read', () => this._store.store);
@@ -569,22 +529,18 @@ export class CimonApp {
 
   private _token?: string = undefined;
   private _userName?: string;
-  private _lastProvidedToken?: string = undefined;
 
   private async _getToken(error: (Error & { errorType?: string }) | undefined) {
-    if (error?.errorType === 'FailedToNegotiateWithServerError') {
+    if (error) {
       this._token = undefined;
     }
-    if (!this._token || this._lastProvidedToken === this._token) {
+    if (!this._token) {
       await this._waitForConnection();
       const { token, userName } = await this._initToken();
       this._token = token;
-      if (this._userName !== userName) {
-        this._userName = userName;
-        this._rebuildMenu();
-      }
+      this._userName = userName;
+      this._rebuildMenu();
     }
-    this._lastProvidedToken = this._token;
     return this._token;
   }
 
@@ -593,10 +549,14 @@ export class CimonApp {
   }
 
   public async showMonitors(): Promise<void> {
-    await this._window.loadURL(options.lastMonitor);
-    if (!this._window.webContents.getURL().endsWith(this._loginPageUrl)) {
-      this._window.show();
+    if (!this._loggedIn) {
+      return;
     }
+    if (!this._window) {
+      await this._initMainWindow();
+    }
+    await this._window!.loadURL(options.lastMonitor);
+    this._window!.show();
   }
 
   public setUpdateReady() {
@@ -648,7 +608,6 @@ export class CimonApp {
     this._optionsWindow = new BrowserWindow({
       maximizable: false,
       minimizable: false,
-      title: 'cimon - settings',
       width: 640,
       height: 450,
       center: true,
@@ -720,5 +679,17 @@ export class CimonApp {
       }
     });
     win.webContents.setFrameRate(1);
+  }
+
+  private async _initSession() {
+    this._session = session.fromPartition('persist:cimon', { cache: true });
+    this._session.allowNTLMCredentialsForDomains('*');
+    await this._session.clearStorageData();
+    await this._session.clearCache();
+    await this._session.cookies.set({
+      name: 'Cimon-ClientType',
+      value: 'Electron',
+      url: options.baseUrl,
+    });
   }
 }

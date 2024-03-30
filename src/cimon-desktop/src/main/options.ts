@@ -24,6 +24,7 @@ class IconLocator {
 export const options = {
   baseUrl: CimonConfig.url,
   waitForConnectionRetryDelay: 10000,
+
   monitorUrl(key: string): string {
     return this.baseUrl + `/monitor/${key}?full-screen=true`;
   },
@@ -33,16 +34,29 @@ export const options = {
     return url.href;
   },
   get entrypoint() {
-    return `${options.baseUrl}`;
+    return `${this.baseUrl}`;
+  },
+  get tokenUrl() {
+    return `${this.baseUrl}/auth/token`;
   },
   get autologin() {
-    return `${options.baseUrl}/auth/autologin?returnUrl=/`;
+    return `${this.baseUrl}/auth/robotAutologin`;
   },
   get lastMonitor() {
-    return `${options.baseUrl}/api/users/openLastMonitor?full-screen=true`;
+    return `${this.baseUrl}/api/users/openLastMonitor?full-screen=true`;
   },
   get discussionWindowUrl() {
-    return `${options.baseUrl}/buildDiscussion/`;
+    return `${this.baseUrl}/buildDiscussion/`;
+  },
+  get loginPageUrl() {
+    return `${this.baseUrl}/Login`;
+  },
+  isLoginPage(url) {
+    if (!url) {
+      return false;
+    }
+    const path = new URL(url).pathname;
+    return path.toLowerCase() === '/login';
   },
   get resourcesPath() {
     if (isDev) {

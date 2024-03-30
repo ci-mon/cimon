@@ -17,10 +17,9 @@ using System.Security.Principal;
 
 public class UserManager : ITechnicalUsers
 {
-	private record UserCache(UserModel Model, User User);
+	private sealed record UserCache(UserModel Model, User User);
 
 	private const string TeamClaimName = "team";
-	
 	private readonly ILogger _logger;
 	private readonly IDbContextFactory<CimonDbContext> _dbContextFactory;
 	private readonly CimonDataSettings _cimonDataSettings;
@@ -114,7 +113,7 @@ public class UserManager : ITechnicalUsers
 			return;
 		}
 		await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-		var userInfo = _ldapClient.FindUserInfo(name.Name);
+		var userInfo = _ldapClient.GetUserInfo(name.Name);
 		var user = new Cimon.DB.Models.User {
 			Name = userInfo.SamAccountName,
 			FullName = userInfo.DisplayName,
@@ -161,7 +160,7 @@ public class UserManager : ITechnicalUsers
 			.ToAsyncEnumerable();
 		await foreach (var user in users) {
 			// TODO how to find main team? 
-			var mainTeam = user.Teams.FirstOrDefault(t => !t.ChildTeams.Any());
+			var mainTeam = user.Teams.Find(t => !t.ChildTeams.Any());
 			yield return new UserInfo(user.Name, user.FullName, mainTeam?.Name, user.Teams.Select(CreateTeamInfo).ToImmutableList());
 		}
 	}

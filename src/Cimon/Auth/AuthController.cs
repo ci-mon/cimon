@@ -1,4 +1,5 @@
-﻿using Cimon.Contracts;
+﻿using System.Buffers;
+using Cimon.Contracts;
 using Cimon.Data.Users;
 
 namespace Cimon.Auth;
@@ -58,13 +59,28 @@ public class AuthController : Controller
 		return Redirect("/");
 	}
 
+	[Route("retry-autologin")]
+	public async Task<IActionResult> RetryAutologin() {
+		Response.Cookies.Append(AllowNegotiateCookieName, "true");
+		return Redirect("autologin");
+	}
+
+	public static string AllowNegotiateCookieName => "negotiate-reset";
+
 	[Route("autologin")]
 	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
 	public async Task<IActionResult> Autologin(string returnUrl, [FromServices] ICurrentUserAccessor userAccessor) {
-		var userName = User.Identity?.Name?.ToLowerInvariant();
-		if (string.IsNullOrWhiteSpace(userName)) {
-			return LocalRedirect("/Login");
-		}
+		return await DoAutologin(returnUrl, userAccessor);
+	}
+
+	[Route("robotAutologin")]
+	[Authorize(AuthenticationSchemes = $"{CookieAuthenticationDefaults.AuthenticationScheme},{NegotiateDefaults.AuthenticationScheme}")]
+	public async Task<IActionResult> RobotAutologin(string returnUrl, [FromServices] ICurrentUserAccessor userAccessor) {
+		return await DoAutologin(returnUrl, userAccessor);
+	}
+
+	private async Task<IActionResult> DoAutologin(string returnUrl, ICurrentUserAccessor userAccessor) {
+		var userName = User.Identity?.Name?.ToLowerInvariant()!;
 		var user = await userAccessor.Current;
 		if (!user.IsGuest() && User.Identities.Any(i => i.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme)) {
 			return string.IsNullOrWhiteSpace(returnUrl) ? Ok() : LocalRedirect(returnUrl);
@@ -78,6 +94,7 @@ public class AuthController : Controller
 	public async Task<IActionResult> Login([FromForm]string userName, [FromForm]string password) {
 		var loginResult = await _userManager.SignInAsync(userName, password);
 		if (!loginResult) {
+			Response.Headers["login-failed"] = true.ToString();
 			return Redirect("/Login?error");
 		}
 		return await SignInUsingCookie("/api/users/openLastMonitor", userName);
@@ -97,9 +114,67 @@ public class AuthController : Controller
 		};
 		await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
 			new ClaimsPrincipal(claimsIdentity), authProperties);
+		Response.Headers["logged-in"] = "true";
 		if (!string.IsNullOrWhiteSpace(returnUrl)) {
 			return LocalRedirect(returnUrl);
 		}
 		return Ok();
+	}
+
+	private static readonly HashSet<string> ActionsWithAllowedRedirects = new(StringComparer.OrdinalIgnoreCase) {
+		"login",
+		"autologin"
+	};
+	private static bool CheckIfCanRedirect(HttpRequest request) {
+		if (!request.RouteValues.TryGetValue("controller", out var controller) ||
+				controller?.ToString()?.ToLowerInvariant() != "auth") {
+			return false;
+		}
+		return request.RouteValues.TryGetValue("action", out var action) &&
+			ActionsWithAllowedRedirects.Contains(action?.ToString() ?? string.Empty);
+	}
+	public static Task<bool> TryHandleOnAuthenticationFailed(
+		Microsoft.AspNetCore.Authentication.Negotiate.AuthenticationFailedContext context) {
+		if (!CheckIfCanRedirect(context.Request)) {
+			return Task.FromResult(false);
+		}
+		if (context.Request.Cookies.TryGetValue(AllowNegotiateCookieName, out _)) {
+			context.Response.Cookies.Delete(AllowNegotiateCookieName);
+			return Task.FromResult(true);
+		}
+		context.Response.Redirect("/login?error=autologinFailed");
+		context.HandleResponse();
+		return Task.FromResult(true);
+	}
+	public static Task<bool> TryHandleOnAuthenticated(AuthenticatedContext context) {
+		if (!CheckIfCanRedirect(context.Request)) {
+			return Task.FromResult(false);
+		}
+		if (context.HttpContext.User.Identity?.IsAuthenticated is not true) {
+			context.Response.Redirect("/login?error=autologinFailed");
+			context.Fail("");
+		}
+		return Task.FromResult(true);
+	}
+
+	public static Task<bool> TryHandleOnChallenge(ChallengeContext context) {
+		if (!CheckIfCanRedirect(context.Request)) {
+			return Task.FromResult(false);
+		}
+		if (context.Request.Headers.Authorization.Count == 0) {
+			context.Response.OnStarting(() => {
+				if (context.HttpContext.User.Identity?.IsAuthenticated is not true) {
+					var cookieKey = "negotiate-try-attempt";
+					if (context.Request.Cookies.ContainsKey(cookieKey)) {
+						context.Response.Cookies.Delete(cookieKey);
+						context.Response.Redirect("/login?error=autologinFailed");
+					} else {
+						context.Response.Cookies.Append(cookieKey, "true");
+					}
+				}
+				return Task.CompletedTask;
+			});
+		}
+		return Task.FromResult(true);
 	}
 }

@@ -13,7 +13,7 @@ import { StatusMessageType } from 'node-win-toast-notifier';
 export enum ConnectionState {
   Connected = 'Connected',
   Disconnected = 'Disconnected',
-  FailedToConnect = 'FailedToConnect',
+  FailedToConnect = 'FailedToConnect'
 }
 
 class ReconnectionPolicy implements IRetryPolicy {
@@ -108,7 +108,6 @@ export class SignalRClient {
       notification.on('action', async (_, action) => {
         if (action === 0) {
           this.onOpenDiscussionWindow?.(url);
-          return;
         } else {
           await this._replyToNotification(buildId, NotificationQuickReply.Wip);
         }
