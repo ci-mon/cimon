@@ -1,5 +1,6 @@
 ﻿using Cimon.Contracts.AppFeatures;
 using Microsoft.FeatureManagement;
+using SmartComponents.LocalEmbeddings;
 
 namespace Cimon.Data.ML;
 
@@ -10,7 +11,7 @@ using Microsoft.ML.Transforms.Text;
 
 public interface IBuildFailurePredictor
 {
-	Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo);
+	Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo, bool useLog);
 }
 public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailurePredictor
 {
@@ -20,8 +21,8 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 		public bool IsEmpty() => Index == Empty.Index;
 	}
 
-	public async Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo) {
-		var textData = ExtractTextData(buildInfo);
+	public async Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo, bool useLog) {
+		var textData = ExtractTextData(buildInfo, useLog);
 		TextData buildStatusTextData = new TextData { Text = textData.BuildStatus.NormalizeText() };
 		var changesTextData = textData.Changes.Select(x => new TextData {
 			Text = x.Item2.NormalizeText()
@@ -41,10 +42,21 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 	}
 
 	private BestMatch FindBestMatchWithSmartComponents(TextData buildStatusTextData, List<TextData> changesTextData) {
-		throw new NotImplementedException();
+		using var embedder = new LocalEmbedder();
+		var buildStatus = embedder.Embed(buildStatusTextData.Text);
+		var changes = embedder.EmbedRange(changesTextData, x => x.Text).ToList();
+		var closestItems = LocalEmbedder.FindClosestWithScore(buildStatus, changes.Select(x => (x.Item, x.Embedding)), 1, 0.2f);
+		if (closestItems.Length == 1) {
+			var closest = closestItems.First();
+			return new BestMatch() {
+				Confidence = Convert.ToInt32(Math.Round(closest.Similarity * 100f)),
+				Index = changesTextData.IndexOf(closest.Item)
+			};
+		}
+		return BestMatch.Empty;
 	}
 
-	public static BuildInfoTextData ExtractTextData(BuildInfo buildInfo) {
+	public static BuildInfoTextData ExtractTextData(BuildInfo buildInfo, bool useLog) {
 		var problems = string.Join(Environment.NewLine,
 			buildInfo.Problems.Select(x => $"{x.ShortSummary} {x.Details}"));
 		var testFailures = string.Join(Environment.NewLine,
@@ -62,6 +74,9 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 				}
 				return (x.Key, changesText.ToString());
 			});
+		if (useLog) {
+			status += $"{Environment.NewLine}{buildInfo.Log}";
+		}
 		return new BuildInfoTextData(status, changes.ToList());
 	}
 
