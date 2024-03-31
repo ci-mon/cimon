@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Reactive.Linq;
 using System.Security.Claims;
 using Cimon.Contracts;
+using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
@@ -158,10 +160,14 @@ public class UserManager : ITechnicalUsers
 		var users = dbContext.Users.Include(x => x.Teams).ThenInclude(x => x.ChildTeams)
 			.Where(u => EF.Functions.Like(u.FullName, $"%{searchTerm}%"))
 			.ToAsyncEnumerable();
+		var activeUsers = await (await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames()))
+			.FirstOrDefaultAsync();
 		await foreach (var user in users) {
 			// TODO how to find main team? 
 			var mainTeam = user.Teams.Find(t => !t.ChildTeams.Any());
-			yield return new UserInfo(user.Name, user.FullName, mainTeam?.Name, user.Teams.Select(CreateTeamInfo).ToImmutableList());
+			var isActive = activeUsers?.Contains(user.Name) ?? false;
+			yield return new UserInfo(user.Name, user.FullName, mainTeam?.Name,
+				user.Teams.Select(CreateTeamInfo).ToImmutableList(), isActive);
 		}
 	}
 

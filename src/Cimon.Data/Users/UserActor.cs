@@ -33,7 +33,7 @@ class Debouncer<TIn, TOut>: ReceiveActor where TIn : IEquatable<TIn>
 
 public class UserActor : ReceiveActor
 {
-    
+
     private ImmutableList<MentionInfo> _mentions = ImmutableList<MentionInfo>.Empty;
     private readonly ReplaySubject<IImmutableList<MentionInfo>> _mentionsSubject = new(1);
     private readonly BuildConfigService _buildConfigService;

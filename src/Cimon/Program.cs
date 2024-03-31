@@ -101,15 +101,14 @@ if (!app.Environment.IsDevelopment()) {
 
 app.UseCors(policyBuilder => policyBuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRouting().UseEndpoints(config => {
-	config.MapHealthChecks("/healthz", new HealthCheckOptions {
-		Predicate = _ => true,
-		ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-	});
-	config.MapHealthChecksUI();
+app.MapHealthChecks("/healthz", new HealthCheckOptions {
+	Predicate = _ => true,
+	ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
+app.MapHealthChecksUI();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");

@@ -22,6 +22,7 @@ public static class ActorsApi
 	public record UnWatchMonitorByActor(string Id) : MonitorMessage(Id);
 	public record MonitorInfo(MonitorModel MonitorModel, IEnumerable<IBuildInfoSnapshot> BuildInfos);
 
+	public record GetActiveUserNames(): IMessageWithResponse<IObservable<IImmutableSet<string>>>;
 	public abstract record DiscussionAction(int BuildConfigId);
 
 	public record OpenDiscussion(BuildConfig BuildConfig, BuildInfo BuildInfo) : DiscussionAction(BuildConfig.Id);
@@ -72,4 +73,7 @@ public static class ActorsApi
 	}
 
 	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId);
+
+	public record UserConnected(User User, string ConnectionId);
+	public record UserDisconnected(User User, string ConnectionId);
 }

@@ -12,6 +12,7 @@
 @using Microsoft.Extensions.Primitives
 @using System.Runtime.CompilerServices
 @using Cimon.DB.Models
+@using System.Collections.Immutable
 @inherits ReactiveComponent
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
@@ -74,6 +75,9 @@
                                     </div>
                                 }
                             </div>
+                            @if (_activeUsers.HasValue && _activeUsers.Value.Contains(user.Name)) {
+                                <div class="active-user"></div>
+                            }
                         </div>
                         <RadzenText Text="@GetUserName(user)" title="@GetUserName(user)" class="user-name"></RadzenText>
                     </RadzenStack>
@@ -90,11 +94,13 @@
     private bool IsLoaded => BuildInfo is not null;
     private IReadOnlyCollection<CommitterInfo> Committers { get; set; } = ArraySegment<CommitterInfo>.Empty;
     private AppClientType AppClientType { get; set; }
+    private ReactiveValue<IImmutableSet<string>> _activeUsers;
 
     record CommitterInfo(VcsUser User, int CommitsCount);
 
     [Parameter] public BuildConfig BuildConfig { get; set; } = null!;
     [Parameter] public IObservable<BuildInfo> Info { get; set; } = null!;
+    [Parameter] public IObservable<IImmutableSet<string>> ActiveUsers { get; set; } = null!;
 
     [Parameter]
     public int? MaxCommitters { get; set; }
@@ -107,6 +113,7 @@
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
+        Subscribe(ref _activeUsers, ActiveUsers);
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
             var committers = value?.Changes.GroupBy(x => x.Author)
                     .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)

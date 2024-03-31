@@ -29,6 +29,7 @@ public class UserHub : Hub<IUserClientApi>
 		await base.OnConnectedAsync();
 		var identity = Context.User?.Identity;
 		var user = await _userManager.GetUser(Context.User);
+		AppActors.Instance.UserSupervisor.Tell(new ActorsApi.UserConnected(user, Context.ConnectionId));
 		await Groups.AddToGroupAsync(Context.ConnectionId, user.Name);
 		foreach (var team in user.Teams) {
 			await Groups.AddToGroupAsync(Context.ConnectionId, team);
@@ -42,6 +43,7 @@ public class UserHub : Hub<IUserClientApi>
 		await base.OnDisconnectedAsync(exception);
 		var user = await _userAccessor.Current;
 		var appActors = AppActors.Instance;
+		appActors.UserSupervisor.Tell(new ActorsApi.UserDisconnected(user, Context.ConnectionId));
 		if (Context.Items.TryGetValue(MentionsSubscriptionKey, out _)) {
 			appActors.UserSupervisor.Tell(new ActorsApi.UnSubscribeOnMentions(user));
 		}

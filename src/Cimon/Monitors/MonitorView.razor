@@ -4,9 +4,11 @@
 @using MediatR
 @using Cimon.Data.Common
 @using System.Reactive.Linq
+@using System.Reactive.Subjects
 @using System.Text
 @using Akka.Actor
 @using Cimon.Contracts.CI
+@using System.Collections.Immutable
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
@@ -30,6 +32,7 @@
         @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Connector.CISystem)) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig" 
                                 Info="@build.BuildInfo"
+                                ActiveUsers="_activeUsers"
                                 MaxCommitters="5"/>
         }
     }
@@ -42,6 +45,8 @@
     public string? MonitorId { get; set; }
     private ReactiveValue<MonitorData> _monitor;
     private ReactiveValue<IList<BuildInfo>> _buildInfos;
+    private string? _errorMessage;
+    private IObservable<IImmutableSet<string>> _activeUsers;
 
     private string GetTitle() {
         var result = new StringBuilder();
@@ -59,7 +64,6 @@
         return result.ToString();
     }
 
-    private string? _errorMessage;
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
@@ -82,6 +86,7 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId!));
+        _activeUsers = await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames());
         Subscribe(ref _monitor, subj).OnChange(info => {
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";

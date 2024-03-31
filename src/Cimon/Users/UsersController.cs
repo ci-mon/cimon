@@ -26,7 +26,9 @@ public class UsersController : Controller
 
 	[Route("search")]
 	[HttpGet]
-	public IAsyncEnumerable<UserInfo> Search([FromQuery]string? searchTerm) => _userManager.GetUsers(searchTerm);
+	public IAsyncEnumerable<UserInfo> Search([FromQuery]string? searchTerm) {
+		return _userManager.GetUsers(searchTerm);
+	}
 
 	[Route("openLastMonitor")]
 	[HttpGet]

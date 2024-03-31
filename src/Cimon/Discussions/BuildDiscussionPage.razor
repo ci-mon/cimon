@@ -5,6 +5,7 @@
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @using Cimon.Monitors
+@using System.Collections.Immutable
 @inject IJSRuntime JsRuntime;
 @inject ICurrentUserAccessor CurrentUserAccessor;
 @inherits ReactiveComponent
@@ -16,7 +17,10 @@
                 @if (_builds.HasValue) {
                     @foreach (var build in _builds.Value) {
                         <div class="build-info-in-discussion">
-                            <BuildInfoComponent BuildConfig="@build.BuildConfig" Info="@build.BuildInfo"/>
+                            <BuildInfoComponent 
+                                BuildConfig="@build.BuildConfig" 
+                                Info="@build.BuildInfo"
+                                ActiveUsers="_activeUsers"/>
                         </div>
                     }
                 }
@@ -57,7 +61,7 @@
        margin: 0;
        overflow: scroll;
     }
-    .container div {
+    .container > div {
         position: relative;
     }
     .container::before {
@@ -116,6 +120,7 @@
     private User _user = null!;
     private ActorsApi.DiscussionHandle? _discussionHandle;
     private ReactiveValue<IEnumerable<IDiscussionBuildData>> _builds;
+    private IObservable<IImmutableSet<string>> _activeUsers;
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
@@ -126,6 +131,7 @@
         await base.InitializeReactiveValues();
         _user = await CurrentUserAccessor.Current;
         _discussionHandle = await AppActors.Instance.DiscussionStore.Ask(new ActorsApi.FindDiscussion(int.Parse(BuildConfigId)));
+        _activeUsers = await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames());
         Subscribe(ref _state, _discussionHandle.State);
         Subscribe(ref _builds, _discussionHandle.Builds);
         ClearComment();

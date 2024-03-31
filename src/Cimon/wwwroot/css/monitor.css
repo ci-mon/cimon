@@ -64,6 +64,22 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     background-color: #ffb35bfc;
     color: #980202;
 }
+.active-user {
+    top: 22px;
+    left: 3px;
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: rgb(80 180 62 / 86%);
+    border-radius: 5px;
+}
+
+.mention-list-item {
+    .active-user {
+        top: 14px;
+        left: 8px;
+    }
+}
 
 .commits-count p {
     margin-bottom: 0;

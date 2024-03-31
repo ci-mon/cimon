@@ -76,6 +76,9 @@ window.quillInterop = {
             ['clean'],
             ['image','code-block']
         ]; 
+        function sortByProp(items, prop) {
+            return items.sort((a,b)=>b[prop] > a[prop] ? 1 : -1)
+        }
         const quill = new Quill(element, {
             modules: {
                 imageClick: true,
@@ -102,17 +105,28 @@ window.quillInterop = {
                         if (mentionChar === '@') {
                             const usersResponse = await fetch(`/api/users/search?searchTerm=${searchTerm}`);
                             const users = await usersResponse.json();
-                            let values = users.map(x => ({id: x.id, value: x.name, team: x.team}));
+                            let values = sortByProp(users, "isActive").map(x => ({id: x.id, value: x.name, team: x.team, isActive: x.isActive}));
                             renderList(values, searchTerm);
                         }
                         if (mentionChar === '#') {
                             const usersResponse = await fetch(`/api/users/searchTeams?searchTerm=${searchTerm}`);
                             const users = await usersResponse.json();
-                            let values = users.map(x => ({id: x.name, value: x.name}));
+                            let values = sortByProp(users, "isActive").map(x => ({id: x.name, value: x.name, isActive: x.isActive}));
                             renderList(values, searchTerm);
                         }
                     },
-                    renderItem: (item, searchTerm) => item.team ? `${item.value} #${item.team}` : item.value
+                    renderItem: (item, searchTerm) => {
+                        const text = item.team ? `${item.value} #${item.team}` : item.value;
+                        const el = document.createElement("div");
+                        if (item.isActive) {
+                            const activeBadge = document.createElement('div');
+                            activeBadge.classList.add("active-user");
+                            el.appendChild(activeBadge);
+                        }
+                        el.classList.add("mention-list-item");
+                        el.append(text);
+                        return el.outerHTML;
+                    }
                 },
                 toolbar: toolbar,
             },
