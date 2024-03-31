@@ -1,7 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.CompilerServices;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
 using Cimon.Data.Common;
@@ -10,6 +12,7 @@ using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Optional;
 
 namespace Cimon.Data.CIConnectors;
@@ -29,6 +32,17 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 
 	private readonly Subject<BuildConfigModel> _singleItemsChanges = new();
 	public IObservable<IImmutableList<BuildConfigModel>> BuildConfigs => _state.Items;
+	public async IAsyncEnumerable<(CIConnectorInfo, HealthCheckResult)> CheckCiConnectors(
+			[EnumeratorCancellation] CancellationToken ct) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync(ct);
+		foreach (var connector in await ctx.CIConnectors.ToListAsync(ct)) {
+			await using var scope = _serviceProvider.CreateAsyncScope();
+			var info = await GetConnectorInfo(connector);
+			var provider = scope.ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(connector.CISystem);
+			yield return (info, await provider.CheckHealth(info));
+		}
+	}
+
 	public IObservable<BuildConfigModel> Get(int id) => _singleItemsChanges
 		.Merge(_state.Items.SelectMany(x => x))
 		.Where(x => x.Id == id);

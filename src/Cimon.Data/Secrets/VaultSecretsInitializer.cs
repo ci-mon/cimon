@@ -38,11 +38,7 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 	}
 
 	private async Task ConfigureAsync(TSecrets options, string? key) {
-		IAuthMethodInfo authMethod = new TokenAuthMethodInfo(_vaultSecrets.Token);
-		var vaultClientSettings = new VaultClientSettings(_vaultSecrets.Url, authMethod) {
-			VaultServiceTimeout = TimeSpan.FromSeconds(30)
-		};
-		IVaultClient vaultClient = new VaultClient(vaultClientSettings);
+		var vaultClient = CreateVaultClient(_vaultSecrets, TimeSpan.FromSeconds(30));
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
 			.ReadSecretAsync(path: _vaultSecrets.Path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
 		var config = new ConfigurationManager();
@@ -80,5 +76,14 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 		}
 		config.Bind(options);
 		_log.LogInformation("{TypeName} initialized from vault: {@Config}", typeof(TSecrets).Name, options);
+	}
+
+	internal static IVaultClient CreateVaultClient(VaultSecrets secrets, TimeSpan timeout) {
+		IAuthMethodInfo authMethod = new TokenAuthMethodInfo(secrets.Token);
+		var vaultClientSettings = new VaultClientSettings(secrets.Url, authMethod) {
+			VaultServiceTimeout = timeout
+		};
+		IVaultClient vaultClient = new VaultClient(vaultClientSettings);
+		return vaultClient;
 	}
 }

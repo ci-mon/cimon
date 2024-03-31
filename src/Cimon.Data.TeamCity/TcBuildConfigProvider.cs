@@ -1,5 +1,6 @@
 ﻿using Cimon.Contracts;
 using Cimon.Contracts.Services;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Models;
 using TeamCityAPI.Queries;
@@ -88,5 +89,15 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		return new() {
 			{_searchedProjectsSettingKey, "*"}
 		};
+	}
+
+	public async Task<HealthCheckResult> CheckHealth(CIConnectorInfo info) {
+		try {
+			using var client = _clientFactory.Create(info.ConnectorKey);
+			await client.Client.GetApiVersionAsync();
+			return HealthCheckResult.Healthy(client.Client.BaseUrl);
+		} catch (Exception e) {
+			return HealthCheckResult.Unhealthy(e.Message);
+		}
 	}
 }

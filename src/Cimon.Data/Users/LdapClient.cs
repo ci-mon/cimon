@@ -1,7 +1,9 @@
 ﻿using System.DirectoryServices.Protocols;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security;
 using Cimon.Contracts;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -27,7 +29,7 @@ public class LdapUserInfo
 	public bool IsAdmin { get; set; }
 }
 
-public class LdapClient
+public class LdapClient : IHealthCheck
 {
 	private readonly ILogger _logger;
 	private readonly LdapClientSecrets _options;
@@ -68,7 +70,7 @@ public class LdapClient
 		if (string.IsNullOrWhiteSpace(_options.Host)) {
 			throw new NotSupportedException("Ldap is not configured");
 		}
-		var context = new PrincipalContext(ContextType.Domain, _options.Host);
+		using var context = new PrincipalContext(ContextType.Domain, _options.Host);
 		UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, name) ??
 			throw new SecurityException($"User {name} is not found in {_options.Host}");
 		var user = new LdapUserInfo {
@@ -101,4 +103,18 @@ public class LdapClient
 		}
 	}
 
+	public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = new CancellationToken()) {
+		try {
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+				return Task.FromResult(HealthCheckResult.Unhealthy("OS not supported"));
+			}
+			if (string.IsNullOrWhiteSpace(_options.Host)) {
+				return Task.FromResult(HealthCheckResult.Healthy("disabled"));
+			}
+			using var ctx = new PrincipalContext(ContextType.Domain, _options.Host);
+			return Task.FromResult(HealthCheckResult.Healthy(_options.Host));
+		} catch (Exception e) {
+			return Task.FromResult(HealthCheckResult.Unhealthy(e.Message));
+		}
+	}
 }

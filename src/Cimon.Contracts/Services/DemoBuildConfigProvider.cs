@@ -1,4 +1,5 @@
 ﻿using Cimon.Contracts.CI;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Cimon.Contracts.Services;
 
@@ -20,4 +21,7 @@ public class DemoBuildConfigProvider : IBuildConfigProvider
 			["Count"] = 10.ToString()
 		};
 	}
+
+	public Task<HealthCheckResult> CheckHealth(CIConnectorInfo info) =>
+		Task.FromResult(HealthCheckResult.Healthy("demo"));
 }

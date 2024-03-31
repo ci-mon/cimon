@@ -13,6 +13,7 @@
     <ItemGroup>
       <PackageReference Include="Cimon.Jenkins" Version="1.0.6" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="8.0.2" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
         <PackageReference Include="Roslynator.Analyzers" Version="4.12.0">
           <PrivateAssets>all</PrivateAssets>

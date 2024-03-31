@@ -4,6 +4,7 @@ using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
+using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Jenkins;
 using Cimon.Data.ML;
@@ -16,8 +17,10 @@ using Cimon.Monitors;
 using Cimon.NativeApp;
 using Cimon.Shared;
 using Cimon.Users;
+using HealthChecks.UI.Client;
 using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Radzen;
 using Serilog;
@@ -42,7 +45,11 @@ builder.Services.AddCimonData()
 			.RegisterServicesFromAssemblyContaining<SavedMonitorInLocalStoragesBehaviour>()
 			.AddBehavior<IPipelineBehavior<GetDefaultMonitorRequest, string>, SavedMonitorInLocalStoragesBehaviour>();
 	});
-builder.Services.AddCimonDb(builder.Configuration, isDevelopment);
+var health = builder.Services.AddHealthChecks()
+	.AddCheck<VaultHealthCheck>("Vault")
+	.AddCheck<CIConnectorsHealthcheck>("CiConnector")
+	.AddCheck<LdapClient>("LdapClient", tags: new []{"windows"});
+builder.Services.AddCimonDb(builder.Configuration, isDevelopment, health);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
 builder.Services.AddKeyedScoped<IBuildConfigProvider, DemoBuildConfigProvider>(CISystem.Demo);
@@ -61,7 +68,7 @@ builder.Services.AddSingleton<GetCurrentPrincipal>(provider => {
 	};
 });
 builder.Services.AddScoped<AppInitialStateAccessor>();
-	
+
 builder.Services.AddOptions()
 	.ConfigureSecrets<CimonSecrets>()
 	.Configure<CimonDataSettings>(settings => {
@@ -81,6 +88,8 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
+builder.Services.AddHealthChecksUI(settings => settings.AddHealthCheckEndpoint("local", "/healthz"))
+	.AddInMemoryStorage();
 
 WebApplication app = builder.Build();
 
@@ -92,14 +101,20 @@ if (!app.Environment.IsDevelopment()) {
 
 app.UseCors(policyBuilder => policyBuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRouting().UseEndpoints(config => {
+	config.MapHealthChecks("/healthz", new HealthCheckOptions {
+		Predicate = _ => true,
+		ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+	});
+	config.MapHealthChecksUI();
+});
 app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList")));
+app.UseStaticFiles();
 app.MapFallbackToPage("/_Host");
 app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");
 

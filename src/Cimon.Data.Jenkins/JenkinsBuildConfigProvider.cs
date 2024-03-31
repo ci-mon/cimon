@@ -1,5 +1,6 @@
 ﻿using Cimon.Contracts.Services;
 using Cimon.Jenkins;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Cimon.Data.Jenkins;
 
@@ -42,4 +43,13 @@ public class JenkinsBuildConfigProvider(ClientFactory clientFactory) : IBuildCon
 	}
 
 	public Dictionary<string, string> GetSettings() => new();
+	public async Task<HealthCheckResult> CheckHealth(CIConnectorInfo info) {
+		try {
+			using var client = clientFactory.Create(info.ConnectorKey, out var config);
+			await client.Query(new JenkinsApi.Master());
+			return HealthCheckResult.Healthy(config.JenkinsUrl.ToString());
+		} catch (Exception e) {
+			return HealthCheckResult.Unhealthy(e.Message);
+		}
+	}
 }
