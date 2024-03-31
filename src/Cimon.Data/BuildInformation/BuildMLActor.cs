@@ -1,4 +1,6 @@
-﻿namespace Cimon.Data.BuildInformation;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace Cimon.Data.BuildInformation;
 
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
@@ -20,15 +22,15 @@ record MlResponse(MlRequest Request, BuildFailureSuspect Suspect);
 
 class BuildMLActor: ReceiveActor
 {
-	private readonly IBuildFailurePredictor _buildFailurePredictor;
 	private readonly ILogger<BuildMLActor> _logger;
 	private CancellationTokenSource? _cts;
 	private ImmutableQueue<MlRequest> _requests = ImmutableQueue<MlRequest>.Empty;
 	private MlRequest _active;
+	private IServiceScope _serviceScope;
 
 	private record LogsResult(string Log, MlRequest Request);
-	public BuildMLActor(IBuildFailurePredictor buildFailurePredictor, ILogger<BuildMLActor> logger) {
-		_buildFailurePredictor = buildFailurePredictor;
+	public BuildMLActor(IServiceProvider serviceProvider, ILogger<BuildMLActor> logger) {
+		_serviceScope = serviceProvider.CreateAsyncScope();
 		_logger = logger;
 		Receive<MlRequest>(HandleRequest);
 	}
@@ -66,7 +68,7 @@ class BuildMLActor: ReceiveActor
 			}
 			EnqueueRequest(request);
 		});
-		Receive<LogsResult>(logs => {
+		ReceiveAsync<LogsResult>(async logs => {
 			UnbecomeStacked();
 			ProcessNextItem();
 			var request = logs.Request;
@@ -74,7 +76,8 @@ class BuildMLActor: ReceiveActor
 			info.Log = logs.Log;
 			BuildFailureSuspect? failureSuspect = null;
 			try {
-				failureSuspect = _buildFailurePredictor.FindFailureSuspect(info);
+				var predictor = _serviceScope.ServiceProvider.GetRequiredService<IBuildFailurePredictor>();
+				failureSuspect = await predictor.FindFailureSuspect(info);
 			} catch (Exception e) {
 				_logger.LogWarning("Failed to find suspect on {BuildName} {BuildId}. Error: {Error}",
 					info.Name, info.Id, e.Message);
@@ -92,6 +95,7 @@ class BuildMLActor: ReceiveActor
 
 	public override void AroundPostStop() {
 		_cts?.Cancel();
+		_serviceScope.Dispose();
 		base.AroundPostStop();
 	}
 }

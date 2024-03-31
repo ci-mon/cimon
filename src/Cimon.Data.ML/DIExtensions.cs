@@ -5,6 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 public static class DIExtensions
 {
 	public static IServiceCollection AddCimonML(this IServiceCollection serviceCollection) {
-		return serviceCollection.AddSingleton<IBuildFailurePredictor, BuildFailurePredictor>();
+		return serviceCollection.AddScoped<IBuildFailurePredictor, BuildFailurePredictor>();
 	}
 }

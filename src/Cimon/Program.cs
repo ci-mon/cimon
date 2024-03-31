@@ -1,11 +1,14 @@
 using Cimon;
 using Cimon.Auth;
+using Cimon.Contracts;
+using Cimon.Contracts.AppFeatures;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
 using Cimon.Data;
 using Cimon.Data.BuildInformation;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
+using Cimon.Data.Features;
 using Cimon.Data.Jenkins;
 using Cimon.Data.ML;
 using Cimon.Data.Secrets;
@@ -21,7 +24,9 @@ using HealthChecks.UI.Client;
 using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Microsoft.FeatureManagement;
 using Radzen;
 using Serilog;
 using NotificationService = Radzen.NotificationService;
@@ -90,10 +95,17 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 builder.Services.AddHealthChecksUI(settings => settings.AddHealthCheckEndpoint("local", "/healthz"))
 	.AddInMemoryStorage();
+builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures>());
+
 
 WebApplication app = builder.Build();
 
 await DbInitializer.Init(app.Services);
+
+foreach (var initializer in app.Services.GetServices<IAppInitializer>()) {
+	await initializer.Init(app.Services);
+}
+
 if (!app.Environment.IsDevelopment()) {
 	app.UseExceptionHandler("/Error");
 	app.UseHsts();

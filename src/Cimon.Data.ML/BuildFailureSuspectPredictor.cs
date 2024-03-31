@@ -1,4 +1,7 @@
-﻿namespace Cimon.Data.ML;
+﻿using Cimon.Contracts.AppFeatures;
+using Microsoft.FeatureManagement;
+
+namespace Cimon.Data.ML;
 
 using System.Text;
 using Contracts.CI;
@@ -7,10 +10,9 @@ using Microsoft.ML.Transforms.Text;
 
 public interface IBuildFailurePredictor
 {
-	BuildFailureSuspect? FindFailureSuspect(BuildInfo buildInfo);
+	Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo);
 }
-
-public class BuildFailurePredictor : IBuildFailurePredictor
+public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailurePredictor
 {
 	readonly record struct BestMatch(int Index, int Confidence)
 	{
@@ -18,7 +20,7 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		public bool IsEmpty() => Index == Empty.Index;
 	}
 
-	public BuildFailureSuspect? FindFailureSuspect(BuildInfo buildInfo) {
+	public async Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo) {
 		var textData = ExtractTextData(buildInfo);
 		TextData buildStatusTextData = new TextData { Text = textData.BuildStatus.NormalizeText() };
 		var changesTextData = textData.Changes.Select(x => new TextData {
@@ -27,12 +29,19 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		if (!changesTextData.Any()) {
 			return null;
 		}
-		BestMatch match = FindBestMatch(buildStatusTextData, changesTextData);
+		var useSmartComponents = await featureManager.IsEnabled<MlFeatures.UseSmartComponents>();
+		BestMatch match = useSmartComponents
+			? FindBestMatchWithSmartComponents(buildStatusTextData, changesTextData)
+			: FindBestMatchByTfNgrams(buildStatusTextData, changesTextData);
 		if (match.IsEmpty()) {
 			return null;
 		}
 		(VcsUser, string) item = textData.Changes[match.Index];
 		return new BuildFailureSuspect(item.Item1, match.Confidence);
+	}
+
+	private BestMatch FindBestMatchWithSmartComponents(TextData buildStatusTextData, List<TextData> changesTextData) {
+		throw new NotImplementedException();
 	}
 
 	public static BuildInfoTextData ExtractTextData(BuildInfo buildInfo) {
@@ -56,7 +65,7 @@ public class BuildFailurePredictor : IBuildFailurePredictor
 		return new BuildInfoTextData(status, changes.ToList());
 	}
 
-	private static BestMatch FindBestMatch(TextData source, IList<TextData> itemsToMatch) {
+	private static BestMatch FindBestMatchByTfNgrams(TextData source, IList<TextData> itemsToMatch) {
 		var mlContext = new MLContext();
 		var dataView = mlContext.Data.LoadFromEnumerable(itemsToMatch.Prepend(source));
 		var pipeline = mlContext.Transforms.Text

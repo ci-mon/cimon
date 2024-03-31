@@ -22,6 +22,8 @@ public class CimonDbContext : DbContext
 	public DbSet<CIConnector> CIConnectors { get; set; } = null!;
 	public DbSet<CIConnectorSetting> CIConnectorSettings { get; set; } = null!;
 
+	public DbSet<AppFeatureState> FeatureStates { get; set; } = null!;
+
 	public override async ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = new CancellationToken()) {
 		var entry = await base.AddAsync(entity, cancellationToken);
 		await _mediator.Publish(new EntityCreatedNotification<TEntity>(entry), cancellationToken);
