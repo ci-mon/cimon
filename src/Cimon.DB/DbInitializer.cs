@@ -34,7 +34,7 @@ public class DbInitializer
 	}
 
 	public async Task Init() {
-		await _dbContext.Database.EnsureCreatedAsync();
+		await _dbContext.Database.MigrateAsync();
 		await AddTestData(_dbContext);
 		await _dbContext.SaveChangesAsync();
 	}
