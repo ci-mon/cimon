@@ -1,5 +1,9 @@
 # cimon-desktop changelog
 
+## 1.0.18
+1. save/restore window position
+2. allow edit web app url
+
 ## 1.0.17
 1. Login flow improvements
 

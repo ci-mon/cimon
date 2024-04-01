@@ -7,7 +7,7 @@ import PublisherCimon from './publisher-cimon';
 
 // @ts-ignore not imported properly.
 const publisherCimon = new PublisherCimon({
-  host: process.env.CIMON_PUBLISH_URL ?? 'http://localhost:5001',
+  host: process.env.CIMON_WEB_APP_URL ?? 'http://localhost:5001',
   token: process.env.CIMON_PUBLISH_TOKEN ?? 'changeme',
 });
 const config = {

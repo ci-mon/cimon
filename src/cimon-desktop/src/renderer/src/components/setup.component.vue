@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue';
 import type {} from '../../../internal-preload/index.d.ts';
 import { VForm } from 'vuetify/components';
 import { ScreenshotOptions } from '../../../shared/interfaces';
+import electron_squirrel_startup from 'electron-squirrel-startup';
 
 const options = await window.electronAPI.getOptions();
 
@@ -11,7 +12,12 @@ const screenshotOptions = ref<ScreenshotOptions>(
   options?.screenshots ?? ({ width: 800, height: 600, quality: 80, save: false } as ScreenshotOptions)
 );
 
+const baseUrl = ref(options.baseUrl);
 const errorText = ref('');
+const dialog = ref({
+  msg: '',
+  show: false,
+});
 const form = ref<VForm>();
 
 onMounted(() => {
@@ -24,15 +30,29 @@ watch(screenshotOptions, () => {
 function validate(): Promise<{ valid: boolean }> {
   return form.value?.validate() ?? Promise.resolve({ valid: true });
 }
+
 async function openFolderDialog() {
   const path = await window.electronAPI.selectFolder(screenshotOptions.value.path);
   if (path) {
     screenshotOptions.value.path = path;
   }
 }
+
 function close() {
   window.close();
 }
+
+async function connect() {
+  if (!(await validate()).valid) {
+    return;
+  }
+  const result = await window.electronAPI.trySetBaseUrl(baseUrl.value);
+  dialog.value = {
+    msg: result.error ? result.error.message : 'Base url changed',
+    show: true,
+  };
+}
+
 async function save() {
   if (!(await validate()).valid) {
     return;
@@ -59,6 +79,15 @@ const rules = {
   width: (value) => (value > 200 && value < 4000) || 'width should be > 200 and < 4000',
   height: (value) => (value > 200 && value < 4000) || 'height should be > 200 and < 4000',
   quality: (value) => (value >= 5 && value <= 100) || 'quality should be > 5 and <= 100',
+  baseUrl: (value) => {
+    if (!URL.canParse(value)){
+      return 'enter valid URL';
+    }
+    if (value.endsWith('/')) {
+      return 'do not end value with "/"';
+    }
+    return true;
+  },
 };
 </script>
 
@@ -67,10 +96,16 @@ const rules = {
     <v-main class="ma-4">
       <v-form ref="form">
         <v-card class="pa-2">
-          <!--          <div class="d-flex">
-            <v-text-field clearable label="cimon server url" prepend-icon="mdi-server"></v-text-field>
-            <v-btn class="ml-4" append-icon="mdi-connection">Connect</v-btn>
-          </div>-->
+          <div class="d-flex">
+            <v-text-field
+              v-model="baseUrl"
+              :rules="[rules.baseUrl]"
+              clearable
+              label="cimon server url"
+              prepend-icon="mdi-server"
+            ></v-text-field>
+            <v-btn class="ml-4" append-icon="mdi-connection" @click="connect">Connect</v-btn>
+          </div>
           <v-switch v-model="autorun" label="Start on login"></v-switch>
           <v-switch v-model="screenshotOptions.save" label="Save screenshots on monitor change"></v-switch>
           <div v-if="screenshotOptions.save">
@@ -117,11 +152,22 @@ const rules = {
       <v-snackbar v-if="Boolean(errorText?.length)" multi-line>
         {{ errorText }}
         <template #actions>
-          <v-btn color="red" variant="text" @click="errorText = ''"> Close </v-btn>
+          <v-btn color="red" variant="text" @click="errorText = ''"> Close</v-btn>
         </template>
       </v-snackbar>
     </v-main>
   </v-app>
+  <v-dialog v-model="dialog.show" max-width="500">
+    <v-card title="Info">
+      <v-card-text>
+        {{ dialog.msg }}
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text="Close" @click="dialog.show = false"></v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

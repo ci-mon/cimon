@@ -12,11 +12,11 @@ import { options } from './options';
 import { NotifierWrapper } from './notifierWrapper';
 
 import electron_squirrel_startup from 'electron-squirrel-startup';
+import { settingsStore } from './settings';
 
 Object.assign(console, log.functions);
 
 Notifier.ExecutableName = build.notifier_exe_name;
-
 if (electron_squirrel_startup) {
   await registerOnSquirrelStartup(build.appId, 'cimon desktop', options.icons.green.big_png_win);
   app.quit();
@@ -30,7 +30,7 @@ if (isDev) {
 } else {
   app.setAppUserModelId(build.appId);
 }
-const cimonApp = new CimonApp();
+const cimonApp = new CimonApp(settingsStore);
 
 AutoUpdater.install(cimonApp);
 

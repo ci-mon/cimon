@@ -1,18 +1,28 @@
 import { app, autoUpdater, dialog } from 'electron';
 import log from 'electron-log';
-import { CimonConfig } from '../../cimon-config';
 import { CimonApp } from './CimonApp';
+import { arch, platform } from 'process';
+import { settingsStore } from './settings';
 
 const updaterLog = log.create({ logId: 'update' });
 
 export class AutoUpdater {
+  private static getReleasesUrl(version: string) {
+    const baseUrl = settingsStore.store.baseUrl;
+    const callbackUrl = Buffer.from(baseUrl).toString('base64');
+    return `${baseUrl}/native/update/${callbackUrl}/${platform}/${arch}/${version}`;
+  }
   public static install(cimonApp: CimonApp) {
-    const feedUrl = CimonConfig.getReleasesUrl(app.getVersion());
+    const feedUrl = AutoUpdater.getReleasesUrl(app.getVersion());
     updaterLog.info(`Updater feed url: ${feedUrl}`);
     if (!app.isPackaged) {
       return;
     }
     autoUpdater.setFeedURL({ url: feedUrl });
+    settingsStore.onDidChange('baseUrl', () => {
+      const feedUrl = AutoUpdater.getReleasesUrl(app.getVersion());
+      autoUpdater.setFeedURL({ url: feedUrl });
+    });
 
     autoUpdater.on('update-downloaded', () => {
       cimonApp.setUpdateReady();

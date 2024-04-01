@@ -6,6 +6,9 @@ class ElectronAPI implements IElectronAPI {
   public async saveOptions(options: NativeAppSettings) {
     return await ipcRenderer.invoke('options:save', options);
   }
+  public async trySetBaseUrl(url: string) {
+    return await ipcRenderer.invoke('options:trySetBaseUrl', url);
+  }
 
   public selectFolder(currentPath?: string) {
     return ipcRenderer.invoke('dialog:selectDir', currentPath);

@@ -125,6 +125,9 @@ app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList")));
+app.MapGet("/cimon-info", () => new {
+	version = typeof(Program).Assembly.GetName().Version
+});
 app.UseStaticFiles();
 app.MapFallbackToPage("/_Host");
 app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");

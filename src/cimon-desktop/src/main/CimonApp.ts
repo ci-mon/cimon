@@ -23,6 +23,8 @@ import Store from 'electron-store';
 import AutoLaunch from 'auto-launch';
 import { NativeAppSettings } from '../shared/interfaces';
 import fs from 'fs';
+import BrowserWindowConstructorOptions = Electron.BrowserWindowConstructorOptions;
+import { Result } from '../internal-preload/types';
 
 interface MentionInfo {
   buildConfigId: number;
@@ -51,33 +53,8 @@ export class CimonApp {
   private _session!: Electron.Session;
   private _signalR!: SignalRClient;
   private _autoLaunch: AutoLaunch;
-  private _store: Store<NativeAppSettings> = new Store<NativeAppSettings>({
-    schema: {
-      autoRun: { type: 'boolean' },
-      screenshots: {
-        type: 'object',
-        properties: {
-          width: {
-            type: 'number',
-          },
-          height: {
-            type: 'number',
-          },
-          quality: {
-            type: 'number',
-          },
-          save: {
-            type: 'boolean',
-          },
-          path: {
-            type: 'string',
-          },
-        },
-      },
-    },
-    accessPropertiesByDotNotation: true,
-    watch: true,
-  });
+
+  constructor(private _settings: Store<NativeAppSettings>) {}
 
   private async _initToken(): Promise<TokenInfo> {
     try {
@@ -102,7 +79,7 @@ export class CimonApp {
   }
 
   private async _initMainWindow() {
-    this._window = new BrowserWindow({
+    const config = {
       webPreferences: {
         session: this._session,
         allowRunningInsecureContent: true,
@@ -110,8 +87,15 @@ export class CimonApp {
       show: false,
       paintWhenInitiallyHidden: false,
       autoHideMenuBar: !isDev,
-    });
+    } as BrowserWindowConstructorOptions;
+    const position = this._settings.store.windowPosition;
+    this._window = new BrowserWindow(config);
+    if (position) {
+      this._window.setBounds(position);
+    }
     this._window.on('close', () => {
+      const bounds = this._window!.getBounds();
+      this._settings.set('windowPosition', bounds);
       if (this._isExiting) return;
       delete this._window;
       this._rebuildMenu();
@@ -490,7 +474,7 @@ export class CimonApp {
   private async _onMonitorInfoChanged(monitorInfo: MonitorInfo) {
     this._monitorInfo = monitorInfo;
     this._refreshTrayIcon();
-    if (this._store.store.screenshots?.save) {
+    if (this._settings.store.screenshots?.save) {
       await this._makeScreenshot(monitorInfo);
     }
   }
@@ -531,13 +515,42 @@ export class CimonApp {
       await this._loadHash(event.sender, relativeUrl);
     });
     ipcMain.handle('dialog:selectDir', (_, defPath) => this.selectDirectory(defPath));
-    ipcMain.handle('options:read', () => this._store.store);
+    ipcMain.handle('options:read', () => this._settings.store);
     ipcMain.handle('options:save', (_, options) => this._updateOptions(options));
+    ipcMain.handle('options:trySetBaseUrl', (_, url) => this._trySetBaseUrl(url));
+  }
+
+  private async _trySetBaseUrl(url: string) : Promise<Result> {
+    try {
+      let infoUrl = url;
+      if (!url.endsWith('/')) {
+        infoUrl += '/';
+      }
+      infoUrl += 'cimon-info';
+      const result = await this._session.fetch(infoUrl);
+      if (!result.ok) {
+        throw new Error(result.statusText);
+      }
+      this._settings.set('baseUrl', url);
+      options.baseUrl = url;
+      setTimeout(async () => {
+        await this._signalR?.disconnect();
+        await this._doLogin();
+        await this._initSignalR();
+      }, 0);
+      return {};
+    } catch (e: unknown) {
+      return {
+        error: {
+          message: (e as unknown as Error)?.message,
+        },
+      } as Result;
+    }
   }
 
   private _updateOptions(settings: NativeAppSettings) {
     try {
-      this._store.set(settings);
+      this._settings.set(settings);
       return {};
     } catch (e) {
       return {
@@ -547,7 +560,7 @@ export class CimonApp {
   }
 
   private _subscribeForSettingsChanges() {
-    this._store.onDidChange('autoRun', (newValue, oldValue) => {
+    this._settings.onDidChange('autoRun', (newValue, oldValue) => {
       if (oldValue && !newValue) {
         this._autoLaunch.disable();
       } else if (newValue) {
@@ -584,8 +597,8 @@ export class CimonApp {
     if (!this._window) {
       await this._initMainWindow();
     }
-    await this._window!.loadURL(options.lastMonitor);
     this._window!.show();
+    await this._window!.loadURL(options.lastMonitor);
   }
 
   public setUpdateReady() {
@@ -664,16 +677,16 @@ export class CimonApp {
   }
 
   private async _initSettings() {
-    const autorun = this._store.store.autoRun;
+    const autorun = this._settings.store.autoRun;
     const isAutorunEnabled = await this._autoLaunch.isEnabled();
     if (autorun !== isAutorunEnabled) {
-      this._store.set('autoRun', isAutorunEnabled);
+      this._settings.set('autoRun', isAutorunEnabled);
     }
     this._subscribeForSettingsChanges();
   }
 
   private async _makeScreenshot(monitorInfo: MonitorInfo) {
-    const destPath = this._store.store.screenshots?.path;
+    const destPath = this._settings.store.screenshots?.path;
     if (!destPath) {
       return;
     }
@@ -683,9 +696,9 @@ export class CimonApp {
       destPath,
       `${monitorInfo.monitorKey}_${formattedDate}_failed_${monitorInfo.failedBuildsCount}.jpeg`
     );
-    const width = this._store.store.screenshots?.width ?? 800;
-    const height = this._store.store.screenshots?.height ?? 600;
-    const quality = this._store.store.screenshots?.quality ?? 80;
+    const width = this._settings.store.screenshots?.width ?? 800;
+    const height = this._settings.store.screenshots?.height ?? 600;
+    const quality = this._settings.store.screenshots?.quality ?? 80;
     const win = new BrowserWindow({
       width: width,
       height: height,

@@ -1,7 +1,7 @@
 import Path from 'path';
 import isDev from 'electron-is-dev';
-import { CimonConfig } from '../../cimon-config';
 import { resourcesPath, platform } from 'process';
+import { settingsStore } from './settings';
 
 class IconLocator {
   constructor(private _basename: string) {}
@@ -22,7 +22,7 @@ class IconLocator {
 }
 
 export const options = {
-  baseUrl: CimonConfig.url,
+  baseUrl: settingsStore.store.baseUrl,
   waitForConnectionRetryDelay: 10000,
 
   monitorUrl(key: string): string {

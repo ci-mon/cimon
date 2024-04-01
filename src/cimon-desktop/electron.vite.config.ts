@@ -35,6 +35,7 @@ export default defineConfig(
           outDir: 'dist/main',
           sourcemap: true,
         },
+        envPrefix: 'CIMON_',
         plugins: [externalizeDepsPlugin(), copyNotifierPlugin],
       },
       preload: {

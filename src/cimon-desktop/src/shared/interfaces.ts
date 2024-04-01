@@ -1,6 +1,8 @@
 export interface NativeAppSettings {
+  windowPosition: Electron.Rectangle;
   screenshots: ScreenshotOptions;
   autoRun: boolean;
+  baseUrl: string;
 }
 
 export interface ScreenshotOptions {
