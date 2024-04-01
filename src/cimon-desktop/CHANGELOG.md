@@ -3,6 +3,7 @@
 ## 1.0.18
 1. save/restore window position
 2. allow edit web app url
+3. auto launch after update
 
 ## 1.0.17
 1. Login flow improvements

@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron';
+import AutoLaunch from 'auto-launch';
 import { CimonApp } from './CimonApp';
 import { AutoUpdater } from './auto-updater';
 
@@ -17,8 +18,23 @@ import { settingsStore } from './settings';
 Object.assign(console, log.functions);
 
 Notifier.ExecutableName = build.notifier_exe_name;
+
+const autoLaunch = new AutoLaunch({
+  name: 'cimon',
+});
+autoLaunch.opts.appName = 'cimon';
+
 if (electron_squirrel_startup) {
   await registerOnSquirrelStartup(build.appId, 'cimon desktop', options.icons.green.big_png_win);
+  const cmd = process.argv[1];
+  if (cmd === '--squirrel-updated') {
+    const isAutorunEnabled = await autoLaunch.isEnabled();
+    if (settingsStore.store.autoRun && !isAutorunEnabled) {
+      autoLaunch.enable();
+    }
+  } else if (cmd === '--squirrel-uninstall') {
+    autoLaunch.disable();
+  }
   app.quit();
 }
 if (isDev) {
@@ -30,7 +46,7 @@ if (isDev) {
 } else {
   app.setAppUserModelId(build.appId);
 }
-const cimonApp = new CimonApp(settingsStore);
+const cimonApp = new CimonApp(settingsStore, autoLaunch);
 
 AutoUpdater.install(cimonApp);
 

@@ -52,9 +52,8 @@ export class CimonApp {
   private _trayContextMenu!: Electron.Menu;
   private _session!: Electron.Session;
   private _signalR!: SignalRClient;
-  private _autoLaunch: AutoLaunch;
 
-  constructor(private _settings: Store<NativeAppSettings>) {}
+  constructor(private _settings: Store<NativeAppSettings>, private _autoLaunch: AutoLaunch) {}
 
   private async _initToken(): Promise<TokenInfo> {
     try {
@@ -356,10 +355,6 @@ export class CimonApp {
   }
 
   public async init() {
-    this._autoLaunch = new AutoLaunch({
-      name: 'cimon',
-    });
-    this._autoLaunch.opts.appName = 'cimon';
     await this._initSettings();
     this._subscribeForEvents();
     await this._initSession();
@@ -677,11 +672,6 @@ export class CimonApp {
   }
 
   private async _initSettings() {
-    const autorun = this._settings.store.autoRun;
-    const isAutorunEnabled = await this._autoLaunch.isEnabled();
-    if (autorun !== isAutorunEnabled) {
-      this._settings.set('autoRun', isAutorunEnabled);
-    }
     this._subscribeForSettingsChanges();
   }
 
