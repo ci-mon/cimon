@@ -23,7 +23,6 @@ import Store from 'electron-store';
 import AutoLaunch from 'auto-launch';
 import { NativeAppSettings } from '../shared/interfaces';
 import fs from 'fs';
-import { CimonConfig } from '../../cimon-config';
 
 interface MentionInfo {
   buildConfigId: number;
@@ -395,7 +394,7 @@ export class CimonApp {
   }
 
   private async _initTray() {
-    this._tray = new Tray(options.icons.red.tray, CimonConfig.trayId);
+    this._tray = new Tray(options.icons.red.tray);
     this._rebuildMenu();
     this._trayContextMenuVisibilityConfigs.push({
       id: 'reconnect',
