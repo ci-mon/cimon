@@ -53,7 +53,10 @@ export class CimonApp {
   private _session!: Electron.Session;
   private _signalR!: SignalRClient;
 
-  constructor(private _settings: Store<NativeAppSettings>, private _autoLaunch: AutoLaunch) {}
+  constructor(
+    private _settings: Store<NativeAppSettings>,
+    private _autoLaunch: AutoLaunch
+  ) {}
 
   private async _initToken(): Promise<TokenInfo> {
     try {
@@ -515,7 +518,7 @@ export class CimonApp {
     ipcMain.handle('options:trySetBaseUrl', (_, url) => this._trySetBaseUrl(url));
   }
 
-  private async _trySetBaseUrl(url: string) : Promise<Result> {
+  private async _trySetBaseUrl(url: string): Promise<Result> {
     try {
       let infoUrl = url;
       if (!url.endsWith('/')) {
