@@ -3,7 +3,6 @@ import { onMounted, ref, watch } from 'vue';
 import type {} from '../../../internal-preload/index.d.ts';
 import { VForm } from 'vuetify/components';
 import { ScreenshotOptions } from '../../../shared/interfaces';
-import electron_squirrel_startup from 'electron-squirrel-startup';
 
 const options = await window.electronAPI.getOptions();
 
