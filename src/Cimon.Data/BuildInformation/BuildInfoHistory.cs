@@ -15,13 +15,12 @@ public class BuildInfoHistory
 	public void Add(BuildInfo newInfo) {
 		var changes = new List<VcsChange>();
 		var currentFailedTests = newInfo.FailedTests.Select(x => x.TestId).ToHashSet();
-		var currentProblems = newInfo.Problems.Select(x => (x.Type, x.Details)).ToHashSet();
 		foreach (var infoItem in _buffer.IterateReversed()) {
 			if (infoItem.Info.Status == BuildStatus.Success) {
 				break;
 			}
 			if (!infoItem.Resolved) {
-				if (TryResolveOldBuilds(infoItem, currentProblems, currentFailedTests)) continue;
+				if (TryResolveOldBuildsByProblems(infoItem, newInfo, currentFailedTests)) continue;
 				changes.InsertRange(0,
 					infoItem.Info.Changes.Where(x => !x.IsInherited).Select(x => x with { IsInherited = true }));
 			}
@@ -33,17 +32,26 @@ public class BuildInfoHistory
 		_buffer.Add(new BuildInfoItem(newInfo, false));
 	}
 
-	private static bool TryResolveOldBuilds(BuildInfoItem infoItem, HashSet<(CIBuildProblemType Type, string Details)> currentProblems, HashSet<string> currentFailedTests) {
-		var oldFailedTests = infoItem.Info.FailedTests;
-		var oldProblems = infoItem.Info.Problems.Select(x => (x.Type, x.Details)).ToHashSet();
+	private static bool TryResolveOldBuildsByProblems(BuildInfoItem oldInfoItem, BuildInfo newInfo,
+			HashSet<string> currentFailedTests) {
+		var oldFailedTests = oldInfoItem.Info.FailedTests;
+		var oldProblems = oldInfoItem.Info.Problems.ToHashSet();
+		if (oldFailedTests.Count == 0 && currentFailedTests.Count == 0 && oldProblems.Count == 0 &&
+				newInfo.Problems.Count == 0) {
+			if (!string.Equals(oldInfoItem.Info.StatusText, newInfo.StatusText,
+					StringComparison.InvariantCultureIgnoreCase)) {
+				oldInfoItem.Resolved = true;
+				return true;
+			}
+		}
 		if (oldFailedTests.Count == 0) {
-			if (!currentProblems.Overlaps(oldProblems)) {
-				infoItem.Resolved = true;
+			if (!oldProblems.Overlaps(newInfo.Problems)) {
+				oldInfoItem.Resolved = true;
 				return true;
 			}
 		} else {
 			if (currentFailedTests.Any() && oldFailedTests.All(t => !currentFailedTests.Contains(t.TestId))) {
-				infoItem.Resolved = true;
+				oldInfoItem.Resolved = true;
 				return true;
 			}
 		}

@@ -3,5 +3,6 @@
 public enum CIBuildProblemType
 {
 	Unknown,
-	FailedTests
+	FailedTests,
+	StageExecutionError
 }

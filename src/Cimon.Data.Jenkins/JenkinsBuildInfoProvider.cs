@@ -8,6 +8,9 @@ using JenkinsBuildInfo = Cimon.Jenkins.Entities.Builds.BuildInfo;
 
 namespace Cimon.Data.Jenkins;
 
+using System.Text;
+using Cimon.Jenkins.Entities.Jobs;
+using Cimon.Jenkins.WorkflowApi;
 using Contracts.CI;
 
 public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvider
@@ -39,7 +42,6 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		var build = await GetBuildInfo(infoQuery, number, client);
 		if (build is null) return null;
 		var buildInfo = build.BuildInfo;
-		var changes = await GetChanges(buildInfo, client);
 		var name = buildInfo.FullDisplayName?.Substring(0,
 			buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal));
 		var info = new BuildInfoWrapper {
@@ -51,14 +53,55 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			StartDate = DateTimeOffset.FromUnixTimeMilliseconds(buildInfo.Timestamp),
 			Duration = TimeSpan.FromMilliseconds(buildInfo.Duration),
 			Status = GetStatus(buildInfo.Result),
-			Changes = changes,
 			InternalInfo = build,
 			Number = buildInfo.Number.ToString()
 		};
-		if (buildInfo.Result == "UNSTABLE") {
+		if (info.Status == BuildStatus.Failed) {
+			await LoadProblems(client, info, build);
 			await LoadTests(client, build, info);
+			info.Changes = await GetChanges(buildInfo, client);
 		}
 		return info;
+	}
+
+	private static async Task LoadProblems(IJenkinsClient client, BuildInfoWrapper info, InternalBuildInfo build) {
+		var workflow = await client.Query(new JenkinsWfApi.DescribeBuild(build.BuildInfo.Number.ToString(), 
+			build.JobLocator));
+		if (workflow is null) return;
+		var statusBuilder = new StringBuilder();
+		var problems = new List<CIBuildProblem>();
+		foreach (var stage in workflow.Stages) {
+			const string? failedStatus = "FAILED";
+			if (!stage.Status.Equals(failedStatus, StringComparison.OrdinalIgnoreCase)) {
+				continue;
+			}
+			statusBuilder.AppendLine($"Stage: {stage.Name} {stage.Status}: {stage.Error?.Message}");
+			var stageFull = await client.Query(stage);
+			stageFull ??= stage;
+			AddProblemsFromStage(stageFull, problems);
+		}
+		info.Problems = problems;
+		info.StatusText = statusBuilder.ToString();
+	}
+
+	private static void AddProblemsFromStage(Stage stageFull, List<CIBuildProblem> problems) {
+		if (stageFull.StageFlowNodes.Count == 0) {
+			Error? error = stageFull.Error;
+			if (error is { }) {
+				var problem = new CIBuildProblem(CIBuildProblemType.StageExecutionError, error.Type, error.Message,
+					null);
+				problems.Add(problem);
+			}
+		}
+		foreach (var flowNode in stageFull.StageFlowNodes) {
+			Error? error = flowNode.Error;
+			if (error is { }) {
+				var problem = new CIBuildProblem(CIBuildProblemType.StageExecutionError,
+					flowNode.Name, $"{error.Type}: {error.Message}",
+					null);
+				problems.Add(problem);
+			}
+		}
 	}
 
 	private async Task LoadBuildHistory(BuildInfoQuery infoQuery, BuildInfoWrapper lastBuildInfo,
@@ -83,6 +126,12 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 	}
 
 	private static async Task LoadTests(IJenkinsClient client, InternalBuildInfo build, BuildInfoWrapper info) {
+		if (build.BuildInfo.Actions?.Find(x => "hudson.tasks.junit.TestResultAction".Equals(x?.Class)) is {} testsResult) {
+			if (testsResult.Props.Contains(new KeyValuePair<string, object?>("failCount", 0)) &&
+				testsResult.Props.TryGetValue("totalCount", out var totalCount) && totalCount is > 0) {
+				return;
+			}
+		}
 		var tests = await client.Query(new JenkinsApi.TestsReport(
 			new JenkinsApi.BuildInfo(build.BuildInfo.Id, build.JobLocator)));
 		if (tests is not null) {
@@ -137,10 +186,13 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		var locator = buildConfig.Branch is { Length: > 0 }
 			? JobLocator.Create(buildConfig.Key, buildConfig.Branch)
 			: JobLocator.Create(buildConfig.Key);
-		var job = await client.Query(new JenkinsApi.Job(locator));
+		if (number is { } buildNumber) {
+			return await GetLastFinishedBuild(buildNumber, locator, client, buildInfoQuery.Options.LastBuildId);
+		}
+		JobInfo? job = await client.Query(new JenkinsApi.Job(locator));
 		if (job is null) return null;
-		var jobNumber = number ?? job.LastCompletedBuild.Number;
-		return await GetLastFinishedBuild(jobNumber, locator, client, buildInfoQuery.Options.LastBuildId);
+		return await GetLastFinishedBuild(job.LastCompletedBuild.Number, locator, client, 
+			buildInfoQuery.Options.LastBuildId);
 	}
 
 	private async Task<IReadOnlyCollection<VcsChange>> GetChanges(JenkinsBuildInfo buildInfo,

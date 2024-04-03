@@ -4,6 +4,8 @@ using FluentAssertions.Execution;
 
 namespace Cimon.Data.Jenkins.Tests;
 
+using Cimon.Data.BuildInformation;
+using Cimon.Jenkins;
 using Contracts.CI;
 
 [TestFixture]
@@ -13,12 +15,12 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 	[Test]
 	public async Task GetInfo_WhenFailed() {
 		using var client = Factory.Create(DefaultConnector.ConnectorKey);
-		var query = new BuildInfoQuery(ConnectorInfo, new BuildConfig {
+		var query = new BuildInfoQuery(DefaultConnector, new BuildConfig {
 			Key = "app.my.test",
 			Branch = "master"
-		});
+		}, new BuildInfoQueryOptions(null, 5));
 		var info = (await BuildInfoProvider.FindInfo(query)).First();
-		var job = await client.GetJob("app.my.test", default);
+		var job = await client.Query(new JenkinsApi.Job("app.my.test"));
 		var number = job.LastBuild.Number;
 		using var scope = new AssertionScope();
 		info!.Url.Should().Be($"http://localhost:8080/job/app.my.test/{number}/");
@@ -38,14 +40,25 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		change.Modifications.Should().ContainEquivalentOf(new FileModification(FileModificationType.Edit, "1.txt"));
 	}
 
-	private static CIConnectorInfo ConnectorInfo => new("main", new Dictionary<string, string>());
+	[Test]
+	public async Task AddInfoToHistory() {
+		var query = new BuildInfoQuery(DefaultConnector, new BuildConfig {
+			Key = "app.studio-enterprise.shell",
+			Branch = "master"
+		}, new BuildInfoQueryOptions(null, 5));
+		var info = await BuildInfoProvider.FindInfo(query);
+		var history = new BuildInfoHistory();
+		foreach (var result in info) {
+			history.Add(result);
+		}
+	}
 
 	[Test]
 	public async Task GetInfo_WhenMultibranch() {
-		var result = await BuildInfoProvider.FindInfo(new BuildInfoQuery(ConnectorInfo, new BuildConfig {
+		var result = await BuildInfoProvider.FindInfo(new BuildInfoQuery(DefaultConnector, new BuildConfig {
 			Key = "app.my.multibranch",
 			Branch = "master"
-		}));
+		}, new BuildInfoQueryOptions(null, 1)));
 		result.Should().NotBeNull();
 	}
 }

@@ -183,7 +183,8 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 					"TC_FAILED_TESTS" => CIBuildProblemType.FailedTests,
 					_ => CIBuildProblemType.Unknown
 				};
-				result.Add(new CIBuildProblem(type, problemOccurrence.Id, 
+				//todo problemOccurrence.Problem.Description to short summary?
+				result.Add(new CIBuildProblem(type, problemOccurrence.Type,
 					problemOccurrence.Details, problemOccurrence.NewFailure));
 			}
 		}
