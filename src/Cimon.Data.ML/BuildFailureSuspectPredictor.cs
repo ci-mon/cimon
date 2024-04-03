@@ -63,7 +63,6 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 			buildInfo.FailedTests.Select(t => $"{t.Name}{Environment.NewLine}{t.Details}"));
 		var status = $"{buildInfo.StatusText}{Environment.NewLine}{problems}{Environment.NewLine}{testFailures}";
 		var changes = buildInfo.Changes
-			.Where(x => !x.IsInherited)
 			.GroupBy(x => x.Author).Select(x => {
 				var changesText = new StringBuilder();
 				foreach (VcsChange change in x) {

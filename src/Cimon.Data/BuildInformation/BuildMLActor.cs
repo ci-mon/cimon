@@ -75,11 +75,8 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 	}
 
 	private static bool TryPublishSuspect(BuildFailureSuspect? failureSuspect, MlRequest request) {
-		if (failureSuspect?.Confidence > 20) {
-			request.Receiver.Tell(new MlResponse(request, failureSuspect));
-			return true;
-		}
-		return false;
+		request.Receiver.Tell(new MlResponse(request, failureSuspect));
+		return true;
 	}
 
 	public override void AroundPostStop() {

@@ -97,7 +97,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			Error? error = flowNode.Error;
 			if (error is { }) {
 				var problem = new CIBuildProblem(CIBuildProblemType.StageExecutionError,
-					flowNode.Name, $"{error.Type}: {error.Message}",
+					flowNode.Name, $"{stageFull.Name}. {error.Type}: {error.Message}",
 					null);
 				problems.Add(problem);
 			}
@@ -137,7 +137,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		if (tests is not null) {
 			info.FailedTests = tests.Suites
 				.SelectMany(x => x.Cases.Select(c=>new{ @case = c,suite = x}))
-				.Where(x=>x.@case.Status == "FAILED")
+				.Where(x=>x.@case.Status == "FAILED" || x.@case.Status == "REGRESSION")
 				.Select(x => new CITestOccurence(x.@case.Name) {
 					TestId = x.@case.Name,
 					Details = string.Join(Environment.NewLine, x.suite.Name,
@@ -146,6 +146,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 					Ignored = x.@case.Skipped,
 					NewFailure = x.@case.FailedSince == build.BuildInfo.Number
 				}).ToList();
+			info.StatusText = $"{info.FailedTests.Count} test(s) failed";
 		}
 	}
 

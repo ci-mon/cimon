@@ -179,7 +179,7 @@
     }
 
     private bool IsSuspect(VcsUser user) {
-        return BuildInfo.FailureSuspect?.User.Name == user.Name;
+        return BuildInfo?.FailureSuspect?.User.Name == user.Name && BuildInfo.FailureSuspect.Confidence >= 10;
     }
 
     private static string GetUserName(VcsUser user) {

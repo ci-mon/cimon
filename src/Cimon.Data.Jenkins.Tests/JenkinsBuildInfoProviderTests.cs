@@ -5,8 +5,10 @@ using FluentAssertions.Execution;
 namespace Cimon.Data.Jenkins.Tests;
 
 using Cimon.Data.BuildInformation;
+using Cimon.Data.ML;
 using Cimon.Jenkins;
 using Contracts.CI;
+using Microsoft.Extensions.DependencyInjection;
 
 [TestFixture]
 public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
@@ -42,8 +44,10 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 
 	[Test]
 	public async Task AddInfoToHistory() {
+		var serviceScope = ServiceProvider.CreateAsyncScope();
+		var predictor = serviceScope.ServiceProvider.GetRequiredService<IBuildFailurePredictor>();
 		var query = new BuildInfoQuery(DefaultConnector, new BuildConfig {
-			Key = "app.studio-enterprise.shell",
+			Key = "lib.studio-enterprise.components",
 			Branch = "master"
 		}, new BuildInfoQueryOptions(null, 5));
 		var info = await BuildInfoProvider.FindInfo(query);
@@ -51,6 +55,8 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		foreach (var result in info) {
 			history.Add(result);
 		}
+		var failureSuspect = await predictor.FindFailureSuspect(history.Last, false);
+
 	}
 
 	[Test]

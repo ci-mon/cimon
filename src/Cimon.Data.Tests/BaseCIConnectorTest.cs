@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.Tests;
 
+using Cimon.Data.ML;
+using Microsoft.FeatureManagement;
+
 public abstract class BaseCIConnectorTest<TSecrets, TBuildInfoProvider, TBuildConfigProvider>(string key, CISystem ciSystem) 
 	where TSecrets : class 
 	where TBuildConfigProvider : class, IBuildConfigProvider
@@ -26,6 +29,7 @@ public abstract class BaseCIConnectorTest<TSecrets, TBuildInfoProvider, TBuildCo
 			.AddSingleton<IConfiguration>(config)
 			.ConfigureSecretsFromConfig<TSecrets>()
 			.AddLogging();
+		serviceCollection.AddCimonML().AddFeatureManagement();
 		SetupDI(serviceCollection);
 		ServiceProvider = serviceCollection.BuildServiceProvider();
 		BuildConfigProvider = ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(ciSystem) as TBuildConfigProvider;
