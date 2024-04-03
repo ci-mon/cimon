@@ -6,7 +6,7 @@
 <RadzenStack aria-label="login-menu"  Orientation="Orientation.Horizontal">
     <RadzenProfileMenu aria-label="show-login-options">
         <Template>
-            <RadzenLabel aria-label="profile-user-name">@_user.FullName</RadzenLabel>
+            <RadzenLabel aria-label="profile-user-name">@_user?.FullName</RadzenLabel>
             <RadzenGravatar Style="width: 22px;height: 22px;" Email="@_user?.Email"></RadzenGravatar>
         </Template>
         <ChildContent>
@@ -34,7 +34,7 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthenticationState { get; set; } = null!;
 
-    private User _user = null!;
+    private User? _user = null!;
     
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
