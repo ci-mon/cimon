@@ -1,6 +1,6 @@
 ﻿namespace Cimon.DB.Models;
 
-public class MonitorModel
+public record MonitorModel
 {
 	public int Id { get; set; }
 	public required string Key { get; set; }
@@ -10,4 +10,5 @@ public class MonitorModel
 	public bool Shared { get; set; }
 	public User? Owner { get; set; }
 	public List<BuildInMonitor> Builds { get; set; } = new();
+	public List<int> BuildPositions { get; set; } = new();
 }

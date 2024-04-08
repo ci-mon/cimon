@@ -118,24 +118,32 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     inherits: false;
 }
 .build-info-item {
-    --bg-from: #3e6213;
-    --bg-to: #71a431;
-    transition: --bg-from 1s, --bg-to 1s;
-    background: var(--bg-from);
-    background: linear-gradient(1deg, var(--bg-from) 0%, var(--bg-to) 100%);
-    padding: 0.5em;
     margin: 0.1em;
-    container-type: size;
-}
-
-.build-info-item.loading {
-    --bg-from: rgb(76 116 34 / 0%);
-    --bg-to: rgb(180 180 180 / 25%);
-}
-
-.build-info-item.failed {
-    --bg-from: rgb(116, 34, 34);
-    --bg-to: rgb(190, 64, 64);
+    .content {
+        --bg-from: #3e6213;
+        --bg-to: #71a431;
+        transition: --bg-from 1s, --bg-to 1s;
+        background: var(--bg-from);
+        background: linear-gradient(1deg, var(--bg-from) 0%, var(--bg-to) 100%);
+        padding: 0.5em;
+        height: 100%;
+        container-type: size;
+        .failed {
+            --bg-from: rgb(116, 34, 34);
+            --bg-to: rgb(190, 64, 64);
+        }
+    }
+    .drop-zone {
+        height: 2em;
+        width: 100%;
+        border: 3px dashed #0077b6;
+        box-shadow: 0 0 10px rgba(0, 119, 182, 0.5);
+    }
+    .loading {
+        --bg-from: rgb(76 116 34 / 0%);
+        --bg-to: rgb(180 180 180 / 25%);
+    }
+    
 }
 
 .build-info-item .committer p {

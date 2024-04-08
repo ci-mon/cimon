@@ -14,6 +14,7 @@ class MonitorServiceActor : ReceiveActor
 		_monitorService = resolver.GetService<MonitorService>();
 		Receive<ActorsApi.WatchMonitor>(ForwardToMonitor);
 		Receive<ActorsApi.RefreshMonitor>(ForwardToMonitor);
+		Receive<ActorsApi.ReorderMonitorItems>(ForwardToMonitor);
 		Receive<ActorsApi.WatchMonitorByActor>(ForwardToMonitor);
 		Receive<ActorsApi.UnWatchMonitorByActor>(ForwardToMonitor);
 		Receive<BuildInfoServiceActorApi.Subscribe>(buildInfoService.Forward);

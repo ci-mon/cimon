@@ -13,22 +13,32 @@
 @using System.Runtime.CompilerServices
 @using Cimon.DB.Models
 @using System.Collections.Immutable
-@inherits ReactiveComponent
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
 @inject AppInitialStateAccessor AppInitialStateAccessor
-<div class="build-info-item @GetClasses()">
-<RadzenProgressBar Visible="@(!IsLoaded)"
-                                ProgressBarStyle="ProgressBarStyle.Light"
-                                Value="100" ShowValue="false" 
-                                Mode="ProgressBarMode.Indeterminate"/>
+@inherits DraggableItem
+
+<div class="build-info-item @GetClasses()" draggable="@AllowReorder.ToString()"
+     @attributes="AdditionalAttributes"
+     @ondragstart="OnDragStart"
+     @ondrop="OnDrop"
+     @ondragenter="OnDragEnter"
+     @ondragleave="OnDragLeave">
+    @if (AllowReorder) {
+        <div class="drop-zone" ondragover="event.preventDefault()"></div>
+    }
+    <div class="content">
+    <RadzenProgressBar Visible="@(!IsLoaded)"
+                       ProgressBarStyle="ProgressBarStyle.Light"
+                       Value="100" ShowValue="false"
+                       Mode="ProgressBarMode.Indeterminate"/>
     <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
         <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
             <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
                 @if (IsLoaded) {
                     <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
                         <span data-qa="build-info-name">@BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)</span>
-                        <RadzenIcon Icon="open_in_new" />
+                        <RadzenIcon Icon="open_in_new"/>
                     </RadzenLink>
                     <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
@@ -36,22 +46,23 @@
                             @BuildInfo.CommentsCount.ToString()
                         </RadzenBadge>
                     </RadzenButton>
-                } else {
+                }
+                else {
                     <RadzenText TextStyle="TextStyle.H5" class="build-info-link">
                         @BuildConfig.Key
                     </RadzenText>
                 }
             </RadzenText>
         </RadzenStack>
-                <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
+        <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
             @{
                 var durationInfo = GetDurationInfo();
             }
-           <span title="@durationInfo.Full">@durationInfo.Start</span>
-           <span> | </span>
-           <span title="@durationInfo.Full">@durationInfo.Duration</span>
-           <span> | </span>
-           <span class="status-text">@GetStatusInfo()</span>
+            <span title="@durationInfo.Full">@durationInfo.Start</span>
+            <span> | </span>
+            <span title="@durationInfo.Full">@durationInfo.Duration</span>
+            <span> | </span>
+            <span class="status-text">@GetStatusInfo()</span>
         </RadzenText>
     </RadzenStack>
     @if (BuildInfo?.Status == BuildStatus.Failed) {
@@ -85,6 +96,7 @@
             </RadzenStack>
         </div>
     }
+    </div>
 </div>
 
 @code {
@@ -104,7 +116,10 @@
 
     [Parameter]
     public int? MaxCommitters { get; set; }
-
+    
+    [Parameter]
+    public bool AllowReorder { get; set; }
+    
     protected override bool PreloadData => true;
     protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;

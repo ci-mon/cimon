@@ -154,6 +154,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.Property<bool>("AlwaysOnMonitoring")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BuildPositions")
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("TEXT");

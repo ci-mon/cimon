@@ -4,7 +4,6 @@
 @using MediatR
 @using Cimon.Data.Common
 @using System.Reactive.Linq
-@using System.Reactive.Subjects
 @using System.Text
 @using Akka.Actor
 @using Cimon.Contracts.CI
@@ -19,7 +18,10 @@
 <PageTitle>CI @GetTitle()</PageTitle>
 <SectionContent SectionName="right-toolbar">
     <AuthorizeView>
-        <RadzenButton Icon="sync" Click="() => RefreshMonitor()" />
+        <RadzenButton Icon="sync" Click="() => RefreshMonitor()"/>
+        </AuthorizeView>
+    <AuthorizeView Policy="EditMonitor" Resource="_monitor.Value">
+        <RadzenToggleButton class="ml-2" Icon="reorder" Click="() => _allowReorderMonitor = !_allowReorderMonitor"/>
     </AuthorizeView>
 </SectionContent>
 
@@ -28,39 +30,50 @@
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
         </RadzenRow>
-    } else if (_monitor.HasValue) {
-        @foreach (var build in _monitor.Value.Builds.OrderBy(x=>x.BuildConfig.Connector.CISystem)) {
-            <BuildInfoComponent BuildConfig="@build.BuildConfig" 
+    }
+    else if (_monitor.HasValue) {
+        var items = _monitor.Value.Builds
+            .OrderBy(x => _monitor.Value.Monitor.BuildPositions.IndexOf(x.BuildConfig.Id))
+            .ToList();
+        @foreach (var build in items) {
+            <BuildInfoComponent BuildConfig="@build.BuildConfig"
                                 Info="@build.BuildInfo"
                                 ActiveUsers="_activeUsers"
-                                MaxCommitters="5"/>
+                                AllowReorder="@_allowReorderMonitor"
+                                MaxCommitters="5"
+                                OnDragStart="e => OnDragStart(e, build)"
+                                OnDrop="e => OnDrop(build)"/>
         }
     }
 </div>
+
 @code {
 
     protected override bool PreloadData => true;
 
-    [Parameter]
-    public string? MonitorId { get; set; }
+    [Parameter] public string? MonitorId { get; set; }
     private ReactiveValue<MonitorData> _monitor;
     private ReactiveValue<IList<BuildInfo>> _buildInfos;
     private string? _errorMessage;
     private IObservable<IImmutableSet<string>> _activeUsers;
+    private bool _allowReorderMonitor;
 
     private string GetTitle() {
         var result = new StringBuilder();
         if ((_monitor.Value?.Monitor.Title ?? MonitorId) is { } title) {
             result.Append(title);
         }
-        if (_buildInfos.Value is {} infos) {
+
+        if (_buildInfos.Value is { } infos) {
             var failed = infos.Count(x => x.IsNotOk());
             if (failed == 0) {
                 result.Append(" - all good");
-            } else {
+            }
+            else {
                 result.Append($" - {failed} of {infos.Count} builds failed");
             }
         }
+
         return result.ToString();
     }
 
@@ -70,10 +83,9 @@
         var user = await CurrentUserAccessor.Current;
         if (!string.IsNullOrWhiteSpace(MonitorId)) {
             await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
-            NavigationManager.RegisterLocationChangingHandler(async _ => {
-                await JSRuntime.InvokeVoidAsync("uiApi.resetIcon");
-            });
-        } else {
+            NavigationManager.RegisterLocationChangingHandler(async _ => { await JSRuntime.InvokeVoidAsync("uiApi.resetIcon"); });
+        }
+        else {
             MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
             if (!string.IsNullOrWhiteSpace(MonitorId)) {
                 NavigationManager.NavigateTo($"monitor/{MonitorId}", new NavigationOptions {
@@ -90,11 +102,14 @@
         Subscribe(ref _monitor, subj).OnChange(info => {
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";
-            } else if (info.Monitor.Removed) {
+            }
+            else if (info.Monitor.Removed) {
                 _errorMessage = "Monitor removed";
-            } else {
+            }
+            else {
                 _errorMessage = null;
             }
+
             Subscribe(ref _buildInfos, info.Builds.Select(x => x.BuildInfo).Zip()).OnChange(list => {
                 var isSomeFailed = list.Any(x => x.IsNotOk());
                 JSRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
@@ -111,6 +126,25 @@
             Summary = "Data refresh started",
             Severity = NotificationSeverity.Success
         });
+    }
+
+
+    private IBuildInfoStream? _draggedItem;
+
+    private void OnDragStart(DragEventArgs e, IBuildInfoStream item) {
+        _draggedItem = item;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnDrop(IBuildInfoStream targetItem) {
+        var target = _draggedItem?.BuildConfig;
+        if (targetItem == _draggedItem || target is null) {
+            _draggedItem = null;
+            return;
+        }
+        var placeBefore = targetItem.BuildConfig;
+        AppActors.Instance.MonitorService.Tell(new ActorsApi.ReorderMonitorItems(MonitorId!, target, placeBefore));
+        _draggedItem = null;
     }
 
 }

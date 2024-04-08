@@ -119,7 +119,25 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			}
 		});
 		Receive<ActorsApi.RefreshMonitor>(Refresh);
+		Receive<ActorsApi.ReorderMonitorItems>(ReorderMonitorItems);
 		Stash.UnstashAll();
+	}
+
+	private void ReorderMonitorItems(ActorsApi.ReorderMonitorItems msg) {
+		var builds = _buildInfos.Values.ToList();
+		var target = builds.Find(x=>x.BuildConfig.Id == msg.Target.Id);
+		var before = builds.Find(x=>x.BuildConfig.Id == msg.PlaceBefore.Id);
+		var positions = _model.BuildPositions
+			.Concat(_buildInfos.Values.Select(x => x.BuildConfig.Id).Except(_model.BuildPositions))
+			.ToList();
+		positions.Remove(target.BuildConfig.Id);
+		var dest = positions.IndexOf(before.BuildConfig.Id);
+		positions.Insert(dest, target.BuildConfig.Id);
+		_model = _model with { BuildPositions = positions };
+		_monitorSubject.OnNext(new MonitorData {
+			Monitor = _model,
+			Builds = _buildInfos.Values
+		});
 	}
 
 	private void Refresh(ActorsApi.RefreshMonitor obj) {
