@@ -1,3 +1,25 @@
+.monitor-settings-panel{
+    position: fixed;
+    z-index: 100;
+    bottom: 10px;
+    left: 10px;
+}
+
+.monitor {
+    background-color: var(--rz-base-800);
+    font-size: small;
+    height: 100%;
+    display: grid;
+    align-content: stretch;
+    justify-items: stretch;
+    align-items: stretch;
+    grid-template-columns: auto;
+}
+
+.monitor h1 {
+    color: var(--rz-danger);
+}
+
 .build-info-item h4 {
     margin-bottom: 4px;
 }
@@ -91,21 +113,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     line-break: anywhere;
 }
 
-.monitor {
-    background-color: var(--rz-base-800);
-    font-size: small;
-    height: 100%;
-    display: grid;
-    align-content: stretch;
-    justify-items: stretch;
-    align-items: stretch;
-    grid-template-columns: auto;
-}
-
-.monitor h1 {
-    color: var(--rz-danger);
-}
-
 @property --bg-from {
     syntax: '<color>';
     initial-value: #3e6213;
@@ -119,6 +126,12 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 }
 .build-info-item {
     margin: 0.1em;
+    &.failed {
+        .content {
+            --bg-from: rgb(116, 34, 34);
+            --bg-to: rgb(190, 64, 64);
+        }
+    }
     .content {
         --bg-from: #3e6213;
         --bg-to: #71a431;
@@ -128,10 +141,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         padding: 0.5em;
         height: 100%;
         container-type: size;
-        .failed {
-            --bg-from: rgb(116, 34, 34);
-            --bg-to: rgb(190, 64, 64);
-        }
     }
     .drop-zone {
         height: 2em;
@@ -175,6 +184,18 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-status {
         cursor: pointer;
     }
+}
+.monitor.monitor-columns-2 {
+    grid-template-columns: auto auto;
+}
+.monitor.monitor-columns-3 {
+    grid-template-columns: auto auto auto;
+}
+.monitor.monitor-columns-4 {
+    grid-template-columns: auto auto auto auto;
+}
+.monitor.monitor-columns-5 {
+    grid-template-columns: auto auto auto auto auto;
 }
 @media only screen and (max-width: 700px) {
     .build-info-item {

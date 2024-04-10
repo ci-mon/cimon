@@ -11,7 +11,7 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "BuildPositions",
+                name: "ViewSettings",
                 table: "Monitors",
                 type: "jsonb",
                 nullable: true);
@@ -21,7 +21,7 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "BuildPositions",
+                name: "ViewSettings",
                 table: "Monitors");
         }
     }

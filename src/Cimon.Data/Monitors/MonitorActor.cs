@@ -13,6 +13,8 @@ namespace Cimon.Data.Monitors;
 
 class MonitorActor : ReceiveActor, IWithUnboundedStash
 {
+	private readonly MonitorService _monitorService;
+
 	record WatchedBuildInfo(BuildInMonitor Build, ReplaySubject<BuildInfo> Subject) 
 		: IBuildInfoStream, IBuildInfoSnapshot
 	{
@@ -31,7 +33,9 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private readonly List<IActorRef> _watchers = new();
 	private MonitorModel _model;
 
-	public MonitorActor() {
+	public MonitorActor(string monitorId, MonitorService monitorService) {
+		_monitorService = monitorService;
+		Context.Observe(_monitorService.GetMonitorById(monitorId));
 		var scheduler = Context.System.Scheduler;
 		var me = Self;
 		_dataObservable = Observable.Create<MonitorData>(observer => {
@@ -43,7 +47,6 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 				OnWatcherRemoved(scheduler, me);
 			});
 		});
-		Receive<IObservable<MonitorModel>>(observable => Context.Observe(observable));
 		Receive<MonitorModel>(model => {
 			OnMonitorChange(model);
 			Become(Ready);
@@ -119,25 +122,28 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			}
 		});
 		Receive<ActorsApi.RefreshMonitor>(Refresh);
-		Receive<ActorsApi.ReorderMonitorItems>(ReorderMonitorItems);
+		ReceiveAsync<ActorsApi.ReorderMonitorItems>(ReorderMonitorItems);
+		ReceiveAsync<ActorsApi.UpdateViewSettings>(UpdateViewSettings);
 		Stash.UnstashAll();
 	}
 
-	private void ReorderMonitorItems(ActorsApi.ReorderMonitorItems msg) {
+	private async Task UpdateViewSettings(ActorsApi.UpdateViewSettings msg) {
+		await _monitorService.Save(_model with { ViewSettings = msg.viewSettings });
+	}
+
+	private async Task ReorderMonitorItems(ActorsApi.ReorderMonitorItems msg) {
 		var builds = _buildInfos.Values.ToList();
-		var target = builds.Find(x=>x.BuildConfig.Id == msg.Target.Id);
-		var before = builds.Find(x=>x.BuildConfig.Id == msg.PlaceBefore.Id);
-		var positions = _model.BuildPositions
-			.Concat(_buildInfos.Values.Select(x => x.BuildConfig.Id).Except(_model.BuildPositions))
-			.ToList();
+		var target = builds.Find(x => x.BuildConfig.Id == msg.Target.Id);
+		var before = builds.Find(x => x.BuildConfig.Id == msg.PlaceBefore.Id);
+		if (target is null || before is null) return;
+		var buildPositions = _model.ViewSettings.BuildPositions;
+		var newBuildIds = _buildInfos.Values.Select(x => x.BuildConfig.Id).Except(buildPositions);
+		var positions = buildPositions.Concat(newBuildIds).ToList();
 		positions.Remove(target.BuildConfig.Id);
 		var dest = positions.IndexOf(before.BuildConfig.Id);
 		positions.Insert(dest, target.BuildConfig.Id);
-		_model = _model with { BuildPositions = positions };
-		_monitorSubject.OnNext(new MonitorData {
-			Monitor = _model,
-			Builds = _buildInfos.Values
-		});
+		_model = _model with { ViewSettings = _model.ViewSettings with { BuildPositions = positions } };
+		await _monitorService.Save(_model);
 	}
 
 	private void Refresh(ActorsApi.RefreshMonitor obj) {

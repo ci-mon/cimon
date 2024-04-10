@@ -49,7 +49,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("FeatureStates");
+                    b.ToTable("FeatureStates", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.BuildConfigModel", b =>
@@ -94,7 +94,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("ConnectorId", "Id", "Branch");
 
-                    b.ToTable("BuildConfigurations");
+                    b.ToTable("BuildConfigurations", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.BuildInMonitor", b =>
@@ -109,7 +109,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("BuildConfigId");
 
-                    b.ToTable("MonitorBuilds");
+                    b.ToTable("MonitorBuilds", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.CIConnector", b =>
@@ -129,7 +129,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CIConnectors");
+                    b.ToTable("CIConnectors", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.CIConnectorSetting", b =>
@@ -155,7 +155,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("CIConnectorId");
 
-                    b.ToTable("CIConnectorSettings");
+                    b.ToTable("CIConnectorSettings", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.MonitorModel", b =>
@@ -168,9 +168,6 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.Property<bool>("AlwaysOnMonitoring")
                         .HasColumnType("bit");
-
-                    b.Property<string>("BuildPositions")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -192,7 +189,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Monitors");
+                    b.ToTable("Monitors", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.Role", b =>
@@ -209,7 +206,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.Team", b =>
@@ -226,7 +223,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teams");
+                    b.ToTable("Teams", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.User", b =>
@@ -262,7 +259,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("RoleRole", b =>
@@ -277,7 +274,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RoleRole");
+                    b.ToTable("RoleRole", (string)null);
                 });
 
             modelBuilder.Entity("RoleUser", b =>
@@ -292,7 +289,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("RoleUser");
+                    b.ToTable("RoleUser", (string)null);
                 });
 
             modelBuilder.Entity("TeamTeam", b =>
@@ -307,7 +304,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TeamTeam");
+                    b.ToTable("TeamTeam", (string)null);
                 });
 
             modelBuilder.Entity("TeamUser", b =>
@@ -322,7 +319,7 @@ namespace Cimon.DB.Migrations.SqlServer.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("TeamUser");
+                    b.ToTable("TeamUser", (string)null);
                 });
 
             modelBuilder.Entity("Cimon.DB.Models.AppFeatureState", b =>

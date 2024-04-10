@@ -20,12 +20,27 @@
     <AuthorizeView>
         <RadzenButton Icon="sync" Click="() => RefreshMonitor()"/>
         </AuthorizeView>
-    <AuthorizeView Policy="EditMonitor" Resource="_monitor.Value">
-        <RadzenToggleButton class="ml-2" Icon="reorder" Click="() => _allowReorderMonitor = !_allowReorderMonitor"/>
-    </AuthorizeView>
+    @if (_monitor.HasValue) {
+        <AuthorizeView Policy="EditMonitor" Resource="_monitor.Value">
+            <RadzenToggleButton class="ml-2" Icon="tune" Click="() => _editMode = !_editMode"/>
+        </AuthorizeView>
+    }
 </SectionContent>
-
-<div class="monitor">
+@if (_editMode) {
+    <RadzenCard class="rz-p-2 monitor-settings-panel">
+        <RadzenLabel>Columns count</RadzenLabel>
+        <RadzenRadioButtonList @bind-Value=@_columnsCount TValue="int" Change="OnColumnCountChange" class="">
+            <Items>
+                <RadzenRadioButtonListItem Text="Auto" Value="0"/>
+                <RadzenRadioButtonListItem Text="2" Value="2"/>
+                <RadzenRadioButtonListItem Text="3" Value="3"/>
+                <RadzenRadioButtonListItem Text="4" Value="4"/>
+                <RadzenRadioButtonListItem Text="5" Value="5"/>
+            </Items>
+        </RadzenRadioButtonList>
+    </RadzenCard>
+}
+<div class="monitor monitor-columns-@_columnsCount">
     @if (_errorMessage != null) {
         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
             <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
@@ -33,13 +48,13 @@
     }
     else if (_monitor.HasValue) {
         var items = _monitor.Value.Builds
-            .OrderBy(x => _monitor.Value.Monitor.BuildPositions.IndexOf(x.BuildConfig.Id))
+            .OrderBy(x => _monitor.Value.Monitor.ViewSettings.BuildPositions.IndexOf(x.BuildConfig.Id))
             .ToList();
         @foreach (var build in items) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig"
                                 Info="@build.BuildInfo"
                                 ActiveUsers="_activeUsers"
-                                AllowReorder="@_allowReorderMonitor"
+                                AllowReorder="@_editMode"
                                 MaxCommitters="5"
                                 OnDragStart="e => OnDragStart(e, build)"
                                 OnDrop="e => OnDrop(build)"/>
@@ -56,7 +71,8 @@
     private ReactiveValue<IList<BuildInfo>> _buildInfos;
     private string? _errorMessage;
     private IObservable<IImmutableSet<string>> _activeUsers;
-    private bool _allowReorderMonitor;
+    private bool _editMode;
+    private int _columnsCount;
 
     private string GetTitle() {
         var result = new StringBuilder();
@@ -100,6 +116,7 @@
         var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId!));
         _activeUsers = await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames());
         Subscribe(ref _monitor, subj).OnChange(info => {
+            _columnsCount = info.Monitor.ViewSettings.ColumnsCount;
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";
             }
@@ -145,6 +162,12 @@
         var placeBefore = targetItem.BuildConfig;
         AppActors.Instance.MonitorService.Tell(new ActorsApi.ReorderMonitorItems(MonitorId!, target, placeBefore));
         _draggedItem = null;
+    }
+
+    private void OnColumnCountChange(int newCount) {
+        var settings = _monitor.Value?.Monitor.ViewSettings;
+        if (settings is null)return;
+        AppActors.Instance.MonitorService.Tell(new ActorsApi.UpdateViewSettings(MonitorId!, settings with { ColumnsCount = newCount }));
     }
 
 }

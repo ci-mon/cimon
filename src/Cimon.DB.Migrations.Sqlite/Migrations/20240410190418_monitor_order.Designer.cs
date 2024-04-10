@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Cimon.DB.Migrations.Sqlite.Migrations
 {
     [DbContext(typeof(CimonDbContext))]
-    [Migration("20240408230813_monitor_order")]
+    [Migration("20240410190418_monitor_order")]
     partial class monitor_order
     {
         /// <inheritdoc />
@@ -157,9 +157,6 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.Property<bool>("AlwaysOnMonitoring")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("BuildPositions")
-                        .HasColumnType("jsonb");
-
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -175,6 +172,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 
                     b.Property<string>("Title")
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("ViewSettings")
+                        .HasColumnType("jsonb");
 
                     b.HasKey("Id");
 
