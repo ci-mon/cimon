@@ -3,6 +3,8 @@ using Cimon.Data.BuildInformation;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.FeatureManagement;
+using NSubstitute;
 using TeamCityAPI.Locators;
 using TeamCityAPI.Queries;
 
@@ -28,8 +30,8 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, 
 			DefaultConnector.ConnectorKey);//5711671,5738602
 		info.Should().NotBeNull();
-		var utils = new BuildFailurePredictor();
-		var author = utils.FindFailureSuspect(info);
+		var utils = new BuildFailurePredictor(Substitute.For<IFeatureManager>());
+		var author = await utils.FindFailureSuspect(info, false);
 		Console.WriteLine($"{author.User.Name}: {author.Confidence}");
 	}
 
@@ -38,9 +40,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var buildConfig = new BuildConfig {
 			Key = "Test1_BuildConf1"
 		};
-		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions {
-			LastBuildId = null
-		});
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
 		var results = await _buildInfoProvider.FindInfo(query);
 		var history = new BuildInfoHistory();
 		foreach (var result in results) {
@@ -54,7 +54,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var buildConfig = new BuildConfig {
 			Key = "Test1_BuildConf1"
 		};
-		var query = new BuildInfoQuery(DefaultConnector, buildConfig);
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
 		var results = await _buildInfoProvider.FindInfo(query);
 		using var client = _clientFactory.Create(DefaultConnector.ConnectorKey);
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {
