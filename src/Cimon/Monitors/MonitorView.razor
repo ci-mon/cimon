@@ -8,6 +8,7 @@
 @using Akka.Actor
 @using Cimon.Contracts.CI
 @using System.Collections.Immutable
+@using Cimon.DB.Models
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
@@ -48,7 +49,7 @@
     }
     else if (_monitor.HasValue) {
         var items = _monitor.Value.Builds
-            .OrderBy(x => _monitor.Value.Monitor.ViewSettings.BuildPositions.IndexOf(x.BuildConfig.Id))
+            .OrderBy(x => _monitor.Value.Monitor.ViewSettings?.BuildPositions.IndexOf(x.BuildConfig.Id))
             .ToList();
         @foreach (var build in items) {
             <BuildInfoComponent BuildConfig="@build.BuildConfig"
@@ -116,7 +117,7 @@
         var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId!));
         _activeUsers = await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames());
         Subscribe(ref _monitor, subj).OnChange(info => {
-            _columnsCount = info.Monitor.ViewSettings.ColumnsCount;
+            _columnsCount = info.Monitor.ViewSettings?.ColumnsCount ?? 0;
             if (!info.Builds.Any()) {
                 _errorMessage = "No build set up";
             }
@@ -165,8 +166,7 @@
     }
 
     private void OnColumnCountChange(int newCount) {
-        var settings = _monitor.Value?.Monitor.ViewSettings;
-        if (settings is null)return;
+        ViewSettings settings = _monitor.Value?.Monitor.ViewSettings ?? new ViewSettings();
         AppActors.Instance.MonitorService.Tell(new ActorsApi.UpdateViewSettings(MonitorId!, settings with { ColumnsCount = newCount }));
     }
 

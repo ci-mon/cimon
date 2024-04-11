@@ -136,13 +136,14 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		var target = builds.Find(x => x.BuildConfig.Id == msg.Target.Id);
 		var before = builds.Find(x => x.BuildConfig.Id == msg.PlaceBefore.Id);
 		if (target is null || before is null) return;
-		var buildPositions = _model.ViewSettings.BuildPositions;
+		ViewSettings settings = _model.ViewSettings ?? new ViewSettings();
+		var buildPositions = settings.BuildPositions;
 		var newBuildIds = _buildInfos.Values.Select(x => x.BuildConfig.Id).Except(buildPositions);
 		var positions = buildPositions.Concat(newBuildIds).ToList();
 		positions.Remove(target.BuildConfig.Id);
 		var dest = positions.IndexOf(before.BuildConfig.Id);
 		positions.Insert(dest, target.BuildConfig.Id);
-		_model = _model with { ViewSettings = _model.ViewSettings with { BuildPositions = positions } };
+		_model = _model with { ViewSettings = settings with { BuildPositions = positions } };
 		await _monitorService.Save(_model);
 	}
 

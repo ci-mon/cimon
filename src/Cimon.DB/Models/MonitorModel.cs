@@ -16,5 +16,5 @@ public record MonitorModel
 	public bool Shared { get; set; }
 	public User? Owner { get; set; }
 	public List<BuildInMonitor> Builds { get; set; } = new();
-	public ViewSettings ViewSettings { get; set; } = new();
+	public ViewSettings? ViewSettings { get; set; } = new();
 }
