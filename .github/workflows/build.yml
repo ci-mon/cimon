@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: SonarScanner for .NET 8 with pull request decoration support
         uses: highbyte/sonarscan-dotnet@v2.3.1
         with:
