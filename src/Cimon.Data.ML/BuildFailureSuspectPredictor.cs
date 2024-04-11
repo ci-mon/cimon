@@ -30,7 +30,7 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 		if (!changesTextData.Any()) {
 			return null;
 		}
-		var useSmartComponents = await featureManager.IsEnabled<MlFeatures.UseSmartComponents>();
+		var useSmartComponents = await featureManager.IsEnabled<MlFeatures.UseSmartComponentsToFindFailureSuspect>();
 		BestMatch match = useSmartComponents
 			? FindBestMatchWithSmartComponents(buildStatusTextData, changesTextData)
 			: FindBestMatchByTfNgrams(buildStatusTextData, changesTextData);
@@ -111,11 +111,11 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 
 	private class TextData
 	{
-		public string Text { get; set; }
+		public string Text { get; init; } = null!;
 	}
 
 	private class TransformedTextData : TextData
 	{
-		public float[] Features { get; set; }
+		public float[] Features { get; set; } = null!;
 	}
 }

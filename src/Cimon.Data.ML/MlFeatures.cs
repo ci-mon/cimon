@@ -2,9 +2,9 @@
 
 namespace Cimon.Data.ML;
 
-public class MlFeatures
+public static class MlFeatures
 {
-    public class UseSmartComponents : FeatureBase
+    public class UseSmartComponentsToFindFailureSuspect : FeatureBase
     {
         public override bool Enabled => false;
     }

@@ -18,13 +18,12 @@ using System.Diagnostics;
 public class AppActors
 {
 	private ActorSystem _actorSystem = null!;
-	public static AppActors Instance { get; set; }
-
-	public IActorRef MonitorService { get; set; }
-	public IActorRef BuildInfoService { get; set; }
-	public IActorRef DiscussionStore { get; set; }
-	public IActorRef UserSupervisor { get; set; }
-	public IActorRef MentionsMonitor { get; set; }
+	public static AppActors Instance { get; private set; } = null!;
+	public IActorRef MonitorService { get; set; } = null!;
+	public IActorRef BuildInfoService { get; set; } = null!;
+	public IActorRef DiscussionStore { get; set; } = null!;
+	public IActorRef UserSupervisor { get; set; } = null!;
+	public IActorRef MentionsMonitor { get; set; } = null!;
 
 	public static void Init(IServiceProvider serviceProvider) {
 		var instance = new AppActors();

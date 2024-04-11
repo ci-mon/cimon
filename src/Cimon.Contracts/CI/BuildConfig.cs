@@ -6,7 +6,7 @@ public record BuildConfig
 {
 	public Dictionary<string, string> Props { get; set; } = new();
 	public int Id { get; init; }
-	public string Key { get; init; }
+	public string Key { get; init; } = null!;
 	public string? Branch { get; init; }
 	public string? Name { get; init; }
 	public bool IsDefaultBranch { get; init; }

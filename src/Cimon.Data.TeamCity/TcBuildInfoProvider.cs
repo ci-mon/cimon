@@ -113,7 +113,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			Id = buildId
 		};
 		var build = await GetBuild(clientTicket, locator);
-		var buildInfo = await GetBuildInfo(build, clientTicket);
+		var buildInfo = await GetBuildInfo(build!, clientTicket);
 		return buildInfo;
 	}
 

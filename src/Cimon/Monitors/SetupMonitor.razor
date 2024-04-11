@@ -7,31 +7,34 @@
 @using Cimon.Data.Monitors
 @using Cimon.DB.Models
 @using System.Text.Json
+@using System.Diagnostics.CodeAnalysis
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
-<RadzenCard Visible="_monitor.HasValue">
-    <RadzenButton data-qa="close" Text="Close" Icon="close" Click="Close"/>
-    <RadzenButton data-qa="save" Text="Save" Icon="save" Click="Save"/>
-    <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
-    <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
-        <RadzenStack Orientation="Orientation.Vertical">
-            <RadzenFormField Text="Title" >
-               <RadzenTextBox aria-label="edit-title" @bind-Value="@Monitor.Title" class="w-100"/>
-            </RadzenFormField>
-            <RadzenFormField Text="Owner" >
-                <RadzenTextBox Disabled="true" aria-label="view-owner" Value="@Monitor.Owner?.FullName" class="w-100"/>
-            </RadzenFormField>
-            <RadzenStack Orientation="Orientation.Horizontal">
-                <RadzenLabel Text="Share with others:" />
-                <RadzenSwitch @bind-Value="@Monitor.Shared" Attributes="@(new Dictionary<string, object>{{"aria-label","edit-share"}})"/>
+@if (Monitor is { }) {
+    <RadzenCard>
+        <RadzenButton data-qa="close" Text="Close" Icon="close" Click="Close"/>
+        <RadzenButton data-qa="save" Text="Save" Icon="save" Click="Save"/>
+        <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
+        <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
+            <RadzenStack Orientation="Orientation.Vertical">
+                <RadzenFormField Text="Title" >
+                    <RadzenTextBox aria-label="edit-title" @bind-Value="@Monitor.Title" class="w-100"/>
+                </RadzenFormField>
+                <RadzenFormField Text="Owner" >
+                    <RadzenTextBox Disabled="true" aria-label="view-owner" Value="@Monitor.Owner?.FullName" class="w-100"/>
+                </RadzenFormField>
+                <RadzenStack Orientation="Orientation.Horizontal">
+                    <RadzenLabel Text="Share with others:" />
+                    <RadzenSwitch @bind-Value="@Monitor.Shared" Attributes="@(new Dictionary<string, object>{{"aria-label","edit-share"}})"/>
+                </RadzenStack>
             </RadzenStack>
-        </RadzenStack>
+        </RadzenCard>
+        <RadzenButton data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
+        <RadzenButton data-qa="rm-build-config" Text="Remove" Icon="remove" Click="Remove"/>
     </RadzenCard>
-    <RadzenButton data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
-    <RadzenButton data-qa="rm-build-config" Text="Remove" Icon="remove" Click="Remove"/>
-</RadzenCard>
-<RadzenDataGrid @ref="Grid" AllowRowSelectOnRowClick="@true"
+}
+<RadzenDataGrid AllowRowSelectOnRowClick="@true"
                 AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
                 FilterMode="FilterMode.SimpleWithMenu"
                 FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
@@ -64,7 +67,6 @@
 </RadzenDataGrid>
 @code {
 
-    private RadzenDataGrid<BuildInMonitor> Grid = null!;
     private ReactiveValue<MonitorModel> _monitor;
     private MonitorModel? Monitor => _monitor.Value;
     private IList<BuildInMonitor> Builds => _monitor.Value?.Builds ?? (IList<BuildInMonitor>)Array.Empty<BuildInMonitor>();

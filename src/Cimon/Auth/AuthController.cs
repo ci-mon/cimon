@@ -62,7 +62,7 @@ public class AuthController : Controller
 	}
 
 	[Route("retry-autologin")]
-	public async Task<IActionResult> RetryAutologin() {
+	public IActionResult RetryAutologin() {
 		Response.Cookies.Append(AllowNegotiateCookieName, "true");
 		return Redirect("autologin");
 	}

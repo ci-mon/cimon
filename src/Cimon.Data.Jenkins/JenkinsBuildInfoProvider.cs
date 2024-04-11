@@ -17,7 +17,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 {
 	record BuildInfoWrapper : BuildInfo
 	{
-		public InternalBuildInfo InternalInfo { get; set; }
+		public required InternalBuildInfo InternalInfo { get; init; }
 	}
 
 	record InternalBuildInfo(JenkinsBuildInfo BuildInfo, JobLocator JobLocator);
@@ -38,12 +38,16 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		return results;
 	}
 
-	private async Task<BuildInfoWrapper?> GetFullBuildInfo(BuildInfoQuery infoQuery, long? number, IJenkinsClient client) {
+	private async Task<BuildInfoWrapper?> GetFullBuildInfo(BuildInfoQuery infoQuery, long? number, 
+			IJenkinsClient client) {
 		var build = await GetBuildInfo(infoQuery, number, client);
 		if (build is null) return null;
 		var buildInfo = build.BuildInfo;
-		var name = buildInfo.FullDisplayName?.Substring(0,
-			buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal));
+		var name = buildInfo.FullDisplayName ?? buildInfo.DisplayName ?? infoQuery.BuildConfig.Key;
+		if (buildInfo.FullDisplayName is not null && buildInfo.DisplayName is not null) {
+			var index = buildInfo.FullDisplayName.LastIndexOf(buildInfo.DisplayName, StringComparison.Ordinal);
+			name = buildInfo.FullDisplayName[..index];
+		}
 		var info = new BuildInfoWrapper {
 			Name = name,
 			Url = buildInfo.Url?.ToString()!,
@@ -209,6 +213,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			if (author.FullName is null) return null;
 			return new VcsUser(author.UserId, author.FullName, email);
 		}
+		if (buildInfo.ChangeSets is null) return res;
 		foreach (var changeSetItem in buildInfo.ChangeSets.SelectMany(x=>x.Items)) {
 			if (changeSetItem.Author.FullName is null) continue;
 			var modifiedFiles = changeSetItem.Paths.Select(GetFileModification).ToImmutableArray();
@@ -245,7 +250,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 			EditType.Edit => FileModificationType.Edit,
 			_ => FileModificationType.Unknown
 		};
-		return new FileModification(type, path.File);
+		return new FileModification(type, path.File ?? "<unknown>");
 	}
 
 	private BuildStatus GetStatus(string? buildInfoResult) {

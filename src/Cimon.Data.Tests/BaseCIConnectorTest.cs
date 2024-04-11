@@ -32,7 +32,7 @@ public abstract class BaseCIConnectorTest<TSecrets, TBuildInfoProvider, TBuildCo
 		serviceCollection.AddCimonML().AddFeatureManagement();
 		SetupDI(serviceCollection);
 		ServiceProvider = serviceCollection.BuildServiceProvider();
-		BuildConfigProvider = ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(ciSystem) as TBuildConfigProvider;
+		BuildConfigProvider = (ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(ciSystem) as TBuildConfigProvider)!;
 		BuildInfoProvider = (ServiceProvider.GetRequiredKeyedService<IBuildInfoProvider>(ciSystem) as TBuildInfoProvider)!;
 	}
 

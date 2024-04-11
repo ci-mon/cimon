@@ -95,7 +95,7 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 builder.Services.AddHealthChecksUI(settings => settings.AddHealthCheckEndpoint("local", "/healthz"))
 	.AddInMemoryStorage();
-builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures>());
+builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures.UseSmartComponentsToFindFailureSuspect>());
 
 
 WebApplication app = builder.Build();

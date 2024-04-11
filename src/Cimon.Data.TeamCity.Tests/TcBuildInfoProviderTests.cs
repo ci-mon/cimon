@@ -32,7 +32,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		info.Should().NotBeNull();
 		var utils = new BuildFailurePredictor(Substitute.For<IFeatureManager>());
 		var author = await utils.FindFailureSuspect(info, false);
-		Console.WriteLine($"{author.User.Name}: {author.Confidence}");
+		author.Should().NotBeNull();
 	}
 
 	[Test]
@@ -77,7 +77,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		info.Status.Should().Be(BuildStatus.Failed);
 		var commit = DateTimeOffset.Now.AddDays(-10);
 		info.StartDate.Should().BeAfter(commit);
-		info.EndDate.Should().BeAfter(info.StartDate.Value);
+		info.EndDate.Should().BeAfter(info.StartDate!.Value);
 		info.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
 		var change = info.Changes.Should().ContainSingle().Subject;
 		change.Author.Name.Should().Be("test");

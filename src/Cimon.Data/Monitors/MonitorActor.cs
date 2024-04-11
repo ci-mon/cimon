@@ -30,7 +30,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private readonly IObservable<MonitorData> _dataObservable;
 	private volatile int _subscriptionsCount;
 	private ICancelable _stopCountdown = Cancelable.CreateCanceled();
-	private readonly List<IActorRef> _watchers = new();
+	private readonly List<IActorRef> _watchers = [];
 	private MonitorModel _model;
 
 	public MonitorActor(string monitorId, MonitorService monitorService) {
@@ -153,5 +153,5 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		}
 	}
 
-	public IStash Stash { get; set; }
+	public IStash Stash { get; set; } = null!;
 }

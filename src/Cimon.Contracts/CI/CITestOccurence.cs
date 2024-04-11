@@ -3,9 +3,9 @@
 public record CITestOccurence(string Name)
 {
 
-	public string TestId { get; init; }
+	public required string TestId { get; init; }
 
-	public string Details { get; init; }
+	public required string Details { get; init; }
 
 	public bool? Ignored { get; init; }
 

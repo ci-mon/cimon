@@ -2,7 +2,7 @@
 
 namespace Cimon.Contracts.AppFeatures;
 
-public class FeatureInstanceCache<TFeature> where TFeature : FeatureBase, new()
+public static class FeatureInstanceCache<TFeature> where TFeature : FeatureBase, new()
 {
     static FeatureInstanceCache() {
         Instance = new TFeature();
