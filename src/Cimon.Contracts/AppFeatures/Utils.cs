@@ -12,7 +12,7 @@ public static class FeatureInstanceCache<TFeature> where TFeature : FeatureBase,
 
 public static class Utils
 {
- 
+
     public static async Task<bool> IsEnabled<TFeature>(this IFeatureManager manager) where TFeature: FeatureBase, new() {
         return await manager.IsEnabledAsync(FeatureInstanceCache<TFeature>.Instance.Code);
     }
