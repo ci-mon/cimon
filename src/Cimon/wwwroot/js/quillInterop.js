@@ -101,6 +101,7 @@ window.quillInterop = {
                 mention: {
                     allowedChars: /^[A-Za-z\s]*$/,
                     mentionDenotationChars: ["@", "#"],
+                    positioningStrategy: 'fixed',
                     source: async function (searchTerm, renderList, mentionChar) {
                         if (mentionChar === '@') {
                             const usersResponse = await fetch(`/api/users/search?searchTerm=${searchTerm}`);
