@@ -9,4 +9,5 @@ export interface IElectronAPI {
   getOptions: () => Promise<NativeAppSettings>;
   saveOptions: (options: NativeAppSettings) => Promise<Result>;
   trySetBaseUrl: (url: string) => Promise<Result>;
+  setOverlay:(svg: string) => Promise<void>;
 }

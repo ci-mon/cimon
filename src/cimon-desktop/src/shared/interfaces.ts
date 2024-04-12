@@ -1,4 +1,5 @@
 export interface NativeAppSettings {
+  hideWhenMinimized: boolean;
   windowPosition: Electron.Rectangle;
   screenshots: ScreenshotOptions;
   autoRun: boolean;

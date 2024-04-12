@@ -18,6 +18,8 @@ const dialog = ref({
   show: false,
 });
 const form = ref<VForm>();
+const debugOverlayIcon = ref(false);
+const overlaySvg = ref('');
 
 onMounted(() => {
   validate();
@@ -50,6 +52,10 @@ async function connect() {
     msg: result.error ? result.error.message : 'Base url changed',
     show: true,
   };
+}
+
+async function setOverlay(){
+  await window.electronAPI.setOverlay(overlaySvg.value);
 }
 
 async function save() {
@@ -104,6 +110,16 @@ const rules = {
               prepend-icon="mdi-server"
             ></v-text-field>
             <v-btn class="ml-4" append-icon="mdi-connection" @click="connect">Connect</v-btn>
+          </div>
+          <div v-if="debugOverlayIcon" class="d-flex">
+            <v-textarea
+              v-model="overlaySvg"
+              clearable
+              label="overlay svg"
+              prepend-icon="mdi-image"
+              aria-multiline="true"
+            ></v-textarea>
+            <v-btn class="ml-4" append-icon="mdi-refresh" @click="setOverlay">Set overlay</v-btn>
           </div>
           <v-switch v-model="autorun" label="Start on login"></v-switch>
           <v-switch v-model="screenshotOptions.save" label="Save screenshots on monitor change"></v-switch>

@@ -16,6 +16,10 @@ class ElectronAPI implements IElectronAPI {
   public async getOptions() {
     return await ipcRenderer.invoke('options:read');
   }
+
+  public async setOverlay(svg: string): Promise<void> {
+    return await ipcRenderer.invoke('options:set-overlay', svg);
+  }
 }
 
 const keys = (x) => Object.getOwnPropertyNames(x).concat(Object.getOwnPropertyNames(x?.__proto__));

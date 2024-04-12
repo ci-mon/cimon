@@ -7,6 +7,7 @@ export const settingsStore = new Store<NativeAppSettings>({
     baseUrl: import.meta.env.CIMON_WEB_APP_URL ?? 'http://localhost:5001',
   } as Readonly<NativeAppSettings>,
   schema: {
+    hideWhenMinimized: { type: 'boolean' },
     autoRun: { type: 'boolean' },
     baseUrl: { type: 'string' },
     windowPosition: {

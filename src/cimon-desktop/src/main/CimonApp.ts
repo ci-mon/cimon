@@ -10,6 +10,7 @@ import {
   shell,
   Tray,
   WebContents,
+  nativeImage,
 } from 'electron';
 import { ConnectionState, MonitorInfo, SignalRClient } from './SignalRClient';
 import log from 'electron-log';
@@ -21,10 +22,10 @@ import process from 'process';
 import AutoLaunch from 'auto-launch';
 import { NativeAppSettings } from '../shared/interfaces';
 import fs from 'fs';
-import BrowserWindowConstructorOptions = Electron.BrowserWindowConstructorOptions;
 import { Result } from '../internal-preload/types';
 import { CimonNotifier } from './notifications/cimon-notifier';
 import ElectronStore from 'electron-store';
+import BrowserWindowConstructorOptions = Electron.BrowserWindowConstructorOptions;
 
 interface MentionInfo {
   buildConfigId: number;
@@ -56,7 +57,7 @@ export class CimonApp {
   constructor(
     private _settings: ElectronStore<NativeAppSettings>,
     private _autoLaunch: AutoLaunch,
-    private _notifier: CimonNotifier,
+    private _notifier: CimonNotifier
   ) {}
 
   private async _initToken(): Promise<TokenInfo> {
@@ -90,6 +91,7 @@ export class CimonApp {
       show: false,
       paintWhenInitiallyHidden: false,
       autoHideMenuBar: !isDev,
+      icon: this._getCurrentStatusIcon(),
     } as BrowserWindowConstructorOptions;
     const position = this._settings.store.windowPosition;
     this._window = new BrowserWindow(config);
@@ -104,8 +106,10 @@ export class CimonApp {
       this._rebuildMenu();
     });
     this._window.on('minimize', (evt) => {
-      evt.preventDefault();
-      this._window?.hide();
+      if (this._settings.store.hideWhenMinimized) {
+        this._window?.hide();
+        evt.preventDefault();
+      }
     });
     this._window.on('show', () => {
       this._updateContextMenuVisibility();
@@ -149,6 +153,7 @@ export class CimonApp {
   }
 
   private _onLogin: Array<() => void> = [];
+
   private async _doLogin() {
     if (this._loginWindow) {
       this._loginWindow.show();
@@ -442,6 +447,13 @@ export class CimonApp {
         },
       },
       { id: 'options', label: 'Options', type: 'normal', click: () => this.showOptions() },
+      {
+        id: 'hideWhenMinimized',
+        label: 'Hide when minimized',
+        type: 'checkbox',
+        checked: this._settings.store.hideWhenMinimized,
+        click: (item) => this._settings.set('hideWhenMinimized', item.checked),
+      },
       { id: 'exit', label: 'Exit', type: 'normal', click: () => this.quit() },
     ];
     if (this._mentions.length > 0) {
@@ -471,8 +483,16 @@ export class CimonApp {
   }
 
   private async _onMonitorInfoChanged(monitorInfo: MonitorInfo) {
+    const monitorKeyChanged = this._monitorInfo?.monitorKey !== monitorInfo.monitorKey;
     this._monitorInfo = monitorInfo;
     this._refreshTrayIcon();
+    if (
+      monitorKeyChanged &&
+      this._window?.isDestroyed() === false &&
+      this._window?.webContents.getURL().includes(monitorInfo.monitorKey) === false
+    ) {
+      await this._window.loadURL(options.lastMonitor);
+    }
     if (this._settings.store.screenshots?.save) {
       await this._makeScreenshot(monitorInfo);
     }
@@ -517,6 +537,7 @@ export class CimonApp {
     ipcMain.handle('options:read', () => this._settings.store);
     ipcMain.handle('options:save', (_, options) => this._updateOptions(options));
     ipcMain.handle('options:trySetBaseUrl', (_, url) => this._trySetBaseUrl(url));
+    ipcMain.handle('options:set-overlay', (_, svg) => this._setOverlay(svg));
   }
 
   private async _trySetBaseUrl(url: string): Promise<Result> {
@@ -622,9 +643,36 @@ export class CimonApp {
   }
 
   private _refreshTrayIcon() {
-    const allOk = this._currentState === ConnectionState.Connected && !this._monitorInfo?.failedBuildsCount;
-    const image = allOk ? options.icons.green.tray : options.icons.red.tray;
+    const image = this._getCurrentStatusIcon();
     this._tray.setImage(image);
+    const win = this._window;
+    if (win?.isDestroyed() === false) {
+      win.setIcon(image);
+      if (!this._getIsAllGood()) {
+        win.once('focus', () => win.flashFrame(false));
+        win.flashFrame(true);
+        if (process.platform === 'win32') {
+          setTimeout(async () => {
+            const overlayImage = await this._getOverlayImage();
+            if (overlayImage) {
+              win.setOverlayIcon(overlayImage, 'Failed build count');
+            }
+          }, 0);
+        }
+      } else {
+        win.flashFrame(false);
+        win.setOverlayIcon(null, '');
+      }
+    }
+  }
+
+  private _getCurrentStatusIcon() {
+    const allOk = this._getIsAllGood();
+    return allOk ? options.icons.green.tray : options.icons.red.tray;
+  }
+
+  private _getIsAllGood() {
+    return this._currentState === ConnectionState.Connected && !this._monitorInfo?.failedBuildsCount;
   }
 
   private allowQuit() {
@@ -727,5 +775,51 @@ export class CimonApp {
       value: 'Electron',
       url: options.baseUrl,
     });
+  }
+
+  private async _setOverlay(svg) {
+    const overlayImage = await this._getOverlayImage(svg);
+    this._window!.setOverlayIcon(overlayImage!, 'Failed build count');
+  }
+
+  private async _getOverlayImage(customSvg?) {
+    const failedBuildsCount = this._monitorInfo?.failedBuildsCount;
+    if (!failedBuildsCount) {
+      return undefined;
+    }
+    const text = failedBuildsCount.toString();
+    const win = new BrowserWindow({
+      width: 64,
+      height: 64,
+      show: false,
+      webPreferences: {
+        offscreen: true,
+        session: this._session,
+      },
+    });
+    const svg =
+      customSvg ??
+      `data:text/html,
+<style>
+body {
+	margin: 0;
+	background-color: rgb(239 36 36);
+    justify-content: center;
+    display: flex;
+}
+span {
+	padding: 4px;
+	font-size: 46;
+    font-family: sans-serif;
+    color: white;
+    font-weight: bold;
+}
+</style>
+<span>${text}</span>`;
+    await win.loadURL(svg);
+    const image = await win.capturePage();
+    const buffer = image.toPNG();
+    win.close();
+    return nativeImage.createFromBuffer(buffer);
   }
 }

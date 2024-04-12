@@ -1,5 +1,10 @@
 # cimon-desktop changelog
 
+## 1.0.19
+1. added icon overlay
+2. added setting to not hide window when minimized
+3. sync window with web
+
 ## 1.0.18
 1. save/restore window position
 2. allow edit web app url
