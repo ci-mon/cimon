@@ -1,5 +1,11 @@
 import { Notification, NotificationConstructorOptions } from 'electron';
-import { createNotifier, NotificationBody, NotificationSounds, StatusMessage } from 'node-win-toast-notifier';
+import {
+  createNotifier,
+  NotificationBody,
+  NotificationSounds,
+  registerAppId,
+  StatusMessage,
+} from 'node-win-toast-notifier';
 import { Notifier as ToastNotifier } from 'node-win-toast-notifier/lib/notifier';
 import { build } from './../../package.json';
 import process from 'process';
@@ -151,5 +157,11 @@ export class NotifierWrapper {
         res(statusMessage);
       });
     });
+  }
+
+  static async register() {
+    if (process.platform === 'win32') {
+      await registerAppId(NotifierWrapper.AppId);
+    }
   }
 }

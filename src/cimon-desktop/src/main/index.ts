@@ -6,7 +6,7 @@ import { AutoUpdater } from './auto-updater';
 import log from 'electron-log';
 import isDev from 'electron-is-dev';
 import process from 'process';
-import { registerOnSquirrelStartup, Notifier, registerAppId } from 'node-win-toast-notifier';
+import { registerOnSquirrelStartup, Notifier } from 'node-win-toast-notifier';
 
 import { build } from './../../package.json';
 import { options } from './options';
@@ -37,7 +37,7 @@ if (isDev) {
   app.setAppUserModelId(NotifierWrapper.AppId);
   // if notifications not visible uncomment this and run once
   // await unRegisterAppId(NotifierWrapper.AppId);
-  await registerAppId(NotifierWrapper.AppId);
+  await NotifierWrapper.register();
 } else {
   app.setAppUserModelId(build.appId);
 }
