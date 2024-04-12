@@ -1,10 +1,12 @@
 ﻿@using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @using System.Reactive.Linq
+@using Akka.Hosting
 @inherits ReactiveComponent
 @inject TooltipService TooltipService
 @inject NavigationManager NavigationManager
 @inject ICurrentUserAccessor CurrentUserAccessor
+@inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
 <RadzenBadge class="mentions-badge"  BadgeStyle="@BadgeStyle" MouseEnter="@(ShowTooltip)">
     <RadzenButton Variant="Variant.Text" Size="ButtonSize.ExtraSmall" Click="OpenMentions" Text="@_mentionsCount.ToString()" 
                   Style="color: var(--rz-white);"/>
@@ -17,10 +19,11 @@
 @code {
     private ReactiveValue<int> _mentionsCount;
     private BadgeStyle BadgeStyle => _mentionsCount.Value > 0 ? BadgeStyle.Danger : BadgeStyle.Info;
+    
 
     protected override async Task InitializeReactiveValues() {
         var user = await CurrentUserAccessor.Current;
-        var mentions = await AppActors.GetMentions(user);
+        var mentions = await AppActors.GetMentions(user, UserSupervisorActor);
         Subscribe(ref _mentionsCount, mentions.Select(x => x.Select(m => m.CommentsCount).Sum()));
     }
 

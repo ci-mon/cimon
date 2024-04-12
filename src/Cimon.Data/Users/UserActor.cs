@@ -2,11 +2,14 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
+using Akka.Hosting;
+using Cimon.Contracts;
 using Cimon.Contracts.CI;
-using Cimon.Data.BuildInformation;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
+using Cimon.Data.Monitors;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.Users;
@@ -31,38 +34,54 @@ class Debouncer<TIn, TOut>: ReceiveActor where TIn : IEquatable<TIn>
 
 }
 
-public class UserActor : ReceiveActor
+public class UserActor : ReceiveActor, IWithUnboundedStash
 {
-
     private ImmutableList<MentionInfo> _mentions = ImmutableList<MentionInfo>.Empty;
     private readonly ReplaySubject<IImmutableList<MentionInfo>> _mentionsSubject = new(1);
     private readonly BuildConfigService _buildConfigService;
+    private readonly IMediator _mediator;
     private readonly IServiceScope _scope;
     private readonly IHubAccessor<IUserClientApi> _hubAccessor;
     private readonly IActorRef _monitorActor;
     private IDisposable? _subscription;
+    private User _user = null!;
+    private int _mentionSubscriptionCount;
+    private string? _lastMonitorId;
+    private MonitorInfo? _latestMonitorInfo;
+    private readonly BehaviorSubject<IReadOnlyCollection<ExtendedMentionInfo>> _mentionsWithBuildConfig =
+        new(new List<ExtendedMentionInfo>());
 
-    public UserActor(BuildConfigService buildConfigService, IServiceProvider serviceProvider, 
-            BuildInfoMonitoringSettings monitoringSettings) {
+    public UserActor(UserManager userManager, BuildConfigService buildConfigService, IServiceProvider serviceProvider, 
+            IRequiredActor<MonitorServiceActor> monitorService) {
         _buildConfigService = buildConfigService;
         _scope = serviceProvider.CreateScope();
         _hubAccessor = _scope.ServiceProvider.GetRequiredKeyedService<IHubAccessor<IUserClientApi>>("UserHub");
+        _mediator = _scope.ServiceProvider.GetRequiredService<IMediator>();
         var nameProvider = _scope.ServiceProvider.GetRequiredService<IUserNameProvider>();
         nameProvider.SetUserName(Self.Path.Name);
-        _monitorActor = AppActors.Instance.MonitorService;
+        _monitorActor = monitorService.ActorRef;
         Receive<ActorsApi.UserMessage<MentionInfo>>(OnMention);
         Receive<ActorsApi.GetUserMentions>(_ => Sender.Tell(_mentionsSubject));
         Receive<ActorsApi.SubscribeToMentions>(SubscribeToMentions);
         Receive<ActorsApi.UnSubscribeOnMentions>(UnSubscribeOnMentions);
         Receive<CheckMentionSubscriptionsCount>(OnCheckMentionSubscriptionsCount);
-        Receive<ActorsApi.SubscribeToMonitor>(SubscribeToMonitor);
-        Receive<ActorsApi.UnSubscribeFromMonitor>(UnSubscribeFromMonitor);
+        ReceiveAsync<ActorsApi.SubscribeToLastMonitor>(SubscribeToMonitor);
+        Receive<ActorsApi.UnSubscribeFromLastMonitor>(UnSubscribeFromMonitor);
         Receive<ActorsApi.UpdateLastMonitor>(UpdateLastMonitor);
         var delay = TimeSpan.FromMilliseconds(500);
         var monitorInfoDebounce =
             Context.ActorOf(Props.Create<Debouncer<ActorsApi.MonitorInfo, MonitorInfo>>(delay, Convert));
         Receive<ActorsApi.MonitorInfo>(m => monitorInfoDebounce.Forward(m));
         ReceiveAsync<MonitorInfo>(OnMonitorInfoUpdated);
+        userManager.GetUser(Self.Path.Name).PipeTo(Self);
+        BecomeStacked(() => {
+            Receive<User>(user => {
+                _user = user;
+                UnbecomeStacked();
+                Stash.UnstashAll();
+            });
+            ReceiveAny(_ => Stash.Stash());
+        });
     }
 
     private MonitorInfo Convert(ActorsApi.MonitorInfo monitorInfo) {
@@ -95,33 +114,24 @@ public class UserActor : ReceiveActor
         _mentionsSubject.OnNext(_mentions);
     }
 
-    private void SubscribeToMonitor(ActorsApi.SubscribeToMonitor msg) {
-        _latestMonitorInfo = null;
-        _watchLastMonitor = true;
-        _lastMonitorId = msg.MonitorId;
-        if (string.IsNullOrEmpty(msg.MonitorId)) {
-            return;
-        }
-        _monitorActor.Tell(new ActorsApi.WatchMonitorByActor(msg.MonitorId));
+    private async Task SubscribeToMonitor(ActorsApi.SubscribeToLastMonitor msg) {
+        var monitorId = await _mediator.Send<string?>(new GetDefaultMonitorRequest(_user));
+        ChangeWatchedMonitor(monitorId);
     }
 
-    private void UpdateLastMonitor(ActorsApi.UpdateLastMonitor msg) {
-        if (msg.MonitorId == _lastMonitorId) return;
-        if (!_watchLastMonitor) return;
+    private void UpdateLastMonitor(ActorsApi.UpdateLastMonitor msg) => ChangeWatchedMonitor(msg.MonitorId);
+    private void UnSubscribeFromMonitor(ActorsApi.UnSubscribeFromLastMonitor msg) => ChangeWatchedMonitor(null);
+
+    private void ChangeWatchedMonitor(string? monitorId) {
+        if (monitorId == _lastMonitorId) return;
+        _latestMonitorInfo = null;
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
             _monitorActor.Tell(new ActorsApi.UnWatchMonitorByActor(_lastMonitorId!));
         }
-        _lastMonitorId = msg.MonitorId;
+        _lastMonitorId = monitorId;
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
             _monitorActor.Tell(new ActorsApi.WatchMonitorByActor(_lastMonitorId));
         }
-    }
-
-    private void UnSubscribeFromMonitor(ActorsApi.UnSubscribeFromMonitor msg) {
-        var monitorId = msg.MonitorId ?? _lastMonitorId;
-        if (monitorId is null) return;
-        _monitorActor.Tell(new ActorsApi.UnWatchMonitorByActor(monitorId));
-        _lastMonitorId = null;
     }
 
     private void OnCheckMentionSubscriptionsCount(CheckMentionSubscriptionsCount obj) {
@@ -145,12 +155,6 @@ public class UserActor : ReceiveActor
         }
     }
 
-    private int _mentionSubscriptionCount;
-    private string? _lastMonitorId;
-    private bool _watchLastMonitor;
-    private MonitorInfo? _latestMonitorInfo;
-    private readonly BehaviorSubject<IReadOnlyCollection<ExtendedMentionInfo>> _mentionsWithBuildConfig =
-        new(new List<ExtendedMentionInfo>());
     private void SubscribeToMentions(ActorsApi.SubscribeToMentions msg) {
         _mentionSubscriptionCount++;
         if (_subscription is not null) {
@@ -170,4 +174,5 @@ public class UserActor : ReceiveActor
     }
 
     private string GetUserName() => Self.Path.Name;
+    public IStash Stash { get; set; } = null!;
 }

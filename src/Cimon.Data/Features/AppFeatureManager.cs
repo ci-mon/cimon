@@ -48,21 +48,21 @@ public class AppFeatureManager : IFeatureDefinitionProvider, IAppInitializer
             state.EnabledGlobally ? EnabledForAll : ArraySegment<FeatureFilterConfiguration>.Empty;
     }
 
-    public async Task<FeatureDefinition> GetFeatureDefinitionAsync(string featureName) {
-        return _features.TryGetValue(featureName, out var state) ? state.Definition : new FeatureDefinition {
-            Name = featureName,
-            RequirementType = RequirementType.Any
-        };
+    public Task<FeatureDefinition> GetFeatureDefinitionAsync(string featureName) {
+        return Task.FromResult(_features.TryGetValue(featureName, out var state)
+            ? state.Definition
+            : new FeatureDefinition {
+                Name = featureName,
+                RequirementType = RequirementType.Any
+            });
     }
 
-    public async IAsyncEnumerable<FeatureDefinition> GetAllFeatureDefinitionsAsync() {
-        foreach (var item in _features.Values) {
-            yield return item.Definition;
-        }
-    }
+    public IAsyncEnumerable<FeatureDefinition> GetAllFeatureDefinitionsAsync() =>
+        _features.Values.Select(x=>x.Definition).ToAsyncEnumerable();
 
-    public async Task<IReadOnlyCollection<FeatureModel>> GetAllFeatures() {
-        return _features.Values.Select(x => new FeatureModel(x.Definition.Name, x.EnabledGlobally)).ToList();
+    public Task<IReadOnlyCollection<FeatureModel>> GetAllFeatures() {
+        return Task.FromResult<IReadOnlyCollection<FeatureModel>>(_features.Values
+            .Select(x => new FeatureModel(x.Definition.Name, x.EnabledGlobally)).ToList());
     }
 
     public async Task Init(IServiceProvider serviceProvider) {

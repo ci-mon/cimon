@@ -8,13 +8,16 @@
 @using Akka.Actor
 @using Cimon.Contracts.CI
 @using System.Collections.Immutable
+@using Akka.Hosting
 @using Cimon.DB.Models
 @inject NavigationManager NavigationManager
 @inherits ReactiveComponent
 @inject IMediator Mediator
 @inject ICurrentUserAccessor CurrentUserAccessor
-@inject IJSRuntime JSRuntime;
+@inject IJSRuntime JsRuntime;
 @inject NotificationService NotificationService
+@inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
+@inject IRequiredActor<MonitorServiceActor> MonitorServiceActor;
 
 <PageTitle>CI @GetTitle()</PageTitle>
 <SectionContent SectionName="right-toolbar">
@@ -100,7 +103,7 @@
         var user = await CurrentUserAccessor.Current;
         if (!string.IsNullOrWhiteSpace(MonitorId)) {
             await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
-            NavigationManager.RegisterLocationChangingHandler(async _ => { await JSRuntime.InvokeVoidAsync("uiApi.resetIcon"); });
+            NavigationManager.RegisterLocationChangingHandler(async _ => { await JsRuntime.InvokeVoidAsync("uiApi.resetIcon"); });
         }
         else {
             MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
@@ -114,8 +117,8 @@
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
-        var subj = await AppActors.Instance.MonitorService.Ask(new ActorsApi.WatchMonitor(MonitorId!));
-        _activeUsers = await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames());
+        var subj = await MonitorServiceActor.ActorRef.Ask(new ActorsApi.WatchMonitor(MonitorId!));
+        _activeUsers = await UserSupervisorActor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
         Subscribe(ref _monitor, subj).OnChange(info => {
             _columnsCount = info.Monitor.ViewSettings?.ColumnsCount ?? 0;
             if (!info.Builds.Any()) {
@@ -130,7 +133,7 @@
 
             Subscribe(ref _buildInfos, info.Builds.Select(x => x.BuildInfo).Zip()).OnChange(list => {
                 var isSomeFailed = list.Any(x => x.IsNotOk());
-                JSRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
+                JsRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
             });
         });
         if (!_monitor.HasValue) {
@@ -139,7 +142,7 @@
     }
 
     private void RefreshMonitor() {
-        AppActors.Instance.MonitorService.Tell(new ActorsApi.RefreshMonitor(MonitorId!));
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshMonitor(MonitorId!));
         NotificationService.Notify(new NotificationMessage() {
             Summary = "Data refresh started",
             Severity = NotificationSeverity.Success
@@ -161,13 +164,13 @@
             return;
         }
         var placeBefore = targetItem.BuildConfig;
-        AppActors.Instance.MonitorService.Tell(new ActorsApi.ReorderMonitorItems(MonitorId!, target, placeBefore));
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.ReorderMonitorItems(MonitorId!, target, placeBefore));
         _draggedItem = null;
     }
 
     private void OnColumnCountChange(int newCount) {
         ViewSettings settings = _monitor.Value?.Monitor.ViewSettings ?? new ViewSettings();
-        AppActors.Instance.MonitorService.Tell(new ActorsApi.UpdateViewSettings(MonitorId!, settings with { ColumnsCount = newCount }));
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.UpdateViewSettings(MonitorId!, settings with { ColumnsCount = newCount }));
     }
 
 }

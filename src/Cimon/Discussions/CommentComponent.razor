@@ -3,8 +3,8 @@
 @using Cimon.Data.Discussions
 @using Cimon.Data.Users
 @inject ICurrentUserAccessor CurrentUserAccessor
-<div id="@BuildComment.Id">
-    <RadzenCard class="@CardClasses">
+<div id="@BuildComment.Id" class="@CardClasses">
+    <RadzenCard >
         <RadzenRow AlignItems="AlignItems.End" >
             <RadzenColumn Size="1" Visible="AuthorIsNotMe">
                 <RadzenStack Orientation="Orientation.Vertical">
@@ -52,7 +52,7 @@
     private bool _editing;
     private User? _user;
     private bool EditButtonVisible => CanEdit && !_editing;
-    private string CardClasses => $"comment-item {(_editing ? "editing" : "")}";
+    private string CardClasses => $"comment-item {(_editing ? "editing" : "")} {(AuthorIsMe ? "my-comment" : "")}";
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;

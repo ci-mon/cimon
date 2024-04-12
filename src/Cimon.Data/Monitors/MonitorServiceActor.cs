@@ -5,13 +5,11 @@ using Cimon.Data.Common;
 
 namespace Cimon.Data.Monitors;
 
-class MonitorServiceActor : ReceiveActor
+public class MonitorServiceActor : ReceiveActor
 {
-	private readonly MonitorService _monitorService;
-
 	public MonitorServiceActor(IActorRef buildInfoService) {
 		var resolver = Context.System.GetExtension<DependencyResolver>().Resolver;
-		_monitorService = resolver.GetService<MonitorService>();
+		resolver.GetService<MonitorService>();
 		Receive<ActorsApi.MonitorMessage>(ForwardToMonitor);
 		Receive<BuildInfoServiceActorApi.Subscribe>(buildInfoService.Forward);
 		Receive<BuildInfoServiceActorApi.Refresh>(buildInfoService.Forward);

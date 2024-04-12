@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Security.Claims;
+using Akka.Hosting;
 using Cimon.Contracts;
 using Cimon.Data.Common;
 using Cimon.DB;
@@ -27,12 +28,15 @@ public class UserManager : ITechnicalUsers
 	private readonly CimonDataSettings _cimonDataSettings;
 	private readonly LdapClient _ldapClient;
 	private readonly ConcurrentDictionary<UserName, Task<UserCache?>> _cachedUsers = new();
+	private readonly IRequiredActor<UserSupervisorActor> _userSupervisor;
 
 	public UserManager(ILogger<UserManager> logger, IDbContextFactory<CimonDbContext> dbContextFactory, 
-			IOptions<CimonDataSettings> cimonDataSettings, LdapClient ldapClient) {
+			IOptions<CimonDataSettings> cimonDataSettings, LdapClient ldapClient, 
+			IRequiredActor<UserSupervisorActor> userSupervisor) {
 		_logger = logger;
 		_dbContextFactory = dbContextFactory;
 		_ldapClient = ldapClient;
+		_userSupervisor = userSupervisor;
 		_cimonDataSettings = cimonDataSettings.Value;
 	}
 
@@ -160,8 +164,8 @@ public class UserManager : ITechnicalUsers
 		var users = dbContext.Users.Include(x => x.Teams).ThenInclude(x => x.ChildTeams)
 			.Where(u => EF.Functions.Like(u.FullName, $"%{searchTerm}%"))
 			.ToAsyncEnumerable();
-		var activeUsers = await (await AppActors.Instance.UserSupervisor.Ask(new ActorsApi.GetActiveUserNames()))
-			.FirstOrDefaultAsync();
+		var userNames = await _userSupervisor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
+		var activeUsers = await userNames.FirstOrDefaultAsync();
 		await foreach (var user in users) {
 			// TODO how to find main team? 
 			var mainTeam = user.Teams.Find(t => !t.ChildTeams.Any());

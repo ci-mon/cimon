@@ -131,7 +131,4 @@ app.MapGet("/cimon-info", () => new {
 app.UseStaticFiles();
 app.MapFallbackToPage("/_Host");
 app.MapFallbackToPage("/buildDiscussion/{param?}", "/_Host");
-
-AppActors.Init(app.Services);
-app.Lifetime.ApplicationStopping.Register(() => AppActors.Instance.Stop().GetAwaiter().GetResult());
 app.Run();

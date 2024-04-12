@@ -22,10 +22,10 @@ public class LdapClientSecrets
 
 public class LdapUserInfo
 {
-	required public string SamAccountName { get; set; }
-	required public string DisplayName { get; set; }
-	required public string EmailAddress { get; set; }
-	public List<string> Teams { get; set; }
+	public required string SamAccountName { get; init; }
+	public required string DisplayName { get; init; }
+	public required string EmailAddress { get; init; }
+	public List<string> Teams { get; init; } = new();
 	public bool IsAdmin { get; set; }
 }
 
@@ -76,8 +76,7 @@ public class LdapClient : IHealthCheck
 		var user = new LdapUserInfo {
 			SamAccountName = userPrincipal.SamAccountName,
 			DisplayName = userPrincipal.DisplayName,
-			EmailAddress = userPrincipal.EmailAddress?.ToLowerInvariant() ?? string.Empty,
-			Teams = new List<string>()
+			EmailAddress = userPrincipal.EmailAddress?.ToLowerInvariant() ?? string.Empty
 		};
 		var teamGroups = _options.TeamGroups.ToHashSet();
 		foreach (Principal group in userPrincipal.GetGroups(context)) {

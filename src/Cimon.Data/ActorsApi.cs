@@ -19,7 +19,7 @@ public static class ActorsApi
 	public record WatchMonitor(string Id) : MonitorMessage(Id), IMessageWithResponse<IObservable<MonitorData>>;
 	public record RefreshMonitor(string Id) : MonitorMessage(Id);
 	public record ReorderMonitorItems(string Id, BuildConfigModel Target, BuildConfigModel PlaceBefore) : MonitorMessage(Id);
-	public record UpdateViewSettings(string Id, ViewSettings viewSettings) : MonitorMessage(Id);
+	public record UpdateViewSettings(string Id, ViewSettings ViewSettings) : MonitorMessage(Id);
 
 	public record WatchMonitorByActor(string Id) : MonitorMessage(Id);
 	public record UnWatchMonitorByActor(string Id) : MonitorMessage(Id);
@@ -57,15 +57,9 @@ public static class ActorsApi
 		IMessageWithResponse<IObservable<IImmutableList<MentionInfo>>>;
 	public record SubscribeToMentions(User User, IUserClientApi Caller) : UserMessage<User>(User.Name.Name, User);
 	public record UnSubscribeOnMentions(User User) : UserMessage<User>(User.Name.Name, User);
-	public record SubscribeToMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
-	public record UnSubscribeFromMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
+	public record SubscribeToLastMonitor(User User) : UserMessage<User>(User.Name.Name, User);
+	public record UnSubscribeFromLastMonitor(User User) : UserMessage<User>(User.Name.Name, User);
 	public record UpdateLastMonitor(User User, string? MonitorId) : UserMessage<User>(User.Name.Name, User);
-
-	public static async Task<IObservable<IReadOnlyCollection<MentionInBuildConfig>>> GetMentionsWithBuildConfig(
-			this BuildConfigService buildConfigService, User user) {
-		var mentionsObservable = await AppActors.GetMentions(user);
-		return buildConfigService.GetMentionsWithBuildConfig(mentionsObservable);
-	}
 
 	public static IObservable<IReadOnlyCollection<MentionInBuildConfig>> GetMentionsWithBuildConfig(this BuildConfigService buildConfigService,
 			IObservable<IImmutableList<MentionInfo>> mentionsObservable) {

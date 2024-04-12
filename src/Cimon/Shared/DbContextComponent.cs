@@ -10,7 +10,7 @@ public class DbContextComponent<TItem> : ReactiveComponent where TItem : class, 
 	[Inject] protected CimonDbContext DbContext { get; set; } = null!;
 
 	protected RadzenDataGrid<TItem> Grid = null!;
-	protected IQueryable<TItem?> Items = null!;
+	protected IQueryable<TItem> Items = null!;
 
 	protected TItem? ItemToInsert;
 	protected TItem? ItemToUpdate;

@@ -1,8 +1,14 @@
-﻿using Cimon.Contracts;
+﻿using System.Xml.Schema;
+using Akka.Actor;
+using Akka.DependencyInjection;
+using Akka.Hosting;
+using Cimon.Contracts;
 using Cimon.Contracts.AppFeatures;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.CIConnectors;
+using Cimon.Data.Common;
 using Cimon.Data.DemoData;
 using Cimon.Data.Discussions;
 using Cimon.Data.Features;
@@ -33,6 +39,25 @@ public static class DI
 			.AddSingleton<IFeatureDefinitionProvider>(sp => sp.GetRequiredService<AppFeatureManager>())
 			.AddScopedFeatureManagement()
 			.WithTargeting<TargetingContextAccessor>();
+		serviceCollection.AddAkka("cimon", (builder, serviceProvider) => {
+			builder.AddSetup(DependencyResolverSetup.Create(serviceProvider))
+				.ConfigureLoggers(x => x.AddLoggerFactory())
+				.WithActors((system, registry) => {
+					var userSupervisor = system.ActorOf(system.DI().Props<UserSupervisorActor>(), "UserSupervisor");
+					var mentionsMonitor = system.ActorOf(system.DI().Props<MentionsMonitorActor>(userSupervisor),
+						"MentionsMonitor");
+					var discussionStore = system.ActorOf(system.DI().Props<DiscussionStoreActor>(mentionsMonitor),
+						"DiscussionStore");
+					var buildInfoService = system.ActorOf(system.DI().Props<BuildInfoServiceActor>(discussionStore),
+						"BuildInfoService");
+					registry.Register<UserSupervisorActor>(userSupervisor);
+					registry.Register<MentionsMonitorActor>(mentionsMonitor);
+					registry.Register<DiscussionStoreActor>(discussionStore);
+					registry.Register<BuildInfoServiceActor>(buildInfoService);
+					registry.Register<MonitorServiceActor>(
+						system.ActorOf(system.DI().Props<MonitorServiceActor>(buildInfoService), "MonitorService"));
+				});
+		});
 		return serviceCollection;
 	}
 

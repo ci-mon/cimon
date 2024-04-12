@@ -3,7 +3,7 @@
 @using System.Collections.Immutable
 @inject AppFeatureManager FeatureManager 
 
-<RadzenDataGrid Data="@data" TItem="FeatureModel" ColumnWidth="200px"
+<RadzenDataGrid Data="@_data" TItem="FeatureModel" ColumnWidth="200px"
                         AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand" FilterMode="FilterMode.Advanced" AllowPaging="true" AllowSorting="true">
         <Columns>
            <RadzenDataGridColumn TItem="FeatureModel" Property="Code" Title="Code" Frozen="true" />
@@ -17,16 +17,16 @@
 
 
 @code {
-    private ImmutableList<FeatureModel> data = null!;
+    private ImmutableList<FeatureModel> _data = null!;
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        data = (await FeatureManager.GetAllFeatures()).ToImmutableList();
+        _data = (await FeatureManager.GetAllFeatures()).ToImmutableList();
     }
 
     private async Task ToggleFlag(FeatureModel model) {
         var newModel = await FeatureManager.ToggleGlobalValue(model.Code);
         if (newModel is not null) {
-            data = data.Remove(model).Add(newModel);
+            _data = _data.Remove(model).Add(newModel);
             StateHasChanged();
         }
     }

@@ -8,10 +8,12 @@ namespace Cimon.Data.Users;
 
 using Microsoft.Extensions.Logging;
 
-class UserSupervisorActor : ReceiveActor
+public class UserSupervisorActor : ReceiveActor
 {
     public UserSupervisorActor(ILogger<UserSupervisorActor> logger) {
-        var activeUserNames = new BehaviorSubject<IImmutableSet<string>>(ImmutableHashSet<string>.Empty.WithComparer(StringComparer.OrdinalIgnoreCase));
+        var activeUserNames =
+            new BehaviorSubject<IImmutableSet<string>>(
+                ImmutableHashSet<string>.Empty.WithComparer(StringComparer.OrdinalIgnoreCase));
         Receive<ActorsApi.UserMessage>(msg => {
             if (string.IsNullOrWhiteSpace(msg.UserName)) {
                 logger.LogDebug("Message to empty user {Message}", msg);

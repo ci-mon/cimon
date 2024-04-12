@@ -33,15 +33,23 @@ class BuildInfoActor : ReceiveActor
 	private bool _discussionOpen;
 	private readonly ILoggingAdapter _log = Context.GetLogger();
 	private readonly IServiceScope _scope;
-	private CIConnectorInfo _connectorInfo;
+	private CIConnectorInfo _connectorInfo = null!;
 
-	public BuildInfoActor(int buildConfigId, IActorRef mlActor, IServiceProvider serviceProvider, BuildConfigService buildConfigService,
+	public BuildInfoActor(int buildConfigId, IActorRef mlActor, IServiceProvider serviceProvider, 
+			BuildConfigService buildConfigService,
 			BuildInfoMonitoringSettings settings) {
 		_mlActor = mlActor;
 		_scope = serviceProvider.CreateScope();
 		_buildConfigService = buildConfigService;
 		_settings = settings;
 		_systemUserLogins = new HashSet<string>(settings.SystemUserLogins, StringComparer.OrdinalIgnoreCase);
+		Setup();
+		var buildConfigStream = buildConfigService.Get(buildConfigId);
+		Context.Observe(buildConfigStream);
+		_log.Info($"BuildInfoActor started: {Self.Path.Name}");
+	}
+
+	private void Setup() {
 		Receive<BuildInfoServiceActorApi.Subscribe>(OnSubscribe);
 		ReceiveAsync<BuildInfoServiceActorApi.Refresh>(OnGetBuildInfo);
 		Receive<BuildInfoServiceActorApi.Unsubscribe>(Unsubscribe);
@@ -60,11 +68,10 @@ class BuildInfoActor : ReceiveActor
 			_commentsCount = state.Comments.Count;
 			NotifySubscribers(_buildInfoHistory.Last);
 		});
-		var buildConfigStream = buildConfigService.Get(buildConfigId);
-		Context.Observe(buildConfigStream);
 	}
 
 	protected override void PostStop() {
+		_log.Info($"BuildInfoActor stopped: {Self.Path.Name}");
 		base.PostStop();
 		_scope?.Dispose();
 	}

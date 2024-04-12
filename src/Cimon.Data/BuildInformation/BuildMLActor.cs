@@ -85,5 +85,5 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 		base.AroundPostStop();
 	}
 
-	public IStash Stash { get; set; }
+	public IStash Stash { get; set; } = null!;
 }

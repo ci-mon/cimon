@@ -8,7 +8,6 @@
 @using Cimon.Data.CIConnectors
 @using MediatR
 
-
 <RadzenPanel Style="padding: 1em">
     <RadzenStack Orientation="Orientation.Vertical">
         <RadzenStack Orientation="Orientation.Horizontal">
@@ -75,10 +74,10 @@
 </RadzenPanel>
 
 @code{
-    private BuildConfigList _buildConfigList;
-    private IList<CIConnector> _selectedConnectors = new List<CIConnector>();
+    private BuildConfigList? _buildConfigList;
+    private IList<CIConnector>? _selectedConnectors = new List<CIConnector>();
 
-    private IList<CIConnector> SelectedConnectors {
+    private IList<CIConnector>? SelectedConnectors {
         get => _selectedConnectors;
         set {
             _selectedConnectors = value;

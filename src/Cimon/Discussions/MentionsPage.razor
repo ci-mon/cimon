@@ -1,10 +1,12 @@
 ﻿@page "/mentions"
 @using Cimon.Data.Users
 @using Cimon.Data.CIConnectors
+@using Akka.Hosting
 @inherits ReactiveComponent
 @inject ICurrentUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
 @inject BuildConfigService BuildConfigService 
+@inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
 <PageTitle>Mentions</PageTitle>
 <RadzenCard>
     @if (!_mentions.HasValue) {
@@ -30,7 +32,8 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var user = await UserAccessor.Current;
-        Subscribe(ref _mentions, await BuildConfigService.GetMentionsWithBuildConfig(user));
+        var mentionsObservable = await AppActors.GetMentions(user, UserSupervisorActor);
+        Subscribe(ref _mentions, BuildConfigService.GetMentionsWithBuildConfig(mentionsObservable));
     }
 
     private void GoToDiscussion(int discussionId) {

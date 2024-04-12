@@ -25,7 +25,7 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
 		var monitor = new Monitor {
-			Key = Guid.NewGuid().ToString(),
+			Key = Guid.NewGuid().ToString("D"),
 			Title = "Untitled",
 			Owner = userModel
 		};

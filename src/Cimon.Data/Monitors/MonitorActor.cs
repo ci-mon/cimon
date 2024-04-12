@@ -128,7 +128,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	}
 
 	private async Task UpdateViewSettings(ActorsApi.UpdateViewSettings msg) {
-		await _monitorService.Save(_model with { ViewSettings = msg.viewSettings });
+		await _monitorService.Save(_model with { ViewSettings = msg.ViewSettings });
 	}
 
 	private async Task ReorderMonitorItems(ActorsApi.ReorderMonitorItems msg) {

@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
+using Akka.Hosting;
 using Akka.Routing;
 using AngleSharp;
 using AngleSharp.Html.Parser;
@@ -26,13 +27,16 @@ public class DiscussionActor : ReceiveActor
 	private BuildConfig _buildConfig;
 	private readonly Dictionary<Guid, BuildInfoActionDescriptor> _actions = new();
 	private readonly ITechnicalUsers _technicalUsers;
+	private readonly IRequiredActor<BuildInfoServiceActor> _buildInfoService;
 	private readonly IActorRef _stateSubscribers;
 	private IActorRef _commentsSubscribers = ActorRefs.Nobody;
 	private DiscussionData _discussionData; 
 
-	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers) {
+	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers, 
+			IRequiredActor<BuildInfoServiceActor> buildInfoService) {
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
+		_buildInfoService = buildInfoService;
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
 		ReceiveAsync<BuildConfig>(OnBuildConfig);
 		Receive<DiscussionData>(state => _discussionData = state);
@@ -79,7 +83,7 @@ public class DiscussionActor : ReceiveActor
 
 	private async Task OnBuildConfig(BuildConfig buildConfig) {
 		_buildConfig = buildConfig;
-		AppActors.Instance.BuildInfoService.Tell(new BuildInfoServiceActorApi.Subscribe(buildConfig));
+		_buildInfoService.ActorRef.Tell(new BuildInfoServiceActorApi.Subscribe(buildConfig));
 		_state = _state with { Status = BuildDiscussionStatus.Unknown };
 		var items = await _discussionData.Builds.Timeout(TimeSpan.FromSeconds(5)).FirstOrDefaultAsync() ??
 			ImmutableList.Create<DiscussionBuildData>();
