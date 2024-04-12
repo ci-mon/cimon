@@ -14,17 +14,17 @@ import {
 import { ConnectionState, MonitorInfo, SignalRClient } from './SignalRClient';
 import log from 'electron-log';
 import isDev from 'electron-is-dev';
-import { NotifierWrapper } from './notifierWrapper';
 import path from 'path';
 import { options } from './options';
 
 import process from 'process';
-import Store from 'electron-store';
 import AutoLaunch from 'auto-launch';
 import { NativeAppSettings } from '../shared/interfaces';
 import fs from 'fs';
 import BrowserWindowConstructorOptions = Electron.BrowserWindowConstructorOptions;
 import { Result } from '../internal-preload/types';
+import { CimonNotifier } from './notifications/cimon-notifier';
+import ElectronStore from 'electron-store';
 
 interface MentionInfo {
   buildConfigId: number;
@@ -54,8 +54,9 @@ export class CimonApp {
   private _signalR!: SignalRClient;
 
   constructor(
-    private _settings: Store<NativeAppSettings>,
-    private _autoLaunch: AutoLaunch
+    private _settings: ElectronStore<NativeAppSettings>,
+    private _autoLaunch: AutoLaunch,
+    private _notifier: CimonNotifier,
   ) {}
 
   private async _initToken(): Promise<TokenInfo> {
@@ -325,24 +326,24 @@ export class CimonApp {
     this._currentState = state;
     this._updateContextMenuVisibility();
     if (state === ConnectionState.Connected) {
-      await NotifierWrapper.hide('connection');
+      await this._notifier.hide('connection');
       this._onConnected();
       if (
         this._hadConnection &&
         (previousState == ConnectionState.Disconnected || previousState == ConnectionState.FailedToConnect)
       ) {
-        await NotifierWrapper.notify('connection', {
+        await this._notifier.notify('connection', {
           title: 'All good',
           subtitle: `Connected`,
         });
       }
       this._hadConnection = true;
-      setTimeout(() => NotifierWrapper.hide('connection'), 5000);
+      setTimeout(() => this._notifier.hide('connection'), 5000);
       return;
     }
     if (ConnectionState.Disconnected === state) {
       this._onDisconnected();
-      await NotifierWrapper.notify('connection', {
+      await this._notifier.notify('connection', {
         title: 'Something went wrong',
         subtitle: `Connection lost`,
       });
@@ -350,7 +351,7 @@ export class CimonApp {
     }
     if (ConnectionState.FailedToConnect === state && previousState !== ConnectionState.Disconnected) {
       this._onDisconnected();
-      await NotifierWrapper.notify('connection', {
+      await this._notifier.notify('connection', {
         title: 'Oops',
         subtitle: "Can't connect",
       });
@@ -367,7 +368,7 @@ export class CimonApp {
   }
 
   private async _initSignalR() {
-    this._signalR = new SignalRClient(options.baseUrl, (error) => this._getToken(error));
+    this._signalR = new SignalRClient(options.baseUrl, (error) => this._getToken(error), this._notifier);
     this._signalR.onConnectionStateChanged = this._onConnectionStateChanged.bind(this);
     this._signalR.onOpenDiscussionWindow = this._onOpenDiscussionWindow.bind(this);
     this._signalR.onMentionsChanged = this._onMentionsChanged.bind(this);

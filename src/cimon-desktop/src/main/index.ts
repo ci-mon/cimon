@@ -4,20 +4,19 @@ import { CimonApp } from './CimonApp';
 import { AutoUpdater } from './auto-updater';
 
 import log from 'electron-log';
-import isDev from 'electron-is-dev';
 import process from 'process';
-import { registerOnSquirrelStartup, Notifier } from 'node-win-toast-notifier';
+import { registerOnSquirrelStartup } from 'node-win-toast-notifier';
 
 import { build } from './../../package.json';
 import { options } from './options';
-import { NotifierWrapper } from './notifierWrapper';
 
 import electron_squirrel_startup from 'electron-squirrel-startup';
 import { settingsStore } from './settings';
+import { initializeCimonNotifier } from './notifications/cimon-notifier-initializer';
 
 Object.assign(console, log.functions);
 
-Notifier.ExecutableName = build.notifier_exe_name;
+const notifier = await initializeCimonNotifier();
 
 const autoLaunch = new AutoLaunch({
   name: 'cimon',
@@ -32,21 +31,16 @@ if (electron_squirrel_startup) {
   }
   app.quit();
 }
-if (isDev) {
-  NotifierWrapper.AppId = process.execPath;
-  app.setAppUserModelId(NotifierWrapper.AppId);
-  // if notifications not visible uncomment this and run once
-  // await unRegisterAppId(NotifierWrapper.AppId);
-  await NotifierWrapper.register();
-} else {
-  app.setAppUserModelId(build.appId);
-}
-const cimonApp = new CimonApp(settingsStore, autoLaunch);
+app.setAppUserModelId(notifier.AppId);
+const cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
 
 AutoUpdater.install(cimonApp);
 
 app.on('ready', async () => {
   await cimonApp.init();
+});
+app.on('before-quit', async () => {
+  await notifier.hideAll();
 });
 app.on('window-all-closed', (e) => e.preventDefault());
 app.on('activate', async () => {

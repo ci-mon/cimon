@@ -5,15 +5,16 @@ import {
   IRetryPolicy,
   RetryContext,
 } from '@microsoft/signalr';
-import { autoUpdater, Notification } from 'electron';
 import log from 'electron-log';
-import { NotifierWrapper } from './notifierWrapper';
-import { StatusMessageType } from 'node-win-toast-notifier';
+import { CimonNotifier } from './notifications/cimon-notifier';
+import { NotificationQuickReply } from './notifications/notification-quickReply';
+import { MentionNotificationReaction } from './notifications/mention-notification-reaction';
+import { AutoUpdater } from './auto-updater';
 
 export enum ConnectionState {
   Connected = 'Connected',
   Disconnected = 'Disconnected',
-  FailedToConnect = 'FailedToConnect'
+  FailedToConnect = 'FailedToConnect',
 }
 
 class ReconnectionPolicy implements IRetryPolicy {
@@ -43,11 +44,11 @@ export class SignalRClient {
   onMonitorInfoChanged?: (monitorInfo: MonitorInfo) => void;
   onOpenDiscussionWindow?: (url: string) => void;
   private _connection: HubConnection;
-  private _notifier = new NotifierWrapper();
 
   constructor(
     private _baseUrl: string,
-    private accessTokenFactory: (error: Error | undefined) => Promise<string>
+    private accessTokenFactory: (error: Error | undefined) => Promise<string>,
+    private _notifier: CimonNotifier
   ) {
     const reconnectPolicy = new ReconnectionPolicy();
     this._connection = new HubConnectionBuilder()
@@ -65,12 +66,17 @@ export class SignalRClient {
       await this._connection.invoke('SubscribeForMentions');
       await this._connection.invoke('SubscribeForLastMonitor');
     });
-    this._connection.on('NotifyWithUrl', this._onNotifyWithUrl.bind(this));
+    this._connection.on(
+      'NotifyWithUrl',
+      (buildId: number, url: string, title: string, comment: string, authorEmail: string) => {
+        this._onNotifyWithUrl(buildId, url, title, comment, authorEmail);
+      }
+    );
     this._connection.on('UpdateMentions', (mentions) => this.onMentionsChanged?.(mentions));
     this._connection.on('UpdateMonitorInfo', (monitorInfo) => this.onMonitorInfoChanged?.(monitorInfo));
     this._connection.on('CheckForUpdates', () => {
       log.info(`CheckForUpdates message received`);
-      autoUpdater.checkForUpdates();
+      AutoUpdater.checkForUpdates();
     });
   }
 
@@ -84,58 +90,19 @@ export class SignalRClient {
   }
 
   private async _onNotifyWithUrl(buildId: number, url: string, title: string, comment: string, authorEmail: string) {
-    // TODO refactor this check to notification wrapper
-    if (process.platform === 'darwin') {
-      const notification = new Notification({
-        title: title,
-        body: comment,
-        hasReply: true,
-        actions: [
-          {
-            text: 'Open',
-            type: 'button',
-          },
-          {
-            text: 'Wip',
-            type: 'button',
-          },
-        ],
-      });
-      notification.show();
-      notification.on('reply', async (_, reply) => {
-        await this._replyToNotification(buildId, NotificationQuickReply.None, reply);
-      });
-      notification.on('action', async (_, action) => {
-        if (action === 0) {
-          this.onOpenDiscussionWindow?.(url);
-        } else {
-          await this._replyToNotification(buildId, NotificationQuickReply.Wip);
-        }
-      });
-      return;
-    }
-    const result = await this._notifier.showCommentMentionNotificationOnWindows(title, comment, authorEmail);
-    switch (result.type) {
-      case StatusMessageType.Activated: {
-        const info = result.info;
-        switch (info?.arguments) {
-          case 'open':
-            this.onOpenDiscussionWindow?.(url);
-            break;
-          case 'sendQuickReply': {
-            const type = info.inputs['quickReply'];
-            const map: Record<string, NotificationQuickReply> = {
-              wip: NotificationQuickReply.Wip,
-              rollback: NotificationQuickReply.RequestingRollback,
-              mute: NotificationQuickReply.RequestingMute,
-            };
-            await this._replyToNotification(buildId, map[type]);
-            break;
-          }
-          case 'sendReply':
-            await this._replyToNotification(buildId, NotificationQuickReply.None, info.inputs['replyText']);
-            break;
-        }
+    const result = await this._notifier.showMentionNotification(title, comment, authorEmail);
+    switch (result.reaction) {
+      case MentionNotificationReaction.Activated: {
+        this.onOpenDiscussionWindow?.(url);
+        break;
+      }
+      case MentionNotificationReaction.QuickReply: {
+        await this._replyToNotification(buildId, result.quickReplyType!);
+        break;
+      }
+      case MentionNotificationReaction.Reply: {
+        await this._replyToNotification(buildId, NotificationQuickReply.None, result.replyText);
+        break;
       }
     }
   }
@@ -147,11 +114,4 @@ export class SignalRClient {
   ) {
     await this._connection.invoke('ReplyToNotification', buildId, type, customReply);
   }
-}
-
-export enum NotificationQuickReply {
-  None = 0,
-  Wip = 1,
-  RequestingRollback = 2,
-  RequestingMute = 3,
 }

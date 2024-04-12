@@ -48,4 +48,8 @@ export class AutoUpdater {
       autoUpdater.checkForUpdates();
     }, 60000);
   }
+
+  public static checkForUpdates() {
+    autoUpdater.checkForUpdates();
+  }
 }
