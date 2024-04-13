@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
+using Akka.Util.Internal;
 using Cimon.Data.Common;
 using Cimon.DB;
 using Cimon.DB.Models;
@@ -104,13 +105,24 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public async Task Save(MonitorModel monitor, IList<MonitorModel> connected) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		ctx.ConnectedMonitors.Where(m => m.SourceMonitorModelId == monitor.Id).ToList()
-			.ForEach(x => ctx.ConnectedMonitors.Remove(x));
-		foreach (var model in connected) {
-			await ctx.ConnectedMonitors.AddAsync(new ConnectedMonitor {
-				SourceMonitorModelId = monitor.Id,
-				ConnectedMonitorModelId = model.Id
-			});
+		var toConnect = connected.Select(x => x.Id).ToHashSet();
+		var current = monitor.ConnectedMonitors.Select(x => x.ConnectedMonitorModelId).ToHashSet();
+		if (!toConnect.SetEquals(current)) {
+			var toRemove = monitor.ConnectedMonitors.Where(m => m.SourceMonitorModelId == monitor.Id)
+				.ToList()
+				.Where(x => !toConnect.Contains(x.ConnectedMonitorModelId));
+			foreach (var x in toRemove) {
+				monitor.ConnectedMonitors.Remove(x);
+				ctx.ConnectedMonitors.Remove(x);
+			}
+			foreach (var model in connected) {
+				if (current.Contains(model.Id)) continue;
+				var item = await ctx.ConnectedMonitors.AddAsync(new ConnectedMonitor {
+					SourceMonitorModelId = monitor.Id,
+					ConnectedMonitorModelId = model.Id
+				});
+				monitor.ConnectedMonitors.Add(item.Entity);
+			}
 		}
 		ctx.Monitors.Update(monitor);
 		await ctx.SaveChangesAsync();

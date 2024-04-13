@@ -32,6 +32,7 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private ICancelable _stopCountdown = Cancelable.CreateCanceled();
 	private readonly List<IActorRef> _watchers = [];
 	private MonitorModel _model;
+	private IActorRef _groupMonitorActor = ActorRefs.Nobody;
 
 	public MonitorActor(string monitorId, MonitorService monitorService) {
 		_monitorService = monitorService;
@@ -70,6 +71,17 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	}
 
 	private void OnMonitorChange(MonitorModel model) {
+		if (model.Type == MonitorType.Simple) {
+			HandleSimpleMonitorChange(model);
+		} else {
+			_groupMonitorActor = Context.GetOrCreateChild<GroupMonitorActor>("group-monitor");
+			_groupMonitorActor.Tell(model);
+		}
+		_builds = model.Builds.ToImmutableList();
+		_model = model;
+	}
+
+	private void HandleSimpleMonitorChange(MonitorModel model) {
 		var diff = _builds.CompareWith(model.Builds, build => build.BuildConfigId);
 		var toRemove = new List<int>();
 		foreach (var monitor in diff.Removed) {
@@ -85,13 +97,12 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		_buildInfos = _buildInfos
 			.RemoveRange(toRemove)
 			.AddRange(toAdd.Select(x => new KeyValuePair<int, WatchedBuildInfo>(x.BuildConfig.Id, x)));
-		_builds = model.Builds.ToImmutableList();
-		_model = model;
 		_monitorSubject.OnNext(new MonitorData {
 			Monitor = model,
 			Builds = _buildInfos.Values
 		});
 	}
+
 
 	private void Ready() {
 		Receive<MonitorModel>(OnMonitorChange);
@@ -108,6 +119,12 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 				Sender.Tell(new ActorsApi.MonitorInfo(_model, _buildInfos.Values));
 			}
 		});
+		Receive<ActorsApi.MonitorInfo>(info => {
+			foreach (var watcher in _watchers) {
+				watcher.Tell(info);
+			}
+		});
+		Receive<MonitorData>(data => _monitorSubject.OnNext(data));
 		Receive<Terminated>(msg => {
 			OnWatcherRemoved(Context.System.Scheduler, Self);
 			_watchers.Remove(msg.ActorRef);

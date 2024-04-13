@@ -146,8 +146,9 @@
     private async Task Save() {
         if (Monitor!.Type == MonitorType.Group) {
             await MonitorService.Save(Monitor!, _selectedMonitorModels);
+        } else {
+            await MonitorService.Save(Monitor!);
         }
-        await MonitorService.Save(Monitor!);
     }
 
     private void OnSelectAllChanged(bool select) {

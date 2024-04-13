@@ -22,21 +22,23 @@
         <MonitorView MonitorData="@monitor"></MonitorView>
     }
     else if (monitor.Monitor.Type == MonitorType.Group) {
-        <SectionContent SectionName="body-content">
-            <div class="monitor-group-controls">
-                <div class="nav-button previous">
-                    <div onclick="@(() => Navigate(-1))">
-                        <RadzenIcon Icon="navigate_before"/>
-                    </div>
+        @if (_connectedMonitors!.Count > 1) {
+            <SectionContent SectionName="body-content">
+                <div class="monitor-group-controls">
+                    <div class="nav-button previous">
+                        <div onclick="@(() => Navigate(-1))">
+                            <RadzenIcon Icon="navigate_before"/>
+                        </div>
                     
-                </div>
-                <div class="nav-button next">
-                    <div onclick="@(() => Navigate(1))">
-                        <RadzenIcon Icon="navigate_next"/>
+                    </div>
+                    <div class="nav-button next">
+                        <div onclick="@(() => Navigate(1))">
+                            <RadzenIcon Icon="navigate_next"/>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </SectionContent>
+            </SectionContent>
+        }
         foreach (var connected in _connectedMonitors!) {
             <MonitorViewLoader Visible="@(connected == _activeConnectedMonitor)" MonitorKey="@connected.ConnectedMonitorModel.Key"></MonitorViewLoader>
         }

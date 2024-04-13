@@ -42,7 +42,7 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
     private readonly IMediator _mediator;
     private readonly IServiceScope _scope;
     private readonly IHubAccessor<IUserClientApi> _hubAccessor;
-    private readonly IActorRef _monitorActor;
+    private readonly IActorRef _monitorServiceActor;
     private IDisposable? _subscription;
     private User _user = null!;
     private int _mentionSubscriptionCount;
@@ -59,7 +59,7 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
         _mediator = _scope.ServiceProvider.GetRequiredService<IMediator>();
         var nameProvider = _scope.ServiceProvider.GetRequiredService<IUserNameProvider>();
         nameProvider.SetUserName(Self.Path.Name);
-        _monitorActor = monitorService.ActorRef;
+        _monitorServiceActor = monitorService.ActorRef;
         Receive<ActorsApi.UserMessage<MentionInfo>>(OnMention);
         Receive<ActorsApi.GetUserMentions>(_ => Sender.Tell(_mentionsSubject));
         Receive<ActorsApi.SubscribeToMentions>(SubscribeToMentions);
@@ -126,11 +126,11 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
         if (monitorId == _lastMonitorId) return;
         _latestMonitorInfo = null;
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
-            _monitorActor.Tell(new ActorsApi.UnWatchMonitorByActor(_lastMonitorId!));
+            _monitorServiceActor.Tell(new ActorsApi.UnWatchMonitorByActor(_lastMonitorId!));
         }
         _lastMonitorId = monitorId;
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
-            _monitorActor.Tell(new ActorsApi.WatchMonitorByActor(_lastMonitorId));
+            _monitorServiceActor.Tell(new ActorsApi.WatchMonitorByActor(_lastMonitorId));
         }
     }
 
