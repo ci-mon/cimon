@@ -262,7 +262,7 @@ public class DbInitializer
 			Title = "Test mon 1",
 			Shared = true
 		});
-		await AddBuildsToMonitor(mon1.Entity, 
+		await AddBuildsToMonitor(mon1.Entity,
 			buildConfig1.Entity,
 			buildConfig2.Entity,
 			buildConfig3.Entity,
@@ -274,16 +274,33 @@ public class DbInitializer
 			Title = "All",
 			Shared = true
 		});
-		await AddBuildsToMonitor(mon2.Entity, 
-			buildConfig1.Entity, 
-			buildConfig2.Entity, 
+		await AddBuildsToMonitor(mon2.Entity,
+			buildConfig1.Entity,
+			buildConfig2.Entity,
 			buildConfig3.Entity,
 			buildConfig4.Entity,
 			buildConfig5.Entity,
 			buildConfig6.Entity,
-			buildConfig7.Entity, 
-			buildConfig8.Entity, 
-			buildConfig9.Entity, 
+			buildConfig7.Entity,
+			buildConfig8.Entity,
+			buildConfig9.Entity,
 			buildConfig10.Entity);
+		var monGroup = await context.Monitors.AddAsync(new Monitor() {
+			Key = "Group",
+			Title = "Group",
+			Shared = true,
+			Type = MonitorType.Group
+		});
+		monGroup.Entity.ConnectedMonitors = [
+			new ConnectedMonitor {
+				SourceMonitorModel = monGroup.Entity,
+				ConnectedMonitorModel = mon1.Entity
+			},
+			new ConnectedMonitor {
+				SourceMonitorModel = monGroup.Entity,
+				ConnectedMonitorModel = mon2.Entity
+			}
+		];
 	}
+	
 }

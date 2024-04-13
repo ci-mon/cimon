@@ -13,6 +13,7 @@
 <SectionContent SectionName="body-content">
     <RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
         <AuthorizeView>
+            <RadzenButton aria-label="add-group" Click="AddGroup" Icon="folder" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium" class="rz-border-radius-10 rz-shadow-8"/>
             <RadzenButton aria-label="add-monitor" Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
         </AuthorizeView>
     </RadzenStack>
@@ -26,7 +27,11 @@
                 <RadzenCard class="monitor-item">
                     <RadzenRow>
                         <RadzenColumn>
-                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
+                            @if (monitor.Type == MonitorType.Simple) {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
+                            } else {
+                                <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Info" Text=@(monitor.ConnectedMonitors.Count.ToString())/>
+                            }
                         </RadzenColumn>
                         <RadzenColumn>
                             <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
@@ -64,18 +69,21 @@
 
     void PageChanged(PagerEventArgs args) {
         _count = _monitors.Value!.Count;
-        _items = _monitors.Value!.Where(GetIsShowMonitor).Skip(args.Skip).Take(args.Top);
+        _items = _monitors.Value!.Skip(args.Skip).Take(args.Top);
     }
 
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
-        Subscribe(ref _monitors, MonitorService.GetMonitors())
-            .OnChange(_ => PageChanged(new PagerEventArgs { Top = _pageSize, Skip = 0 }));
         _user = await CurrentUserAccessor.Current;
+        Subscribe(ref _monitors, MonitorService.GetMonitors(_user))
+            .OnChange(_ => PageChanged(new PagerEventArgs { Top = _pageSize, Skip = 0 }));
     }
 
     private async Task Add() {
-        await MonitorService.Add(_user!);
+        await MonitorService.Add(_user!, MonitorType.Simple);
+    }
+    private async Task AddGroup() {
+        await MonitorService.Add(_user!, MonitorType.Group);
     }
 
     private async Task CopyMonitor(MonitorModel monitor) {
@@ -87,8 +95,5 @@
         NavigationManager.NavigateTo(url);
     }
 
-    private bool GetIsShowMonitor(MonitorModel m) {
-        return !m.Removed && (m.Shared || m.Owner?.Id == _user?.Id || (_user?.Roles.Contains("monitor-editor") ?? false));
-    }
 
 }

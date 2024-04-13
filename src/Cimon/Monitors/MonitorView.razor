@@ -1,4 +1,3 @@
-@page "/monitor/{monitorId?}"
 @using Cimon.Data.Monitors
 @using Cimon.Data.Users
 @using MediatR
@@ -19,71 +18,72 @@
 @inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
 @inject IRequiredActor<MonitorServiceActor> MonitorServiceActor;
 
-<PageTitle>CI @GetTitle()</PageTitle>
-<SectionContent SectionName="right-toolbar">
-    <AuthorizeView>
-        <RadzenButton Icon="sync" Click="() => RefreshMonitor()"/>
-        </AuthorizeView>
-    @if (_monitor.HasValue) {
-        <AuthorizeView Policy="EditMonitor" Resource="_monitor.Value">
-            <RadzenToggleButton class="ml-2" Icon="tune" Click="() => _editMode = !_editMode"/>
-        </AuthorizeView>
-    }
-</SectionContent>
-@if (_editMode) {
-    <RadzenCard class="rz-p-2 monitor-settings-panel">
-        <RadzenLabel>Columns count</RadzenLabel>
-        <RadzenRadioButtonList @bind-Value=@_columnsCount TValue="int" Change="OnColumnCountChange" class="">
-            <Items>
-                <RadzenRadioButtonListItem Text="Auto" Value="0"/>
-                <RadzenRadioButtonListItem Text="2" Value="2"/>
-                <RadzenRadioButtonListItem Text="3" Value="3"/>
-                <RadzenRadioButtonListItem Text="4" Value="4"/>
-                <RadzenRadioButtonListItem Text="5" Value="5"/>
-            </Items>
-        </RadzenRadioButtonList>
-    </RadzenCard>
-}
-<div class="monitor monitor-columns-@_columnsCount">
-    @if (_errorMessage != null) {
-        <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
-            <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
-        </RadzenRow>
-    }
-    else if (_monitor.HasValue) {
-        var items = _monitor.Value.Builds
-            .OrderBy(x => _monitor.Value.Monitor.ViewSettings?.BuildPositions.IndexOf(x.BuildConfig.Id))
-            .ToList();
-        @foreach (var build in items) {
-            <BuildInfoComponent BuildConfig="@build.BuildConfig"
-                                Info="@build.BuildInfo"
-                                ActiveUsers="_activeUsers"
-                                AllowReorder="@_editMode"
-                                MaxCommitters="5"
-                                OnDragStart="e => OnDragStart(e, build)"
-                                OnDrop="e => OnDrop(build)"/>
+@if (Visible) {
+    <PageTitle>CI @GetTitle()</PageTitle>
+    <SectionContent SectionName="right-toolbar">
+        @if (Visible) {
+            <AuthorizeView>
+                <RadzenButton Icon="sync" Click="() => RefreshMonitor()"/>
+            </AuthorizeView>
         }
+       <AuthorizeView Policy="EditMonitor" Resource="MonitorData">
+           <RadzenToggleButton class="ml-2" Icon="tune" Click="() => _editMode = !_editMode"/>
+       </AuthorizeView>
+    </SectionContent>
+    @if (_editMode) {
+        <RadzenCard class="rz-p-2 monitor-settings-panel">
+            <RadzenLabel>Columns count</RadzenLabel>
+            <RadzenRadioButtonList @bind-Value=@_columnsCount TValue="int" Change="OnColumnCountChange" class="">
+                <Items>
+                    <RadzenRadioButtonListItem Text="Auto" Value="0"/>
+                    <RadzenRadioButtonListItem Text="2" Value="2"/>
+                    <RadzenRadioButtonListItem Text="3" Value="3"/>
+                    <RadzenRadioButtonListItem Text="4" Value="4"/>
+                    <RadzenRadioButtonListItem Text="5" Value="5"/>
+                </Items>
+            </RadzenRadioButtonList>
+        </RadzenCard>
     }
-</div>
-
+    <div class="monitor monitor-columns-@_columnsCount">
+        @if (_errorMessage != null) {
+            <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
+            </RadzenRow>
+        } else if (_activeUsers is {}) {
+            var items = MonitorData.Builds
+                .OrderBy(x => MonitorData.Monitor.ViewSettings?.BuildPositions.IndexOf(x.BuildConfig.Id))
+                .ToList();
+            @foreach (var build in items) {
+                <BuildInfoComponent BuildConfig="@build.BuildConfig"
+                                    Info="@build.BuildInfo"
+                                    ActiveUsers="@_activeUsers"
+                                    AllowReorder="@_editMode"
+                                    MaxCommitters="5"
+                                    OnDragStart="e => OnDragStart(e, build)"
+                                    OnDrop="e => OnDrop(build)"/>
+            }
+        }
+    </div>
+}
 @code {
 
     protected override bool PreloadData => true;
 
-    [Parameter] public string? MonitorId { get; set; }
-    private ReactiveValue<MonitorData> _monitor;
+    [Parameter] public MonitorData MonitorData { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
+   
     private ReactiveValue<IList<BuildInfo>> _buildInfos;
     private string? _errorMessage;
-    private IObservable<IImmutableSet<string>> _activeUsers;
+    private IObservable<IImmutableSet<string>>? _activeUsers;
     private bool _editMode;
     private int _columnsCount;
+    private string MonitorKey => MonitorData.Monitor.Key;
 
     private string GetTitle() {
         var result = new StringBuilder();
-        if ((_monitor.Value?.Monitor.Title ?? MonitorId) is { } title) {
+        if (MonitorData.Monitor.Title is { } title) {
             result.Append(title);
         }
-
         if (_buildInfos.Value is { } infos) {
             var failed = infos.Count(x => x.IsNotOk());
             if (failed == 0) {
@@ -97,58 +97,36 @@
         return result.ToString();
     }
 
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+       _activeUsers = await UserSupervisorActor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
+    }
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
-        var user = await CurrentUserAccessor.Current;
-        if (!string.IsNullOrWhiteSpace(MonitorId)) {
-            await Mediator.Publish(new MonitorOpenedNotification(user, MonitorId));
-            NavigationManager.RegisterLocationChangingHandler(async _ => { await JsRuntime.InvokeVoidAsync("uiApi.resetIcon"); });
+        _columnsCount = MonitorData.Monitor.ViewSettings?.ColumnsCount ?? 0;
+        if (!MonitorData.Builds.Any()) {
+            _errorMessage = "No build set up";
+        }
+        else if (MonitorData.Monitor.Removed) {
+            _errorMessage = "Monitor removed";
         }
         else {
-            MonitorId = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
-            if (!string.IsNullOrWhiteSpace(MonitorId)) {
-                NavigationManager.NavigateTo($"monitor/{MonitorId}", new NavigationOptions {
-                    ReplaceHistoryEntry = true
-                });
-            }
+            _errorMessage = null;
         }
-    }
-
-    protected override async Task InitializeReactiveValues() {
-        await base.InitializeReactiveValues();
-        var subj = await MonitorServiceActor.ActorRef.Ask(new ActorsApi.WatchMonitor(MonitorId!));
-        _activeUsers = await UserSupervisorActor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
-        Subscribe(ref _monitor, subj).OnChange(info => {
-            _columnsCount = info.Monitor.ViewSettings?.ColumnsCount ?? 0;
-            if (!info.Builds.Any()) {
-                _errorMessage = "No build set up";
-            }
-            else if (info.Monitor.Removed) {
-                _errorMessage = "Monitor removed";
-            }
-            else {
-                _errorMessage = null;
-            }
-
-            Subscribe(ref _buildInfos, info.Builds.Select(x => x.BuildInfo).Zip()).OnChange(list => {
-                var isSomeFailed = list.Any(x => x.IsNotOk());
-                JsRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
-            });
+        Subscribe(ref _buildInfos, MonitorData.Builds.Select(x => x.BuildInfo).Zip()).OnChange(list => {
+            var isSomeFailed = list.Any(x => x.IsNotOk());
+            JsRuntime.InvokeVoidAsync("uiApi.setIcon", isSomeFailed ? "red" : "green");
         });
-        if (!_monitor.HasValue) {
-            _errorMessage = "Loading...";
-        }
     }
 
     private void RefreshMonitor() {
-        MonitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshMonitor(MonitorId!));
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshMonitor(MonitorKey));
         NotificationService.Notify(new NotificationMessage() {
             Summary = "Data refresh started",
             Severity = NotificationSeverity.Success
         });
     }
-
 
     private IBuildInfoStream? _draggedItem;
 
@@ -164,13 +142,13 @@
             return;
         }
         var placeBefore = targetItem.BuildConfig;
-        MonitorServiceActor.ActorRef.Tell(new ActorsApi.ReorderMonitorItems(MonitorId!, target, placeBefore));
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.ReorderMonitorItems(MonitorKey!, target, placeBefore));
         _draggedItem = null;
     }
 
     private void OnColumnCountChange(int newCount) {
-        ViewSettings settings = _monitor.Value?.Monitor.ViewSettings ?? new ViewSettings();
-        MonitorServiceActor.ActorRef.Tell(new ActorsApi.UpdateViewSettings(MonitorId!, settings with { ColumnsCount = newCount }));
+        ViewSettings settings = MonitorData.Monitor.ViewSettings ?? new ViewSettings();
+        MonitorServiceActor.ActorRef.Tell(new ActorsApi.UpdateViewSettings(MonitorKey!, settings with { ColumnsCount = newCount }));
     }
 
 }

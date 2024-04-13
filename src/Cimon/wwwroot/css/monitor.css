@@ -300,8 +300,6 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-info-item.failed.with-committers {
         grid-row: auto / span 3;
     }
-
-
 }
 
 .build-info-in-discussion {
@@ -313,5 +311,35 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 
     .commits-count {
         position: fixed;
+    }
+}
+.monitor-group-controls {
+    font-size: 80px;
+    cursor: pointer;
+    .nav-button {
+        opacity: 0.05;
+        transition: opacity 0.2s ease-in-out;
+        position: fixed;
+        margin: -20px;
+        top: 40%;
+        pointer-events: auto;
+        cursor: auto;
+        &.previous {
+            padding: 70px 70px 70px 0;
+        }
+        &.next {
+            right: 0;
+            padding: 70px 0 70px 70px;
+        }
+        i {
+            cursor: pointer;
+            color: #232323;
+            font-size: 80px;
+            position: relative;
+        }
+    }
+    .nav-button:hover {
+        opacity: 1;
+        transition: opacity 0.5s ease-in-out;
     }
 }

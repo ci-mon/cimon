@@ -11,10 +11,11 @@
 @using User = Cimon.Contracts.User
 @using System.Text.Json
 @using Cimon.Data.Users
+@using System.Reactive.Linq
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
-@if (Monitor is { }) {
+@if (Monitor is { } monitor) {
     <RadzenCard>
         <RadzenButton data-qa="close" Text="Close" Icon="close" Click="Close"/>
         <RadzenButton data-qa="save" Text="Save" Icon="save" Click="Save"/>
@@ -23,6 +24,9 @@
             <RadzenStack Orientation="Orientation.Vertical">
                 <RadzenFormField Text="Title" >
                     <RadzenTextBox aria-label="edit-title" @bind-Value="@Monitor.Title" class="w-100"/>
+                </RadzenFormField>
+                <RadzenFormField Text="Type" >
+                    <RadzenTextBox Disabled="true" aria-label="view-type" Value="@Monitor.Type.ToString()" class="w-100"/>
                 </RadzenFormField>
                 <RadzenFormField Text="Owner" >
                     <RadzenTextBox Disabled="true" aria-label="view-owner" Value="@Monitor.Owner?.FullName" class="w-100"/>
@@ -33,41 +37,64 @@
                 </RadzenStack>
             </RadzenStack>
         </RadzenCard>
-        <RadzenButton Variant="Variant.Outlined" data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
-        <RadzenButton Visible="@_selectedBuilds.Any()" Variant="Variant.Outlined" data-qa="rm-build-config" Text="Remove selected builds" Icon="remove" Click="RemoveBuilds"/>
+        @if (monitor.Type == MonitorType.Simple) {
+            <RadzenButton Variant="Variant.Outlined" data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
+            <RadzenButton Visible="@_selectedBuilds.Any()" Variant="Variant.Outlined" data-qa="rm-build-config" Text="Remove selected builds" Icon="remove" Click="RemoveBuilds"/>
+        }
     </RadzenCard>
+    <RadzenDataGrid Visible="monitor.Type == MonitorType.Simple" AllowRowSelectOnRowClick="@true"
+                    AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                    FilterMode="FilterMode.SimpleWithMenu"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    AllowSorting="true" AllowColumnResize="true"
+                    PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
+                    Data="@Builds" TItem="BuildInMonitor" ColumnWidth="200px"
+                    SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@_selectedBuilds" class="m-4">
+        <Columns>
+            <RadzenDataGridColumn TItem="BuildInMonitor" Width="60px" Sortable="false" Filterable="false">
+                <HeaderTemplate>
+                    <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
+                </HeaderTemplate>
+                <Template Context="data">
+                    <RadzenCheckBox TriState="false" Value="@(_selectedBuilds.Contains(data))"
+                                    TValue="bool"/>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.CISystem" Title="CI type" Width="150px" />
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.Key" Title="CI Key" Width="150px" />
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Name" Title="Name"/>
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Key" Title="Key"/>
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.IsDefaultBranch" Title="IsDefaultBranch" />
+            <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Status" Title="Status" Width="100px"/>
+            <RadzenDataGridColumn TItem="BuildInMonitor" Title="Props">
+                <Template Context="item">
+                    <RadzenText>@JsonSerializer.Serialize(item.BuildConfig.Props)</RadzenText>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    @if (_availableMonitors.Value is { } monitors) {
+        <RadzenDataGrid Visible="monitor.Type == MonitorType.Group" AllowRowSelectOnRowClick="@true"
+                    AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                    FilterMode="FilterMode.SimpleWithMenu"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    AllowSorting="true" AllowColumnResize="true"
+                    PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
+                    Data="@monitors" TItem="MonitorModel" 
+                    SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@_selectedMonitorModels" class="m-4">
+        <Columns>
+            <RadzenDataGridColumn TItem="MonitorModel" Width="60px" Sortable="false" Filterable="false">
+                <Template Context="data">
+                    <RadzenCheckBox TriState="false" Value="@(_selectedMonitorModels.Contains(data))"
+                                    TValue="bool"/>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MonitorModel" Property="Title" Title="Title" Width="250px" />
+            <RadzenDataGridColumn TItem="MonitorModel" Property="Key" Title="Key"  />
+        </Columns>
+    </RadzenDataGrid>
+    }
 }
-<RadzenDataGrid AllowRowSelectOnRowClick="@true"
-                AllowFiltering="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
-                FilterMode="FilterMode.SimpleWithMenu"
-                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                AllowSorting="true" AllowColumnResize="true"
-                PagerPosition="PagerPosition.Top" AllowPaging="true" PageSize="15"
-                Data="@Builds" TItem="BuildInMonitor" ColumnWidth="200px"
-                SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@_selectedBuilds" class="m-4">
-    <Columns>
-        <RadzenDataGridColumn TItem="BuildInMonitor" Width="60px" Sortable="false" Filterable="false">
-            <HeaderTemplate>
-                <RadzenCheckBox TriState="false" TValue="bool" Change="@(OnSelectAllChanged)"/>
-            </HeaderTemplate>
-            <Template Context="data">
-                <RadzenCheckBox TriState="false" Value="@(_selectedBuilds.Contains(data))"
-                                TValue="bool"/>
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.CISystem" Title="CI type" Width="150px" />
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Connector.Key" Title="CI Key" Width="150px" />
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Name" Title="Name"/>
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Key" Title="Key"/>
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.IsDefaultBranch" Title="IsDefaultBranch" />
-        <RadzenDataGridColumn TItem="BuildInMonitor" Property="BuildConfig.Status" Title="Status" Width="100px"/>
-        <RadzenDataGridColumn TItem="BuildInMonitor" Title="Props">
-            <Template Context="item">
-                <RadzenText>@JsonSerializer.Serialize(item.BuildConfig.Props)</RadzenText>
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
 @code {
 
     private User? _user;
@@ -75,6 +102,8 @@
     private MonitorModel? Monitor => _monitor.Value;
     private IList<BuildInMonitor> Builds => _monitor.Value?.Builds ?? (IList<BuildInMonitor>)Array.Empty<BuildInMonitor>();
     private IList<BuildInMonitor> _selectedBuilds = new List<BuildInMonitor>();
+    private IList<MonitorModel> _selectedMonitorModels = new List<MonitorModel>();
+    private ReactiveValue<IReadOnlyList<MonitorModel>> _availableMonitors = new(ArraySegment<MonitorModel>.Empty);
     
     [Parameter]
     public string? MonitorId { get; set; }
@@ -83,7 +112,11 @@
         _user = await CurrentUserAccessor.Current;
         await base.InitializeReactiveValues();
         await MonitorService.Refresh();
-        Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId));
+        Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId)).OnChange(model => {
+            _selectedMonitorModels = model.ConnectedMonitors.Select(x => x.ConnectedMonitorModel).ToList();
+        });
+        Subscribe(ref _availableMonitors, MonitorService.GetMonitors(_user)
+            .Select(x => x.Where(m => m.Type == MonitorType.Simple).ToList()));
     }
 
     private async Task RemoveBuilds() {
@@ -111,6 +144,9 @@
     }
 
     private async Task Save() {
+        if (Monitor!.Type == MonitorType.Group) {
+            await MonitorService.Save(Monitor!, _selectedMonitorModels);
+        }
         await MonitorService.Save(Monitor!);
     }
 

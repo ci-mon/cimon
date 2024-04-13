@@ -145,6 +145,21 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.ToTable("CIConnectorSettings");
                 });
 
+            modelBuilder.Entity("Cimon.DB.Models.ConnectedMonitor", b =>
+                {
+                    b.Property<int>("SourceMonitorModelId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ConnectedMonitorModelId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SourceMonitorModelId", "ConnectedMonitorModelId");
+
+                    b.HasIndex("ConnectedMonitorModelId");
+
+                    b.ToTable("ConnectedMonitors");
+                });
+
             modelBuilder.Entity("Cimon.DB.Models.MonitorModel", b =>
                 {
                     b.Property<int>("Id")
@@ -169,6 +184,9 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
 
                     b.Property<string>("Title")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ViewSettings")
                         .HasColumnType("jsonb");
@@ -360,6 +378,25 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.Navigation("CIConnector");
                 });
 
+            modelBuilder.Entity("Cimon.DB.Models.ConnectedMonitor", b =>
+                {
+                    b.HasOne("Cimon.DB.Models.MonitorModel", "ConnectedMonitorModel")
+                        .WithMany()
+                        .HasForeignKey("ConnectedMonitorModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cimon.DB.Models.MonitorModel", "SourceMonitorModel")
+                        .WithMany("ConnectedMonitors")
+                        .HasForeignKey("SourceMonitorModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConnectedMonitorModel");
+
+                    b.Navigation("SourceMonitorModel");
+                });
+
             modelBuilder.Entity("Cimon.DB.Models.MonitorModel", b =>
                 {
                     b.HasOne("Cimon.DB.Models.User", "Owner")
@@ -442,6 +479,8 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
             modelBuilder.Entity("Cimon.DB.Models.MonitorModel", b =>
                 {
                     b.Navigation("Builds");
+
+                    b.Navigation("ConnectedMonitors");
                 });
 #pragma warning restore 612, 618
         }

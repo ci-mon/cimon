@@ -1,0 +1,22 @@
+﻿@using Cimon.Data.Monitors
+@using Cimon.Data.Users
+@using Akka.Hosting
+@using Cimon.Data.Common
+@using MediatR
+@inherits ReactiveComponent
+@inject IRequiredActor<MonitorServiceActor> MonitorServiceActor
+
+@if (_monitor.Value is { } monitor) {
+    <MonitorView Visible="@Visible" MonitorData="@monitor"></MonitorView>
+}
+
+@code {
+    [Parameter] public string? MonitorKey { get; set; }
+    [Parameter] public bool Visible { get; set; }
+    private ReactiveValue<MonitorData> _monitor;
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        var subj = await MonitorServiceActor.ActorRef.Ask(new ActorsApi.WatchMonitor(MonitorKey!));
+        Subscribe(ref _monitor, subj);
+    }
+}

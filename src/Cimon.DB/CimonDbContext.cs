@@ -21,8 +21,8 @@ public class CimonDbContext : DbContext
 	public DbSet<BuildInMonitor> MonitorBuilds { get; set; } = null!;
 	public DbSet<CIConnector> CIConnectors { get; set; } = null!;
 	public DbSet<CIConnectorSetting> CIConnectorSettings { get; set; } = null!;
-
 	public DbSet<AppFeatureState> FeatureStates { get; set; } = null!;
+	public DbSet<ConnectedMonitor> ConnectedMonitors { get; set; } = null!;
 
 	public override async ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = new CancellationToken()) {
 		var entry = await base.AddAsync(entity, cancellationToken);
@@ -40,6 +40,8 @@ public class CimonDbContext : DbContext
 		modelBuilder.Entity<BuildConfigModel>().Property(x => x.DemoState).HasJsonConversion(Database.ProviderName);
 		modelBuilder.Entity<Team>().HasMany(x => x.ChildTeams).WithMany();
 		modelBuilder.Entity<BuildInMonitor>().HasKey(x => new { x.MonitorId, x.BuildConfigId });
+		modelBuilder.Entity<ConnectedMonitor>().HasKey(x => new { x.SourceMonitorModelId, x.ConnectedMonitorModelId });
+		modelBuilder.Entity<Monitor>().HasMany(x => x.ConnectedMonitors).WithOne(x => x.SourceMonitorModel);
 		modelBuilder.Entity<BuildConfigModel>().Property(x => x.AllowML).HasDefaultValue(true);
 	}
 }

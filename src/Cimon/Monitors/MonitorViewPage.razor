@@ -1,0 +1,118 @@
+﻿@page "/monitor/{monitorKey?}"
+@using Cimon.Data.Monitors
+@using Akka.Hosting
+@using Cimon.Data.Common
+@using Cimon.Data.Users
+@using Cimon.DB.Models
+@using MediatR
+@inherits ReactiveComponent
+@inject IRequiredActor<MonitorServiceActor> MonitorServiceActor
+@inject ICurrentUserAccessor CurrentUserAccessor
+@inject IMediator Mediator
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+
+@if (_errorMessage != null) {
+    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+        <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
+    </RadzenRow>
+}
+@if (_monitor.Value is { } monitor) {
+    if (monitor.Monitor.Type == MonitorType.Simple) {
+        <MonitorView MonitorData="@monitor"></MonitorView>
+    }
+    else if (monitor.Monitor.Type == MonitorType.Group) {
+        <SectionContent SectionName="body-content">
+            <div class="monitor-group-controls">
+                <div class="nav-button previous">
+                    <div onclick="@(() => Navigate(-1))">
+                        <RadzenIcon Icon="navigate_before"/>
+                    </div>
+                    
+                </div>
+                <div class="nav-button next">
+                    <div onclick="@(() => Navigate(1))">
+                        <RadzenIcon Icon="navigate_next"/>
+                    </div>
+                </div>
+            </div>
+        </SectionContent>
+        foreach (var connected in _connectedMonitors!) {
+            <MonitorViewLoader Visible="@(connected == _activeConnectedMonitor)" MonitorKey="@connected.ConnectedMonitorModel.Key"></MonitorViewLoader>
+        }
+    }
+}
+
+@code {
+    [Parameter] public string? MonitorKey { get; set; }
+    private string? _errorMessage;
+    private ReactiveValue<MonitorData> _monitor;
+    private List<ConnectedMonitor>? _connectedMonitors;
+    private ConnectedMonitor? _activeConnectedMonitor;
+    private CancellationTokenSource? _cancellationTokenSource;
+
+    protected override async Task OnParametersSetAsync() {
+        await base.OnParametersSetAsync();
+        var user = await CurrentUserAccessor.Current;
+        if (!string.IsNullOrWhiteSpace(MonitorKey)) {
+            await Mediator.Publish(new MonitorOpenedNotification(user, MonitorKey));
+            NavigationManager.RegisterLocationChangingHandler(async _ => { await JsRuntime.InvokeVoidAsync("uiApi.resetIcon"); });
+        }
+        else {
+            MonitorKey = await Mediator.Send<string?>(new GetDefaultMonitorRequest(user));
+            if (!string.IsNullOrWhiteSpace(MonitorKey)) {
+                NavigationManager.NavigateTo($"monitor/{MonitorKey}", new NavigationOptions {
+                    ReplaceHistoryEntry = true
+                });
+            }
+        }
+    }
+
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        var subj = await MonitorServiceActor.ActorRef.Ask(new ActorsApi.WatchMonitor(MonitorKey!));
+        Subscribe(ref _monitor, subj).OnChange(data => {
+            _connectedMonitors = data.Monitor.ConnectedMonitors.ToList();
+            _activeConnectedMonitor = _connectedMonitors?.FirstOrDefault();
+            if (data.Monitor.Type == MonitorType.Group) {
+                StartActiveMonitorRotation();
+            }
+        });
+        if (!_monitor.HasValue) {
+            _errorMessage = "Loading...";
+        }
+    }
+
+    private void StartActiveMonitorRotation() {
+        if (_cancellationTokenSource is not null) {
+            return;
+        }
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        Task.Run(async () => {
+            while (!_cancellationTokenSource.IsCancellationRequested) {
+                await Task.Delay(TimeSpan.FromSeconds(3000));
+                await Navigate(1);
+            }
+        });
+    }
+
+    protected override void Dispose(bool disposing) {
+        base.Dispose(disposing);
+        _cancellationTokenSource?.Cancel();
+    }
+
+    private async Task Navigate(int delta) {
+        if (_connectedMonitors is null) return;
+        var index = _activeConnectedMonitor is null ? 0 : _connectedMonitors.IndexOf(_activeConnectedMonitor);
+        index += delta;
+        if (index >= _connectedMonitors.Count) {
+            index = 0;
+        } else if (index < 0) {
+            index = _connectedMonitors.Count - 1;
+        }
+        _activeConnectedMonitor = _connectedMonitors[index];
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

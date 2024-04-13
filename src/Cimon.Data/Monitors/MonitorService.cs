@@ -21,6 +21,11 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _state.Items;
 
+	public IObservable<IReadOnlyList<Monitor>> GetMonitors(User user) => _state.Items.Select(x =>
+		x.Where(m =>
+			!m.Removed && (m.Shared || m.Owner?.Id == user?.Id ||
+			               (user?.Roles.Contains("monitor-editor") ?? false))).ToList());
+
 	public async Task<Monitor> Copy(User user, Monitor source) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
@@ -28,11 +33,16 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			Key = Guid.NewGuid().ToString("D"),
 			Title = $"Copy of {source.Title}",
 			Owner = userModel,
-			ViewSettings = source.ViewSettings
+			ViewSettings = source.ViewSettings,
+			Type = source.Type
 		};
 		monitor.Builds.AddRange(source.Builds.Select(b => new BuildInMonitor {
 			Monitor = monitor,
 			BuildConfigId = b.BuildConfig.Id
+		}));
+		monitor.ConnectedMonitors.AddRange(source.ConnectedMonitors.Select(c => new ConnectedMonitor {
+			SourceMonitorModel = monitor,
+			ConnectedMonitorModelId = c.ConnectedMonitorModel.Id
 		}));
 		await ctx.Monitors.AddAsync(monitor);
 		await ctx.SaveChangesAsync();
@@ -40,13 +50,14 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		return monitor;
 	}
 
-	public async Task<Monitor> Add(User user) {
+	public async Task<Monitor> Add(User user, MonitorType monitorType) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
 		var monitor = new Monitor {
 			Key = Guid.NewGuid().ToString("D"),
-			Title = "Untitled",
-			Owner = userModel
+			Title = monitorType == MonitorType.Simple ? "Untitled" : "Untitled Group",
+			Owner = userModel,
+			Type = monitorType
 		};
 		await ctx.Monitors.AddAsync(monitor);
 		await ctx.SaveChangesAsync();
@@ -91,6 +102,21 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 		await _state.Refresh();
 	}
 
+	public async Task Save(MonitorModel monitor, IList<MonitorModel> connected) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		ctx.ConnectedMonitors.Where(m => m.SourceMonitorModelId == monitor.Id).ToList()
+			.ForEach(x => ctx.ConnectedMonitors.Remove(x));
+		foreach (var model in connected) {
+			await ctx.ConnectedMonitors.AddAsync(new ConnectedMonitor {
+				SourceMonitorModelId = monitor.Id,
+				ConnectedMonitorModelId = model.Id
+			});
+		}
+		ctx.Monitors.Update(monitor);
+		await ctx.SaveChangesAsync();
+		await _state.Refresh();
+	}
+
 	public async Task<IImmutableList<Monitor>> LoadData(CancellationToken token) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync(token);
 		var result = await ctx.Monitors
@@ -98,6 +124,8 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			.Include(x => x.Builds)
 			.ThenInclude(x => x.BuildConfig)
 			.ThenInclude(x => x.Connector)
+			.Include(x=>x.ConnectedMonitors)
+			.ThenInclude(x=>x.ConnectedMonitorModel)
 			.ToListAsync(cancellationToken: token);
 		return result.ToImmutableList();
 	}

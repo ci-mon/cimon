@@ -41,7 +41,8 @@ public class MonitorServiceTests
 	public async Task Add() {
 		var sut = new MonitorService(TestDbContextFactory.New);
 		await sut.GetMonitors().FirstAsync();
-		var newMon = await sut.Add(new User("test", "test", Array.Empty<string>(), Array.Empty<string>()){Id = 1});
+		var newMon = await sut.Add(new User("test", "test", Array.Empty<string>(), Array.Empty<string>()) { Id = 1 },
+			MonitorType.Simple);
 		var monitors = await sut.GetMonitors().FirstAsync();
 		monitors.Should().Contain(x=>x.Key == newMon.Key);
 	}
