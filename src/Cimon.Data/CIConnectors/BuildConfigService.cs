@@ -21,7 +21,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 	private readonly IDbContextFactory<CimonDbContext> _contextFactory;
 	private readonly IServiceProvider _serviceProvider;
 	private readonly ReactiveRepository<IImmutableList<BuildConfigModel>> _state;
-	
+
 	public BuildConfigService(IDbContextFactory<CimonDbContext> contextFactory,
 			IServiceProvider serviceProvider) {
 		_contextFactory = contextFactory;
