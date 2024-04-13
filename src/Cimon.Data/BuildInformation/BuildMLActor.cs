@@ -2,8 +2,6 @@
 
 namespace Cimon.Data.BuildInformation;
 
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using Akka.Actor;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;

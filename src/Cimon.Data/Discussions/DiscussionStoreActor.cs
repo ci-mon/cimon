@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Akka.Actor;
 using Cimon.Data.Common;
@@ -7,7 +6,6 @@ using Cimon.Data.Common;
 namespace Cimon.Data.Discussions;
 
 using Cimon.Contracts.CI;
-using Cimon.Data.BuildInformation;
 
 public record DiscussionBuildData(BuildConfig BuildConfig, ReplaySubject<BuildInfo> BuildInfo) : IDiscussionBuildData
 {

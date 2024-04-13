@@ -6,7 +6,6 @@ using Cimon.DB;
 using Cimon.DB.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.FeatureManagement;
 
 namespace Cimon.Data.Features;

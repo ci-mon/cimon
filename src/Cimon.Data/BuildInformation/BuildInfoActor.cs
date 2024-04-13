@@ -1,5 +1,4 @@
-﻿using System.Reactive.Linq;
-using Akka.Actor;
+﻿using Akka.Actor;
 using Akka.Event;
 using Cimon.Contracts.CI;
 using Cimon.Contracts.Services;

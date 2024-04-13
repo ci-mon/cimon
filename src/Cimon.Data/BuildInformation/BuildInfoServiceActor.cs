@@ -1,7 +1,6 @@
 ﻿using Akka.Actor;
 using Cimon.Contracts.CI;
 using Cimon.Data.Common;
-using Cimon.DB.Models;
 
 namespace Cimon.Data.BuildInformation;
 

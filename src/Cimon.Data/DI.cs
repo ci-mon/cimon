@@ -1,6 +1,4 @@
-﻿using System.Xml.Schema;
-using Akka.Actor;
-using Akka.DependencyInjection;
+﻿using Akka.DependencyInjection;
 using Akka.Hosting;
 using Cimon.Contracts;
 using Cimon.Contracts.AppFeatures;
@@ -14,7 +12,6 @@ using Cimon.Data.Discussions;
 using Cimon.Data.Features;
 using Cimon.Data.Monitors;
 using Cimon.Data.Users;
-using Microsoft.Extensions.Hosting;
 using Microsoft.FeatureManagement;
 
 // ReSharper disable once CheckNamespace

@@ -1,18 +1,14 @@
-﻿using Cimon.Contracts.Services;
-using Cimon.DB;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Cimon.Data.CIConnectors;
 
 public class CIConnectorsHealthcheck(BuildConfigService buildConfigService) : IHealthCheck
 {
 	public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
-			CancellationToken ct = default) {
+			CancellationToken cancellationToken = default) {
 		var unhealthy = new List<string>();
 		var healthy = new List<string>();
-		await foreach (var result in buildConfigService.CheckCiConnectors(ct)) {
+		await foreach (var result in buildConfigService.CheckCiConnectors(cancellationToken)) {
 			var status = $"{result.Item1.ConnectorKey}: {result.Item2.Description}";
 			if (result.Item2.Status != HealthStatus.Healthy) {
 				unhealthy.Add(status);
