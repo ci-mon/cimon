@@ -1,13 +1,16 @@
 ﻿@page "/setupMonitor/{monitorId?}"
 @attribute [Authorize(Policy = "EditMonitor")]
-
+@using MediatR
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
+@inject IMediator Mediator 
+@inject ICurrentUserAccessor CurrentUserAccessor 
 @using Cimon.Data.Monitors
 @using Cimon.DB.Models
+@using User = Cimon.Contracts.User
 @using System.Text.Json
-@using System.Diagnostics.CodeAnalysis
+@using Cimon.Data.Users
 @inherits ReactiveComponent
 
 <PageTitle>Setup monitor @MonitorId</PageTitle>
@@ -15,7 +18,7 @@
     <RadzenCard>
         <RadzenButton data-qa="close" Text="Close" Icon="close" Click="Close"/>
         <RadzenButton data-qa="save" Text="Save" Icon="save" Click="Save"/>
-        <RadzenButton Text="Setup connectors" Click="@SetupCIConnectors" />
+        <RadzenButton data-qa="delete-monitor" Text="Remove" Icon="delete" Click="Remove" />
         <RadzenCard class="rz-mb-4 rz-mt-4" Style="max-width: 40em">
             <RadzenStack Orientation="Orientation.Vertical">
                 <RadzenFormField Text="Title" >
@@ -30,8 +33,8 @@
                 </RadzenStack>
             </RadzenStack>
         </RadzenCard>
-        <RadzenButton data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
-        <RadzenButton data-qa="rm-build-config" Text="Remove" Icon="remove" Click="Remove"/>
+        <RadzenButton Variant="Variant.Outlined" data-qa="add-build-config" Text="Add" Icon="add" Click="Add"/>
+        <RadzenButton Visible="@_selectedBuilds.Any()" Variant="Variant.Outlined" data-qa="rm-build-config" Text="Remove selected builds" Icon="remove" Click="RemoveBuilds"/>
     </RadzenCard>
 }
 <RadzenDataGrid AllowRowSelectOnRowClick="@true"
@@ -67,6 +70,7 @@
 </RadzenDataGrid>
 @code {
 
+    private User? _user;
     private ReactiveValue<MonitorModel> _monitor;
     private MonitorModel? Monitor => _monitor.Value;
     private IList<BuildInMonitor> Builds => _monitor.Value?.Builds ?? (IList<BuildInMonitor>)Array.Empty<BuildInMonitor>();
@@ -76,12 +80,13 @@
     public string? MonitorId { get; set; }
 
     protected override async Task InitializeReactiveValues() {
+        _user = await CurrentUserAccessor.Current;
         await base.InitializeReactiveValues();
         await MonitorService.Refresh();
         Subscribe(ref _monitor, MonitorService.GetMonitorById(MonitorId));
     }
 
-    private async Task Remove() {
+    private async Task RemoveBuilds() {
         await MonitorService.RemoveBuilds(Monitor!, _selectedBuilds.Select(x=>x.BuildConfigId));
     }
 
@@ -109,13 +114,21 @@
         await MonitorService.Save(Monitor!);
     }
 
-    private void SetupCIConnectors() {
-        NavigationManager.NavigateTo("/SetupCIConnectors");
-    }
-
-
     private void OnSelectAllChanged(bool select) {
         _selectedBuilds = select ? Builds.ToList() : Array.Empty<BuildInMonitor>();
     }
+    
+    private async Task Remove() {
+        var result = await DialogService.Confirm("Are you sure?", "Delete monitor", new ConfirmOptions {
+            OkButtonText = "Yes",
+            CancelButtonText = "No"
+        });
+        if (result is true) {
+            await Mediator.Publish(new MonitorOpenedNotification(_user!, null));
+            await MonitorService.Remove(Monitor!);
+            NavigationManager.NavigateTo("/monitorList");
+        }
+    }
+
 
 }

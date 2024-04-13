@@ -2,13 +2,13 @@
 @using Cimon.Data.Monitors
 @using Cimon.Data.Users
 @using Cimon.DB.Models
-@using MediatR
+
 @using Microsoft.AspNetCore.Http.Extensions
 @using User = Cimon.Contracts.User
 @inject ICurrentUserAccessor CurrentUserAccessor 
 @inject MonitorService MonitorService
 @inject NavigationManager NavigationManager
-@inject IMediator Mediator; 
+
 @inherits ReactiveComponent
 <SectionContent SectionName="body-content">
     <RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
@@ -32,8 +32,8 @@
                             <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
                                 <AuthorizeView Policy="EditMonitor" Resource="monitor">
                                     <RadzenButton data-qa="setup" Variant="Variant.Text" Icon="settings" Click="() => SetupMonitor(monitor)"/>
-                                    <RadzenButton data-qa="remove" Variant="Variant.Text" Icon="delete" Click="() => Remove(monitor)"/>
                                 </AuthorizeView>
+                                <RadzenButton data-qa="copy" Visible="false" Variant="Variant.Text" Icon="content_copy" Click="() => CopyMonitor(monitor)"/>
                             </RadzenRow>
                         </RadzenColumn>
                     </RadzenRow>
@@ -78,7 +78,7 @@
         await MonitorService.Add(_user!);
     }
 
-    private void ViewMonitor(MonitorModel monitor) {
+    private void CopyMonitor(MonitorModel monitor) {
         string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
     }
@@ -86,11 +86,6 @@
     private void SetupMonitor(MonitorModel monitor) {
         string url = UriHelper.BuildRelative("/setupMonitor", $"/{monitor.Key}");
         NavigationManager.NavigateTo(url);
-    }
-
-    private async Task Remove(MonitorModel monitor) {
-        await Mediator.Publish(new MonitorOpenedNotification(_user!, null));
-        await MonitorService.Remove(monitor);
     }
 
     private bool GetIsShowMonitor(MonitorModel m) {

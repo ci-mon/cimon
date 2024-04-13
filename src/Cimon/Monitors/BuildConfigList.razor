@@ -70,6 +70,7 @@
     [Parameter] public IEnumerable<int>? SelectedBuildConfigIds { get; set; }
 
     [Parameter] public bool DisableSelection { get; set; }
+    [Parameter] public bool FilterDefaultBranch { get; set; }
 
     [Parameter]
     public CIConnector? CIConnector {
@@ -111,6 +112,18 @@
     private async Task OnChangeAllowMl(bool value, BuildConfigModel data) {
         data.AllowML = value;
         await BuildConfigService.Edit(data.Id, x => x.AllowML = value);
+    }
+    
+    protected override Task OnAfterRenderAsync(bool firstRender) {
+        if(firstRender) {
+            var column = Grid.ColumnsCollection.FirstOrDefault(c => c.Property == "IsDefaultBranch");
+            if(column != null) {
+                column.SetFilterValue(true);
+                column.SetFilterOperator(FilterOperator.Equals);
+                Grid.Reload();
+            }
+        }
+        return base.OnAfterRenderAsync(firstRender);
     }
 
 }

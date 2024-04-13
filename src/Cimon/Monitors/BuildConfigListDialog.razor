@@ -3,7 +3,7 @@
 <div data-qa="build-config-dialog">
     <RadzenButton aria-label="save-build-configs" Text="Save" Icon="save" Click="OnSaveClick" />
     
-    <BuildConfigList @ref="_list" SelectedBuildConfigIds="@SelectedBuildConfigIds"></BuildConfigList>
+    <BuildConfigList FilterDefaultBranch="true" @ref="_list" SelectedBuildConfigIds="@SelectedBuildConfigIds"></BuildConfigList>
 </div>
 @code {
 

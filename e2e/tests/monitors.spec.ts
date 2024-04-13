@@ -68,6 +68,11 @@ test('add monitor', async ({page, blazorPage}) => {
     await expect(redBuildInfo).toBeVisible({timeout: 15000});
     expect(await page.locator('.monitor .build-info-item').count()).toBe(10);
     await page.getByLabel('monitor-list').click();
-    await card.getByTestId('remove').click();
+    await card.getByTestId('setup').click();
+    await page.waitForURL(/setupMonitor/);
+    await page.getByTestId('delete-monitor').click();
+    await page.locator('.rz-dialog-confirm-buttons button').getByText('Yes').click();
+    await page.waitForURL(/monitorList/);
+    await expect(page.getByTestId('monitor-item-title').first()).toBeVisible();
     await expect(card).not.toBeVisible();
 });

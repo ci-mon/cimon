@@ -110,7 +110,8 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig2 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "TeamCityPluginsByJetBrains_NUnitTeamCity_NUnitIntegration") {
 			DemoState = new BuildInfo {
@@ -122,7 +123,8 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig3 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Unit (.Net 6)") {
 			DemoState = new BuildInfo {
@@ -134,7 +136,8 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig4 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (MSSQL)") {
 			DemoState = new BuildInfo {
@@ -146,7 +149,8 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var manyChanges = Enumerable.Range(0, 10).Select(i => 
 				new VcsChange(new VcsUser($"test{i}", $"Test {i}", $"user{i}@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
@@ -165,7 +169,8 @@ public class DbInitializer
 				BranchName = "trunk",
 				Changes = manyChanges,
 				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig6 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (Oracle)") {
 			DemoState = new BuildInfo {
@@ -177,7 +182,8 @@ public class DbInitializer
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig7 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "app.scope1.app1") {
 			DemoState = new BuildInfo {
@@ -189,7 +195,8 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "trunk",
 				Changes = manyChanges,
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "jen_proj2") {
 			DemoState = new BuildInfo {
@@ -203,7 +210,8 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig9 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "app.scope2.app3") {
 			DemoState = new BuildInfo {
@@ -218,7 +226,8 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-			}
+			},
+			IsDefaultBranch = true
 		});
 		var buildConfig10 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "lib.scope2.app4") {
 			DemoState = new BuildInfo {
@@ -234,7 +243,8 @@ public class DbInitializer
 					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
 					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
-			}
+			},
+			IsDefaultBranch = true
 		});
 
 		async Task AddBuildsToMonitor(Monitor monitor, params BuildConfigModel[] buildConfigs) {
