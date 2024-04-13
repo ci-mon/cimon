@@ -1,4 +1,4 @@
-.monitor-settings-panel{
+.monitor-settings-panel {
     position: fixed;
     z-index: 100;
     bottom: 10px;
@@ -18,10 +18,6 @@
 
 .monitor h1 {
     color: var(--rz-danger);
-}
-
-.build-info-item h4 {
-    margin-bottom: 4px;
 }
 
 .build-info-item h6 {
@@ -55,7 +51,6 @@
 
 button.rz-button.discussion-button {
     padding: 0;
-    /*position: absolute;*/
 }
 
 button.rz-button.discussion-button:hover {
@@ -86,6 +81,7 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     background-color: #ffb35bfc;
     color: #980202;
 }
+
 .active-user {
     top: 22px;
     left: 3px;
@@ -124,14 +120,21 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     initial-value: #71a431;
     inherits: false;
 }
+
 .build-info-item {
     margin: 0.1em;
+
     &.failed {
         .content {
             --bg-from: rgb(116, 34, 34);
             --bg-to: rgb(190, 64, 64);
         }
+
+        .build-status {
+            cursor: pointer;
+        }
     }
+
     .content {
         --bg-from: #3e6213;
         --bg-to: #71a431;
@@ -142,17 +145,19 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         height: 100%;
         container-type: size;
     }
+
     .drop-zone {
         height: 2em;
         width: 100%;
         border: 3px dashed #0077b6;
         box-shadow: 0 0 10px rgba(0, 119, 182, 0.5);
     }
+
     .loading {
         --bg-from: rgb(76 116 34 / 0%);
         --bg-to: rgb(180 180 180 / 25%);
     }
-    
+
 }
 
 .build-info-item .committer p {
@@ -160,14 +165,18 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
 }
 
 .build-info-item h4 {
+    margin-bottom: 4px;
     font-size: clamp(10px, 2vw, 15px) !important;
 }
+
 .build-info-item h5 {
     font-size: clamp(.8em, 5vw, 1em) !important;
 }
+
 .committer-wrap {
     scale: 0.7;
 }
+
 .build-status {
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -175,31 +184,30 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     display: inline-block;
 }
 
-.build-info-item .build-info-link
-, .build-info-item .build-info-link:hover
-, .build-status {
+.build-info-item .build-info-link, .build-info-item .build-info-link:hover, .build-status {
     color: var(--rz-white) !important;
 }
-.build-info-item.failed {
-    .build-status {
-        cursor: pointer;
-    }
-}
+
 .monitor.monitor-columns-2 {
     grid-template-columns: auto auto;
 }
+
 .monitor.monitor-columns-3 {
     grid-template-columns: auto auto auto;
 }
+
 .monitor.monitor-columns-4 {
     grid-template-columns: auto auto auto auto;
 }
+
 .monitor.monitor-columns-5 {
     grid-template-columns: auto auto auto auto auto;
 }
+
 @media only screen and (max-width: 700px) {
     .build-info-item {
         grid-row: auto / span 1;
+
         &.failed.with-committers {
             grid-row: auto / span 2;
         }
@@ -209,45 +217,55 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
             white-space: nowrap;
             display: contents;
         }
+
         .build-name-text {
             display: contents;
         }
+
         .build-info-link, .build-status {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
         .build-status {
             display: flex;
             flex-direction: row-reverse;
             justify-content: flex-end;
         }
+
         &.failed {
             .build-name-and-status {
                 flex-direction: row !important;
+
                 .build-name {
                     flex-direction: row-reverse !important;
+
                     .rz-badge {
                         padding: 0;
                         margin-right: 4px;
                         margin-left: 4px !important;
                     }
+
                     .build-info-link {
                         padding-top: 2px;
                         align-self: baseline;
                     }
                 }
             }
+
             .build-status {
                 align-self: self-end;
             }
         }
     }
 }
+
 @media only screen and (min-width: 700px) {
-    .committer-wrap{
+    .committer-wrap {
         scale: 1;
     }
+
     .monitor {
         grid-template-columns: auto auto;
     }
@@ -264,6 +282,7 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         white-space: normal;
         text-overflow: ellipsis;
         overflow: auto;
+        grid-row: auto / span 2;
     }
 
     .build-info-item h5 {
@@ -273,23 +292,25 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-info-item h4 {
         font-size: clamp(10px, 22cqmin, 20px);
     }
+
     .build-info-item:not(.failed) h4 {
         font-size: clamp(10px, 38cqmin, 20px);
     }
+
     .build-info-item.failed.with-committers {
         grid-row: auto / span 3;
     }
-    .build-info-item {
-        grid-row: auto / span 2;
-    }
+
 
 }
+
 .build-info-in-discussion {
     .build-info-item {
         margin-top: 1em;
         height: 12em;
         border-radius: 5px;
     }
+
     .commits-count {
         position: fixed;
     }

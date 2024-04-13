@@ -6,12 +6,14 @@ authAsUser();
 test.beforeEach(async ({page}) => {
     await page.goto('/');
 });
+
 async function allBuildInfosLoaded(page: Page) {
     await Promise.all((await page.locator('.monitor .build-info-item.loading').all()).map(locator => expect(locator).toBeHidden({timeout: 15000})));
 }
+
 test('add monitor', async ({page, blazorPage}) => {
     await blazorPage.waitForBlazor();
-    const testRunId = Math.floor(Math.random()*1000);
+    const testRunId = Math.floor(Math.random() * 1000);
     await page.getByLabel('monitor-list').click();
     await blazorPage.waitForBlazor();
     await page.getByLabel('add-monitor').click();

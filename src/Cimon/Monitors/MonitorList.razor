@@ -38,7 +38,7 @@
                         </RadzenColumn>
                     </RadzenRow>
                     <RadzenRow>
-                        <RadzenLink Path="@($"monitor/{monitor.Key}")">
+                        <RadzenLink Path="@($"monitor/{monitor.Key}")" Attributes="@(new Dictionary<string, object>{{"data-qa", "view"}})">
                             <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                         </RadzenLink>
                     </RadzenRow>
