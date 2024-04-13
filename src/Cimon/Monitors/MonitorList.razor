@@ -33,7 +33,7 @@
                                 <AuthorizeView Policy="EditMonitor" Resource="monitor">
                                     <RadzenButton data-qa="setup" Variant="Variant.Text" Icon="settings" Click="() => SetupMonitor(monitor)"/>
                                 </AuthorizeView>
-                                <RadzenButton data-qa="copy" Visible="false" Variant="Variant.Text" Icon="content_copy" Click="() => CopyMonitor(monitor)"/>
+                                <RadzenButton data-qa="copy" Variant="Variant.Text" Icon="content_copy" Click="() => CopyMonitor(monitor)"/>
                             </RadzenRow>
                         </RadzenColumn>
                     </RadzenRow>
@@ -78,9 +78,8 @@
         await MonitorService.Add(_user!);
     }
 
-    private void CopyMonitor(MonitorModel monitor) {
-        string url = UriHelper.BuildRelative("/monitor", $"/{monitor.Key}");
-        NavigationManager.NavigateTo(url);
+    private async Task CopyMonitor(MonitorModel monitor) {
+        await MonitorService.Copy(_user!, monitor);
     }
 
     private void SetupMonitor(MonitorModel monitor) {

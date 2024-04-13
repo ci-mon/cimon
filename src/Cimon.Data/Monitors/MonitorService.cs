@@ -21,6 +21,25 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 
 	public IObservable<IReadOnlyList<Monitor>> GetMonitors() => _state.Items;
 
+	public async Task<Monitor> Copy(User user, Monitor source) {
+		await using var ctx = await _contextFactory.CreateDbContextAsync();
+		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
+		var monitor = new Monitor {
+			Key = Guid.NewGuid().ToString("D"),
+			Title = $"Copy of {source.Title}",
+			Owner = userModel,
+			ViewSettings = source.ViewSettings
+		};
+		monitor.Builds.AddRange(source.Builds.Select(b => new BuildInMonitor {
+			Monitor = monitor,
+			BuildConfigId = b.BuildConfig.Id
+		}));
+		await ctx.Monitors.AddAsync(monitor);
+		await ctx.SaveChangesAsync();
+		await _state.Refresh();
+		return monitor;
+	}
+
 	public async Task<Monitor> Add(User user) {
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
 		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
