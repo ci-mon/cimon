@@ -2,10 +2,15 @@
 @using Cimon.Data.Users
 @using Cimon.DB.Models
 @using Microsoft.EntityFrameworkCore
+@using Akka.Hosting
+@using Cimon.Data.Common
+@using System.Collections.Immutable
 @attribute [Authorize(Roles = "admin")]
 
 @inherits DbContextComponent<User>;
 @inject UserManager UserManager;
+@inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
+
 <RadzenLayout Style="padding: 1em">
     <RadzenStack Orientation="Orientation.Vertical">
         <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="40" AllowSorting="true" EditMode="DataGridEditMode.Single"
@@ -43,6 +48,9 @@
                                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
                     <Template Context="user">
+                        @if (_usersOnline.Value is { } onlineUsers && onlineUsers.Contains(user.Name)) {
+                            <RadzenBadge Text="Online" IsPill="@true" />
+                        }
                         @if (user.IsDeactivated) {
                             <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Activate" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
                             </RadzenButton>
@@ -50,7 +58,6 @@
                             <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person_off" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Deactivate" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
                             </RadzenButton>
                         }
-                       
                         <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))" @onclick:stopPropagation="true">
                         </RadzenButton>
                     </Template>
@@ -70,6 +77,7 @@
 
 @code {
 
+    private ReactiveValue<IImmutableSet<string>> _usersOnline;
     protected override IQueryable<User> GetItems() {
         return DbContext.Users.OrderBy(x=>x.Id).Include(x => x.Teams).Include(x => x.Roles);
     }
@@ -80,6 +88,12 @@
 
     private async Task Activate(User value) {
         await UserManager.Activate(value.Name);
+    }
+
+    protected override async Task InitializeReactiveValues() {
+        await base.InitializeReactiveValues();
+        var activeUsers = await UserSupervisorActor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
+        Subscribe(ref _usersOnline, activeUsers);
     }
 
 }
