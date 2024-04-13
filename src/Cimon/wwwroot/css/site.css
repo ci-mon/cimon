@@ -70,3 +70,16 @@ article.content {
 div.rz-notification-message > div {
     border-radius: 0.6em;
 }
+
+.bottom-panel {
+    display: none;
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+    width: 100%;
+    padding: 1em;
+    pointer-events: none;
+    button {
+        pointer-events: all;
+    }
+}

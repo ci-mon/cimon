@@ -28,18 +28,26 @@
         <div class="drop-zone" ondragover="event.preventDefault()"></div>
     }
     <div class="content">
-    <RadzenProgressBar Visible="@(!IsLoaded)"
-                       ProgressBarStyle="ProgressBarStyle.Light"
-                       Value="100" ShowValue="false"
-                       Mode="ProgressBarMode.Indeterminate"/>
-    <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
-        <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
-            <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
-                @if (IsLoaded) {
-                    <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
-                        <span data-qa="build-info-name">@BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)</span>
-                        <RadzenIcon Icon="open_in_new"/>
-                    </RadzenLink>
+        <RadzenProgressBar Visible="@(!IsLoaded)"
+                           ProgressBarStyle="ProgressBarStyle.Light"
+                           Value="100" ShowValue="false"
+                           Mode="ProgressBarMode.Indeterminate"/>
+        <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
+            <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
+                <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
+                    @if (IsLoaded) {
+                        <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
+                            <span data-qa="build-info-name">@BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)</span>
+                            <RadzenIcon Icon="open_in_new"/>
+                        </RadzenLink>
+                    }
+                    else {
+                        <RadzenText TextStyle="TextStyle.H5" class="build-info-link">
+                            @BuildConfig.Key
+                        </RadzenText>
+                    }
+                </RadzenText>
+                 @if (IsLoaded) {
                     <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
                             <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
@@ -47,55 +55,51 @@
                         </RadzenBadge>
                     </RadzenButton>
                 }
-                else {
-                    <RadzenText TextStyle="TextStyle.H5" class="build-info-link">
-                        @BuildConfig.Key
-                    </RadzenText>
+            </RadzenStack>
+
+            <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
+                @{
+                    var durationInfo = GetDurationInfo();
                 }
+                <span title="@durationInfo.Full">@durationInfo.Start</span>
+                <span> | </span>
+                <span title="@durationInfo.Full">@durationInfo.Duration</span>
+                <span> | </span>
+                <span class="status-text">@GetStatusInfo()</span>
             </RadzenText>
         </RadzenStack>
-        <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
-            @{
-                var durationInfo = GetDurationInfo();
-            }
-            <span title="@durationInfo.Full">@durationInfo.Start</span>
-            <span> | </span>
-            <span title="@durationInfo.Full">@durationInfo.Duration</span>
-            <span> | </span>
-            <span class="status-text">@GetStatusInfo()</span>
-        </RadzenText>
-    </RadzenStack>
-    @if (BuildInfo?.Status == BuildStatus.Failed) {
-        <div class="avatar-group">
-            <RadzenStack Orientation="Orientation.Horizontal"
-                         AlignItems="AlignItems.Normal" Gap="8px">
-                @foreach (var committer in Committers) {
-                    var user = committer.User;
-                    var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
-                    <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
-                                 AlignItems="AlignItems.Center" Gap="2px">
-                        <div class="avatar committer @committerClasses">
-                            <CimonAvatar UserName="@GetUserName(user)" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
-                            <div class="commits-count">
-                                <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
-                                @if (IsSuspect(user)) {
-                                    var confidence = BuildInfo.FailureSuspect?.Confidence ?? 0;
-                                    var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
-                                    <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
-                                        <RadzenIcon Icon="local_fire_department"/>
-                                    </div>
+
+        @if (BuildInfo?.Status == BuildStatus.Failed) {
+            <div class="avatar-group">
+                <RadzenStack Orientation="Orientation.Horizontal"
+                             AlignItems="AlignItems.Normal" Gap="8px">
+                    @foreach (var committer in Committers) {
+                        var user = committer.User;
+                        var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                        <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
+                                     AlignItems="AlignItems.Center" Gap="2px">
+                            <div class="avatar committer @committerClasses">
+                                <CimonAvatar UserName="@GetUserName(user)" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                                <div class="commits-count">
+                                    <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
+                                    @if (IsSuspect(user)) {
+                                        var confidence = BuildInfo.FailureSuspect?.Confidence ?? 0;
+                                        var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
+                                        <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
+                                            <RadzenIcon Icon="local_fire_department"/>
+                                        </div>
+                                    }
+                                </div>
+                                @if (_activeUsers.HasValue && _activeUsers.Value.Contains(user.Name)) {
+                                    <div class="active-user"></div>
                                 }
                             </div>
-                            @if (_activeUsers.HasValue && _activeUsers.Value.Contains(user.Name)) {
-                                <div class="active-user"></div>
-                            }
-                        </div>
-                        <RadzenText Text="@GetUserName(user)" title="@GetUserName(user)" class="user-name"></RadzenText>
-                    </RadzenStack>
-                }
-            </RadzenStack>
-        </div>
-    }
+                            <RadzenText Text="@GetUserName(user)" title="@GetUserName(user)" class="user-name"></RadzenText>
+                        </RadzenStack>
+                    }
+                </RadzenStack>
+            </div>
+        }
     </div>
 </div>
 
@@ -114,13 +118,12 @@
     [Parameter] public IObservable<BuildInfo> Info { get; set; } = null!;
     [Parameter] public IObservable<IImmutableSet<string>> ActiveUsers { get; set; } = null!;
 
-    [Parameter]
-    public int? MaxCommitters { get; set; }
-    
-    [Parameter]
-    public bool AllowReorder { get; set; }
-    
+    [Parameter] public int? MaxCommitters { get; set; }
+
+    [Parameter] public bool AllowReorder { get; set; }
+
     protected override bool PreloadData => true;
+
     protected override async Task OnInitializedAsync() {
         AppClientType = AppInitialStateAccessor.State.ClientType;
         await base.OnInitializedAsync();
@@ -131,13 +134,14 @@
         Subscribe(ref _activeUsers, ActiveUsers);
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
             var committers = value?.Changes.GroupBy(x => x.Author)
-                    .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)
-                    .ThenByDescending(x => x.Count())
-                    .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+                                 .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)
+                                 .ThenByDescending(x => x.Count())
+                                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
+                             (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
             if (MaxCommitters.HasValue && committers.Count > MaxCommitters.Value) {
                 committers = committers.Take(MaxCommitters.Value).ToList();
             }
+
             Committers = committers;
         });
     }
@@ -146,12 +150,14 @@
         var builder = new DefaultInterpolatedStringHandler();
         if (!IsLoaded) {
             builder.AppendLiteral(" loading");
-        } else if (BuildInfo?.Status == BuildStatus.Failed) {
+        }
+        else if (BuildInfo?.Status == BuildStatus.Failed) {
             builder.AppendLiteral(" failed");
             if (Committers.Any()) {
                 builder.AppendLiteral(" with-committers");
             }
         }
+
         return builder.ToStringAndClear();
     }
 

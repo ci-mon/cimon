@@ -1,4 +1,4 @@
-﻿@page "/MonitorList"
+﻿@page "/monitorList"
 @using Cimon.Data.Monitors
 @using Cimon.Data.Users
 @using Cimon.DB.Models
@@ -10,91 +10,67 @@
 @inject NavigationManager NavigationManager
 @inject IMediator Mediator; 
 @inherits ReactiveComponent
-
-<RadzenCard class="rz-mt-4 main-panel">
-    <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="true"
-                    Data="@_monitors.Value.Where(GetIsShowMonitor)" TItem="MonitorModel">
-        <Template Context="monitor">
-            <RadzenCard class="monitor-item">
-                <RadzenRow>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
-                </RadzenRow>
-                <div>
+<SectionContent SectionName="body-content">
+    <RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
+        <AuthorizeView>
+            <RadzenButton aria-label="add-monitor" Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
+        </AuthorizeView>
+    </RadzenStack>
+</SectionContent>
+<div>
+    <RadzenPager class="monitor-pager" HorizontalAlign="HorizontalAlign.Center" Count="@_count" PageSize="@_pageSize" PageNumbersCount="5" PageChanged="@PageChanged"/>
+    <RadzenCard class="rz-mt-4 main-panel">
+        <RadzenDataList PageSize="16" WrapItems="true" AllowPaging="false"
+                        Data="_items" TItem="MonitorModel">
+            <Template Context="monitor">
+                <RadzenCard class="monitor-item">
                     <RadzenRow>
-                        <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
+                        <RadzenColumn>
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
+                                <AuthorizeView Policy="EditMonitor" Resource="monitor">
+                                    <RadzenButton data-qa="setup" Variant="Variant.Text" Icon="settings" Click="() => SetupMonitor(monitor)"/>
+                                    <RadzenButton data-qa="remove" Variant="Variant.Text" Icon="delete" Click="() => Remove(monitor)"/>
+                                </AuthorizeView>
+                            </RadzenRow>
+                        </RadzenColumn>
                     </RadzenRow>
                     <RadzenRow>
-                        <RadzenText data-qa="monitor-item-owner" TextStyle="TextStyle.H6" 
+                        <RadzenLink Path="@($"monitor/{monitor.Key}")">
+                            <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
+                        </RadzenLink>
+                    </RadzenRow>
+                    <RadzenRow>
+                        <RadzenText data-qa="monitor-item-owner" TextStyle="TextStyle.H6"
                                     Text=@($"{monitor.Owner?.FullName}") class="me-1"/>
                     </RadzenRow>
-                    <RadzenRow class="item-actions" JustifyContent="JustifyContent.End">
-                        <AuthorizeView Policy="EditMonitor" Resource="monitor">
-                            <RadzenButton data-qa="remove" Variant="Variant.Text" Icon="remove" Click="() => Remove(monitor)"/>
-                            <RadzenButton data-qa="setup" Variant="Variant.Text" Text="Setup" Click="() => SetupMonitor(monitor)"/>
-                        </AuthorizeView>
-                        <RadzenButton data-qa="view" Variant="Variant.Text" Text="Open" Click="() => ViewMonitor(monitor)"/>
-                    </RadzenRow>
-                </div>
-            </RadzenCard>
-        </Template>
-    </RadzenDataList>
 
-</RadzenCard>
-<RadzenStack class="bottom-panel" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" JustifyContent="JustifyContent.End">
-    <AuthorizeView>
-        <RadzenButton aria-label="add-monitor" Click="Add" Icon="add" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" class="rz-border-radius-10 rz-shadow-8"/>
-    </AuthorizeView>
-</RadzenStack>
-<style>
-    .bottom-panel {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        padding: 1em;
-        pointer-events: none;
-    }
-    .bottom-panel button {
-        pointer-events: all;
-    }
-    .main-panel {
-        height: 100%;
-        margin-top: 0px !important;
-    }
-    .main-panel .rz-paginator {
-        justify-content: center;
-    }
-    .main-panel .rz-datalist-content .rz-paginator-next
-     ,.main-panel .rz-datalist-content .rz-paginator-prev{
-        margin-right: 0;
-        margin-left: 0;
-    }
-    .main-panel .rz-datalist-content {
-        height: calc(100% - 40px);
-    }
-    .main-panel .rz-datalist-content .rz-g {
-        height: 100%;
-        display: grid;
-        grid-template-columns: auto auto auto auto;
-    }
-    .monitor-item {
-        max-height: 200px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .item-actions {
-        position: relative;
-        bottom: 0px;
-    }
-</style>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+
+    </RadzenCard>
+</div>
 
 @code {
 
     private ReactiveValue<IReadOnlyList<MonitorModel>> _monitors = new(ArraySegment<MonitorModel>.Empty);
     private User? _user;
+    readonly int _pageSize = 35;
+    int _count;
+    IEnumerable<MonitorModel> _items;
+
+    void PageChanged(PagerEventArgs args) {
+        _count = _monitors.Value!.Count;
+        _items = _monitors.Value!.Where(GetIsShowMonitor).Skip(args.Skip).Take(args.Top);
+    }
+
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
-        Subscribe(ref _monitors, MonitorService.GetMonitors());
+        Subscribe(ref _monitors, MonitorService.GetMonitors())
+            .OnChange(_ => PageChanged(new PagerEventArgs { Top = _pageSize, Skip = 0 }));
         _user = await CurrentUserAccessor.Current;
     }
 

@@ -55,7 +55,7 @@
 
 button.rz-button.discussion-button {
     padding: 0;
-    position: absolute;
+    /*position: absolute;*/
 }
 
 button.rz-button.discussion-button:hover {
@@ -223,20 +223,24 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
             justify-content: flex-end;
         }
         &.failed {
-            .build-info-link {
-                 margin-left: 22px;
-            }
             .build-name-and-status {
                 flex-direction: row !important;
+                .build-name {
+                    flex-direction: row-reverse !important;
+                    .rz-badge {
+                        padding: 0;
+                        margin-right: 4px;
+                        margin-left: 4px !important;
+                    }
+                    .build-info-link {
+                        padding-top: 2px;
+                        align-self: baseline;
+                    }
+                }
             }
             .build-status {
                 align-self: self-end;
             }
-        }
-        .discussion-button {
-            position: fixed !important;
-            top: 4px;
-            left: -6px;
         }
     }
 }

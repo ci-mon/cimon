@@ -1,0 +1,31 @@
+﻿::deep .monitor-pager {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: var(--bs-body-bg);
+}
+::deep .main-panel {
+    height: 100%;
+    margin-top: 0 !important;
+    padding: 2em;
+    .rz-datalist-content .rz-paginator-next
+    ,.rz-datalist-content .rz-paginator-prev{
+        margin-right: 0;
+        margin-left: 0;
+    }
+    .rz-datalist-content {
+        height: calc(100% - 40px);
+    }
+    .rz-datalist-content .rz-g {
+        height: 100%;
+    }
+}
+::deep .monitor-item {
+    max-height: 200px;
+    min-width: 200px;
+    max-width: 400px;
+}
+::deep .item-actions {
+    position: relative;
+    bottom: 0;
+}
