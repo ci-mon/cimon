@@ -89,9 +89,16 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
-builder.Services.AddHealthChecksUI(settings =>
-		settings.SetEvaluationTimeInSeconds(60 * 5).AddHealthCheckEndpoint("local", "/healthz"))
-	.AddInMemoryStorage();
+builder.Services.AddHealthChecksUI(settings => {
+	var localAddress = builder.Configuration.GetValue<string>("LOCAL_ADDRESS");
+	var healthcheckAddress = "/healthz";
+	if (!string.IsNullOrWhiteSpace(localAddress) && Uri.TryCreate(localAddress, UriKind.Absolute, out var uri)
+			&& Uri.TryCreate(uri, healthcheckAddress, out var healthcheckUri)) {
+		healthcheckAddress = healthcheckUri.AbsoluteUri;
+	}
+	settings.SetEvaluationTimeInSeconds(60 * 5).AddHealthCheckEndpoint("local", healthcheckAddress);
+})
+.AddInMemoryStorage();
 builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures.UseSmartComponentsToFindFailureSuspect>());
 
 WebApplication app = builder.Build();
