@@ -37,8 +37,7 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                         name: "FK_ConnectedMonitors_Monitors_SourceMonitorModelId",
                         column: x => x.SourceMonitorModelId,
                         principalTable: "Monitors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(

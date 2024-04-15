@@ -41,7 +41,8 @@ public class CimonDbContext : DbContext
 		modelBuilder.Entity<Team>().HasMany(x => x.ChildTeams).WithMany();
 		modelBuilder.Entity<BuildInMonitor>().HasKey(x => new { x.MonitorId, x.BuildConfigId });
 		modelBuilder.Entity<ConnectedMonitor>().HasKey(x => new { x.SourceMonitorModelId, x.ConnectedMonitorModelId });
-		modelBuilder.Entity<Monitor>().HasMany(x => x.ConnectedMonitors).WithOne(x => x.SourceMonitorModel);
+		modelBuilder.Entity<Monitor>().HasMany(x => x.ConnectedMonitors)
+			.WithOne(x => x.SourceMonitorModel).OnDelete(DeleteBehavior.NoAction);
 		modelBuilder.Entity<BuildConfigModel>().Property(x => x.AllowML).HasDefaultValue(true);
 	}
 }

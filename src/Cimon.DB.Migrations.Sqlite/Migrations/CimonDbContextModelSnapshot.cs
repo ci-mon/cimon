@@ -389,7 +389,7 @@ namespace Cimon.DB.Migrations.Sqlite.Migrations
                     b.HasOne("Cimon.DB.Models.MonitorModel", "SourceMonitorModel")
                         .WithMany("ConnectedMonitors")
                         .HasForeignKey("SourceMonitorModelId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("ConnectedMonitorModel");
