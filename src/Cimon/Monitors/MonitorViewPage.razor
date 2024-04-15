@@ -13,9 +13,11 @@
 @inject NavigationManager NavigationManager
 
 @if (_errorMessage != null) {
-    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
-        <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
-    </RadzenRow>
+    <div class="monitor">
+         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
+            </RadzenRow>
+    </div>
 }
 @if (_monitor.Value is { } monitor) {
     if (monitor.Monitor.Type == MonitorType.Simple) {
@@ -74,6 +76,7 @@
         await base.InitializeReactiveValues();
         var subj = await MonitorServiceActor.ActorRef.Ask(new ActorsApi.WatchMonitor(MonitorKey!));
         Subscribe(ref _monitor, subj).OnChange(data => {
+            _errorMessage = null;
             _connectedMonitors = data.Monitor.ConnectedMonitors.ToList();
             _activeConnectedMonitor = _connectedMonitors?.FirstOrDefault();
             if (data.Monitor.Type == MonitorType.Group) {
