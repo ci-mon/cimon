@@ -92,11 +92,10 @@
         if (_cancellationTokenSource is not null) {
             return;
         }
-
         _cancellationTokenSource = new CancellationTokenSource();
         Task.Run(async () => {
             while (!_cancellationTokenSource.IsCancellationRequested) {
-                await Task.Delay(TimeSpan.FromSeconds(3000));
+                await Task.Delay(TimeSpan.FromSeconds(30));
                 await Navigate(1);
             }
         });
@@ -105,6 +104,8 @@
     protected override void Dispose(bool disposing) {
         base.Dispose(disposing);
         _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = null;
     }
 
     private async Task Navigate(int delta) {
