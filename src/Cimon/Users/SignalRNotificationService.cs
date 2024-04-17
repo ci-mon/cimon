@@ -14,7 +14,7 @@ public class SignalRNotificationService : INotificationService, INotificationHan
 		_hubContext = hubContext;
 	}
 
-	public async Task Notify(int buildConfigId, string commentId, User messageAuthor, 
+	public async Task Notify(int buildConfigId, string commentId, User messageAuthor,
 			IReadOnlyCollection<MentionedEntityId> groups, string comment) {
 		var groupNames = groups.Select(x=>x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
 		await _hubContext.Clients.Groups(groupNames)

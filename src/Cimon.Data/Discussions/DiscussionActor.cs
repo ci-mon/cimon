@@ -112,7 +112,7 @@ public class DiscussionActor : ReceiveActor
 		await _notificationService.Notify(_buildConfig.Id, comment.Id, data.Author, comment.Mentions,
 			commentSimpleText);
 	}
-	
+
 	private string ExtractText(BuildComment comment) {
 		var context = BrowsingContext.New(Configuration.Default);
 		var parser = context.GetService<IHtmlParser>() ?? throw new InvalidOperationException("Can't get parser");

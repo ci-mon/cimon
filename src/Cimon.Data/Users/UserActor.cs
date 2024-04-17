@@ -94,6 +94,10 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
 
     private async Task OnMonitorInfoUpdated(MonitorInfo msg) {
         if (_latestMonitorInfo?.Equals(msg) == true) return;
+        await SendMonitorInfo(msg);
+    }
+
+    private async Task SendMonitorInfo(MonitorInfo msg) {
         _latestMonitorInfo = msg;
         var userName = GetUserName();
         await _hubAccessor.Group(userName).UpdateMonitorInfo(msg);
@@ -116,14 +120,16 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
 
     private async Task SubscribeToMonitor(ActorsApi.SubscribeToLastMonitor msg) {
         var monitorId = await _mediator.Send<string?>(new GetDefaultMonitorRequest(_user));
-        ChangeWatchedMonitor(monitorId);
+        if (!ChangeWatchedMonitor(monitorId) && _latestMonitorInfo is not null) {
+            await SendMonitorInfo(_latestMonitorInfo);
+        }
     }
 
     private void UpdateLastMonitor(ActorsApi.UpdateLastMonitor msg) => ChangeWatchedMonitor(msg.MonitorId);
     private void UnSubscribeFromMonitor(ActorsApi.UnSubscribeFromLastMonitor msg) => ChangeWatchedMonitor(null);
 
-    private void ChangeWatchedMonitor(string? monitorId) {
-        if (monitorId == _lastMonitorId) return;
+    private bool ChangeWatchedMonitor(string? monitorId) {
+        if (monitorId == _lastMonitorId) return false;
         _latestMonitorInfo = null;
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
             _monitorServiceActor.Tell(new ActorsApi.UnWatchMonitorByActor(_lastMonitorId!));
@@ -132,6 +138,7 @@ public class UserActor : ReceiveActor, IWithUnboundedStash
         if (!string.IsNullOrEmpty(_lastMonitorId)) {
             _monitorServiceActor.Tell(new ActorsApi.WatchMonitorByActor(_lastMonitorId));
         }
+        return true;
     }
 
     private void OnCheckMentionSubscriptionsCount(CheckMentionSubscriptionsCount obj) {
