@@ -14,9 +14,9 @@
 
 @if (_errorMessage != null) {
     <div class="monitor">
-         <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
-                <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
-            </RadzenRow>
+        <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.H1">@_errorMessage</RadzenText>
+        </RadzenRow>
     </div>
 }
 @if (_monitor.Value is { } monitor) {
@@ -27,20 +27,21 @@
         @if (_connectedMonitors!.Count > 1) {
             <SectionContent SectionName="body-content">
                 <div class="monitor-group-controls">
-                    <div class="nav-button previous">
-                        <div onclick="@(() => Navigate(-1))">
-                            <RadzenIcon Icon="navigate_before"/>
+                    @foreach (var connectedMonitor in _connectedMonitors!) {
+                        var isActive = connectedMonitor == _activeConnectedMonitor;
+                        var icon = isActive ? "radio_button_checked" : "radio_button_unchecked";
+                        var classes = "nav-button" + (isActive ? " active" : " inactive");
+                        var style = "animation-duration: " + _changeDelaySeconds + "s;";
+                        <div class="@classes">
+                            <div onclick="@(() => SetActiveMonitor(connectedMonitor))">
+                                <RadzenIcon Style="@style" Icon="@icon"/>
+                            </div>
                         </div>
-                    
-                    </div>
-                    <div class="nav-button next">
-                        <div onclick="@(() => Navigate(1))">
-                            <RadzenIcon Icon="navigate_next"/>
-                        </div>
-                    </div>
+                    }
                 </div>
             </SectionContent>
         }
+
         foreach (var connected in _connectedMonitors!) {
             <MonitorViewLoader Visible="@(connected == _activeConnectedMonitor)" MonitorKey="@connected.ConnectedMonitorModel.Key"></MonitorViewLoader>
         }
@@ -54,6 +55,7 @@
     private List<ConnectedMonitor>? _connectedMonitors;
     private ConnectedMonitor? _activeConnectedMonitor;
     private CancellationTokenSource? _cancellationTokenSource;
+    private double _changeDelaySeconds = 30;
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
@@ -88,24 +90,28 @@
         }
     }
 
+    private void StopActiveMonitorRotation() {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = null;
+    }
+
     private void StartActiveMonitorRotation() {
         if (_cancellationTokenSource is not null) {
             return;
         }
-        _cancellationTokenSource = new CancellationTokenSource();
+        var tokenSource = _cancellationTokenSource = new CancellationTokenSource();
         Task.Run(async () => {
-            while (!_cancellationTokenSource.IsCancellationRequested) {
-                await Task.Delay(TimeSpan.FromSeconds(30));
+            while (!tokenSource.IsCancellationRequested) {
+                await Task.Delay(TimeSpan.FromSeconds(_changeDelaySeconds), tokenSource.Token);
                 await Navigate(1);
             }
-        });
+        }, tokenSource.Token);
     }
 
     protected override void Dispose(bool disposing) {
         base.Dispose(disposing);
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
-        _cancellationTokenSource = null;
+        StopActiveMonitorRotation();
     }
 
     private async Task Navigate(int delta) {
@@ -114,11 +120,19 @@
         index += delta;
         if (index >= _connectedMonitors.Count) {
             index = 0;
-        } else if (index < 0) {
+        }
+        else if (index < 0) {
             index = _connectedMonitors.Count - 1;
         }
         _activeConnectedMonitor = _connectedMonitors[index];
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetActiveMonitor(ConnectedMonitor monitor) {
+        StopActiveMonitorRotation();
+        _activeConnectedMonitor = monitor;
+        StartActiveMonitorRotation();
+        StateHasChanged();
     }
 
 }

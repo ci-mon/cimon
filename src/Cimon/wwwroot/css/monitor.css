@@ -313,33 +313,41 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         position: fixed;
     }
 }
+@keyframes hide-circle {
+    0% { clip-path: polygon(50% 55%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0); }
+    13% { clip-path: polygon(50% 50%, 75% 25%, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0); }
+    25% { clip-path: polygon(50% 50%, 75% 50%, 100% 50%, 100% 100%, 0 100%, 0 0, 50% 0); }
+    38% { clip-path: polygon(50% 50%, 50% 50%, 100% 100%, 100% 100%, 0 100%, 0 0, 50% 0); }
+    50% { clip-path: polygon(50% 50%, 50% 50%, 50% 100%, 50% 100%, 0 100%, 0 0, 50% 0); }
+    63% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 0 100%, 0 100%, 0 0, 50% 0); }
+    75% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 0 50%, 0 0, 50% 0); }
+    88% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 25% 25%, 0 0, 50% 0); }
+    100% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 25% 0, 50% 0); }
+}
 .monitor-group-controls {
-    font-size: 80px;
-    cursor: pointer;
+    position: fixed;
+    bottom: 0;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    opacity: 0.3;
     .nav-button {
-        opacity: 0.05;
         transition: opacity 0.2s ease-in-out;
-        position: fixed;
-        margin: -20px;
-        top: 40%;
-        pointer-events: auto;
-        cursor: auto;
-        &.previous {
-            padding: 70px 70px 70px 0;
-        }
-        &.next {
-            right: 0;
-            padding: 70px 0 70px 70px;
-        }
         i {
             cursor: pointer;
             color: #232323;
-            font-size: 80px;
+            font-size: 2em;
+            font-weight: bold;
             position: relative;
         }
+        &.active i {
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: 1;
+            animation-name: hide-circle;
+        }
     }
-    .nav-button:hover {
-        opacity: 1;
-        transition: opacity 0.5s ease-in-out;
-    }
+}
+.monitor-group-controls:hover {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
 }
