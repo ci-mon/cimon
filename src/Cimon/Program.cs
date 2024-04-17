@@ -21,6 +21,7 @@ using Cimon.Users;
 using HealthChecks.UI.Client;
 using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Radzen;
@@ -31,6 +32,10 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
 	loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
 builder.Configuration.AddEnvironmentVariables("CIMON_");
+if (builder.Configuration["DataProtection:Path"] is { Length: > 0 } path) {
+	builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(path));
+	Console.WriteLine($"Data protection keys path set to: {path}");
+}
 builder.Services.AddAuth();
 builder.Services.AddCors();
 builder.Services.AddRazorPages();

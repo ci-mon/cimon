@@ -84,7 +84,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
                 .Append("/MIR")
                 .Append("/R:15")
                 .Append("/W:5")
-                .Append("/XD").AppendQuoted("nativeApps").AppendQuoted("db")
+                .Append("/XD").AppendQuoted("nativeApps").AppendQuoted("db").AppendQuoted("logs")
         });
         context.StartPowershellScript($"Start-WebAppPool -Name \"{context.AppPoolName}\"", new PowershellSettings {
             ComputerName = deployServerName,
