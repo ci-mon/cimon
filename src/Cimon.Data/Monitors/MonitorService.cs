@@ -28,8 +28,9 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 			               (user?.Roles.Contains("monitor-editor") ?? false))).ToList());
 
 	public async Task<Monitor> Copy(User user, Monitor source) {
+		ArgumentNullException.ThrowIfNull(user);
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
+		var userModel = await ctx.Users.SingleAsync(x => x.Id == user.Id);
 		var monitor = new Monitor {
 			Key = Guid.NewGuid().ToString("D"),
 			Title = $"Copy of {source.Title}",
@@ -52,8 +53,9 @@ public class MonitorService : IReactiveRepositoryApi<IImmutableList<Monitor>>
 	}
 
 	public async Task<Monitor> Add(User user, MonitorType monitorType) {
+		ArgumentNullException.ThrowIfNull(user);
 		await using var ctx = await _contextFactory.CreateDbContextAsync();
-		var userModel = await ctx.Users.SingleOrDefaultAsync(x => x.Id == user.Id);
+		var userModel = await ctx.Users.SingleAsync(x => x.Id == user.Id);
 		var monitor = new Monitor {
 			Key = Guid.NewGuid().ToString("D"),
 			Title = monitorType == MonitorType.Simple ? "Untitled" : "Untitled Group",
