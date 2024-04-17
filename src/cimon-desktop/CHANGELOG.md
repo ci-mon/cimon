@@ -1,5 +1,9 @@
 # cimon-desktop changelog
 
+## 1.0.20
+1. [bug] Discussion window not visible after click on notification if main window minimized
+2.
+
 ## 1.0.19
 1. added icon overlay
 2. added setting to not hide window when minimized

@@ -278,6 +278,9 @@ export class CimonApp {
 
   private async _onOpenDiscussionWindow(url: string) {
     if (!this._discussionWindow || this._discussionWindow.isDestroyed()) {
+      if (this._window?.isDestroyed() === false) {
+        this._window.show();
+      }
       this._discussionWindow = new BrowserWindow({
         webPreferences: {
           session: this._session,
@@ -289,7 +292,7 @@ export class CimonApp {
         center: true,
         width: 600,
         height: 800,
-        modal: true,
+        modal: this._window?.isDestroyed() == false,
         parent: this._window,
       });
       this._hideWindowOnEsc(this._discussionWindow, 'close');
@@ -651,6 +654,11 @@ export class CimonApp {
       if (!this._getIsAllGood()) {
         win.once('focus', () => win.flashFrame(false));
         win.flashFrame(true);
+        setTimeout(() => {
+          if (!win.isDestroyed()) {
+            win.flashFrame(false);
+          }
+        }, 30 * 1000);
         if (process.platform === 'win32') {
           setTimeout(async () => {
             const overlayImage = await this._getOverlayImage();
