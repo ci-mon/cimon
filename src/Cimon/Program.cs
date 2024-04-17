@@ -91,12 +91,12 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 builder.Services.AddHealthChecksUI(settings => {
 	var localAddress = builder.Configuration.GetValue<string>("LOCAL_ADDRESS");
-	var healthcheckAddress = "/healthz";
+	var healthCheckAddress = "/healthz";
 	if (!string.IsNullOrWhiteSpace(localAddress) && Uri.TryCreate(localAddress, UriKind.Absolute, out var uri)
-			&& Uri.TryCreate(uri, healthcheckAddress, out var healthcheckUri)) {
-		healthcheckAddress = healthcheckUri.AbsoluteUri;
+			&& Uri.TryCreate(uri, healthCheckAddress, out var healthcheckUri)) {
+		healthCheckAddress = healthcheckUri.AbsoluteUri;
 	}
-	settings.SetEvaluationTimeInSeconds(60 * 5).AddHealthCheckEndpoint("local", healthcheckAddress);
+	settings.SetEvaluationTimeInSeconds(60 * 5).AddHealthCheckEndpoint("local", healthCheckAddress);
 })
 .AddInMemoryStorage();
 builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures.UseSmartComponentsToFindFailureSuspect>());
