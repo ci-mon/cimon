@@ -622,6 +622,8 @@ export class CimonApp {
     }
     this._window!.show();
     await this._window!.loadURL(options.lastMonitor);
+    const icon = this._getCurrentStatusIcon();
+    this._setMainWindowIcon(this._window!, icon, false);
   }
 
   public setUpdateReady() {
@@ -650,8 +652,14 @@ export class CimonApp {
     this._tray.setImage(image);
     const win = this._window;
     if (win?.isDestroyed() === false) {
-      win.setIcon(image);
-      if (!this._getIsAllGood()) {
+      this._setMainWindowIcon(win, image);
+    }
+  }
+
+  private _setMainWindowIcon(win: Electron.CrossProcessExports.BrowserWindow, image: string, flash = true) {
+    win.setIcon(image);
+    if (!this._getIsAllGood()) {
+      if (flash) {
         win.once('focus', () => win.flashFrame(false));
         win.flashFrame(true);
         setTimeout(() => {
@@ -659,18 +667,18 @@ export class CimonApp {
             win.flashFrame(false);
           }
         }, 30 * 1000);
-        if (process.platform === 'win32') {
-          setTimeout(async () => {
-            const overlayImage = await this._getOverlayImage();
-            if (overlayImage) {
-              win.setOverlayIcon(overlayImage, 'Failed build count');
-            }
-          }, 0);
-        }
-      } else {
-        win.flashFrame(false);
-        win.setOverlayIcon(null, '');
       }
+      if (process.platform === 'win32') {
+        setTimeout(async () => {
+          const overlayImage = await this._getOverlayImage();
+          if (overlayImage) {
+            win.setOverlayIcon(overlayImage, 'Failed build count');
+          }
+        }, 0);
+      }
+    } else {
+      win.flashFrame(false);
+      win.setOverlayIcon(null, '');
     }
   }
 

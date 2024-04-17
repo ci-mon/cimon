@@ -2,7 +2,7 @@
 
 ## 1.0.20
 1. [bug] Discussion window not visible after click on notification if main window minimized
-2.
+2. Actualize icon when window opened
 
 ## 1.0.19
 1. added icon overlay
