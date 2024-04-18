@@ -29,7 +29,8 @@
                         <RadzenColumn>
                             @if (monitor.Type == MonitorType.Simple) {
                                 <RadzenBadge BadgeStyle="BadgeStyle.Success" Text=@(monitor.Builds.Count.ToString())/>
-                            } else {
+                            }
+                            else {
                                 <RadzenBadge IsPill="true" BadgeStyle="BadgeStyle.Info" Text=@(monitor.ConnectedMonitors.Count.ToString())/>
                             }
                         </RadzenColumn>
@@ -38,12 +39,14 @@
                                 <AuthorizeView Policy="EditMonitor" Resource="monitor">
                                     <RadzenButton data-qa="setup" Variant="Variant.Text" Icon="settings" Click="() => SetupMonitor(monitor)"/>
                                 </AuthorizeView>
-                                <RadzenButton data-qa="copy" Variant="Variant.Text" Icon="content_copy" Click="() => CopyMonitor(monitor)"/>
+                                <AuthorizeView>
+                                    <RadzenButton data-qa="copy" Variant="Variant.Text" Icon="content_copy" Click="() => CopyMonitor(monitor)"/>
+                                </AuthorizeView>
                             </RadzenRow>
                         </RadzenColumn>
                     </RadzenRow>
                     <RadzenRow>
-                        <RadzenLink Path="@($"monitor/{monitor.Key}")" Attributes="@(new Dictionary<string, object>{{"data-qa", "view"}})">
+                        <RadzenLink Path="@($"monitor/{monitor.Key}")" Attributes="@(new Dictionary<string, object> { { "data-qa", "view" } })">
                             <RadzenText data-qa="monitor-item-title" TextStyle="TextStyle.H2" Text=@($"{monitor.Title}") class="me-1"/>
                         </RadzenLink>
                     </RadzenRow>
@@ -82,6 +85,7 @@
     private async Task Add() {
         await MonitorService.Add(_user!, MonitorType.Simple);
     }
+
     private async Task AddGroup() {
         await MonitorService.Add(_user!, MonitorType.Group);
     }

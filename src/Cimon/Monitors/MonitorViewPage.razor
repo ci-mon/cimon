@@ -41,7 +41,6 @@
                 </div>
             </SectionContent>
         }
-
         foreach (var connected in _connectedMonitors!) {
             <MonitorViewLoader Visible="@(connected == _activeConnectedMonitor)" MonitorKey="@connected.ConnectedMonitorModel.Key"></MonitorViewLoader>
         }
