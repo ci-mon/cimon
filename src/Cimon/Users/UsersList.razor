@@ -13,7 +13,10 @@
 
 <RadzenLayout Style="padding: 1em">
     <RadzenStack Orientation="Orientation.Vertical">
-        <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="40" AllowSorting="true" EditMode="DataGridEditMode.Single"
+        <RadzenStack JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End">
+            <RadzenToggleButton Value="_showOnlineOnly" ValueChanged="OnShowOnlineOnlyChanged" Title="Show online" Icon="public" />
+        </RadzenStack>
+        <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PagerPosition="PagerPosition.Top" PageSize="30" AllowSorting="true" EditMode="DataGridEditMode.Single"
                         Data="@Items" TItem="User" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
             <Columns>
                 <RadzenDataGridColumn TItem="User" Property="Name" Title="Name" Width="180px">
@@ -22,35 +25,41 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="FullName" Title="FullName" Width="180px">
-                                    <Template Context="user">
-                                        @user.FullName
-                                    </Template>
-                                </RadzenDataGridColumn>
+                    <Template Context="user">
+                        @user.FullName
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
-                                    <Template Context="user">
-                                        @string.Join(",", user.Roles.Select(x=>x.Name))
-                                    </Template>
-                                </RadzenDataGridColumn>
+                    <Template Context="user">
+                        @string.Join(",", user.Roles.Select(x => x.Name))
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
-                                    <Template Context="user">
-                                        @string.Join(",", user.Teams.Select(x=>x.Name))
-                                    </Template>
-                                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="180px">
-                                    <Template Context="user">
-                                        @user.AllowLocalLogin
-                                    </Template>
-                                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="IsDeactivated" Title="IsDeactivated" Width="180px">
-                                    <Template Context="user">
-                                        @user.IsDeactivated
-                                    </Template>
-                                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                    <Template Context="user">
+                        @string.Join(",", user.Teams.Select(x => x.Name))
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="80px">
+                    <Template Context="user">
+                        @user.AllowLocalLogin
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Property="IsDeactivated" Title="IsDeactivated" Width="80px">
+                    <Template Context="user">
+                        @user.IsDeactivated
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Filterable="false" Title="Is online" Width="80px">
                     <Template Context="user">
                         @if (_usersOnline.Value is { } onlineUsers && onlineUsers.Contains(user.Name)) {
-                            <RadzenBadge Text="Online" IsPill="@true" />
+                            <RadzenBadge Text="Online" BadgeStyle="BadgeStyle.Success" IsPill="@true"/>
+                        } else {
+                            <RadzenBadge Text="Offline" BadgeStyle="BadgeStyle.Warning" IsPill="@true"/>
                         }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                    <Template Context="user">
                         @if (user.IsDeactivated) {
                             <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Activate" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
                             </RadzenButton>
@@ -78,8 +87,10 @@
 @code {
 
     private ReactiveValue<IImmutableSet<string>> _usersOnline;
+    private bool _showOnlineOnly;
     protected override IQueryable<User> GetItems() {
-        return DbContext.Users.OrderBy(x=>x.Id).Include(x => x.Teams).Include(x => x.Roles);
+        var items = DbContext.Users.OrderBy(x=>x.Id).Include(x => x.Teams).Include(x => x.Roles);
+        return _showOnlineOnly && _usersOnline.Value is { } onlineUsers ? items.Where(x => onlineUsers.Contains(x.Name)) : items;
     }
 
     private async Task Deactivate(User value) {
@@ -93,7 +104,16 @@
     protected override async Task InitializeReactiveValues() {
         await base.InitializeReactiveValues();
         var activeUsers = await UserSupervisorActor.ActorRef.Ask(new ActorsApi.GetActiveUserNames());
-        Subscribe(ref _usersOnline, activeUsers);
+        Subscribe(ref _usersOnline, activeUsers).OnChange(set => {
+            RefreshItems();
+        });
+    }
+
+    private void OnShowOnlineOnlyChanged(bool value) {
+        _showOnlineOnly = value;
+        RefreshItems();
+        Grid.Reload();
+        StateHasChanged();
     }
 
 }
