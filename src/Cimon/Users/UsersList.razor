@@ -28,12 +28,12 @@
                     @user.FullName
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
+            <RadzenDataGridColumn TItem="User" Filterable="false" Property="Roles" Title="Roles" Width="180px">
                 <Template Context="user">
                     @string.Join(",", user.Roles.Select(x => x.Name))
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
+            <RadzenDataGridColumn TItem="User" Filterable="false" Property="Teams" Title="Teams" Width="180px">
                 <Template Context="user">
                     @string.Join(",", user.Teams.Select(x => x.Name))
                 </Template>
