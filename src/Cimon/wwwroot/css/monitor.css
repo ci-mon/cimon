@@ -347,6 +347,13 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         }
     }
 }
+.monitor-group-controls.paused {
+    opacity: .8;
+    .nav-button.active i {
+        animation: none;
+        color: #8bc34ade;
+    }
+}
 .monitor-group-controls:hover {
     opacity: 1;
     transition: opacity 0.5s ease-in-out;

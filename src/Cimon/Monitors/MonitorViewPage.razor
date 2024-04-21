@@ -25,17 +25,20 @@
     }
     else if (monitor.Monitor.Type == MonitorType.Group) {
         @if (_connectedMonitors!.Count > 1) {
+            var wrapClasses ="monitor-group-controls";
+            if (_paused) {
+                wrapClasses += " paused";
+            }
             <SectionContent SectionName="body-content">
-                <div class="monitor-group-controls">
+                <div class="@wrapClasses">
                     @foreach (var connectedMonitor in _connectedMonitors!) {
                         var isActive = connectedMonitor == _activeConnectedMonitor;
                         var icon = isActive ? "radio_button_checked" : "radio_button_unchecked";
                         var classes = "nav-button" + (isActive ? " active" : " inactive");
                         var style = "animation-duration: " + _changeDelaySeconds + "s;";
-                        <div class="@classes">
-                            <div onclick="@(() => SetActiveMonitor(connectedMonitor))">
-                                <RadzenIcon Style="@style" Icon="@icon"/>
-                            </div>
+                        <div title="@connectedMonitor.ConnectedMonitorModel.Title" class="@classes"
+                             onclick="@(() => SetActiveMonitor(connectedMonitor))">
+                            <RadzenIcon Style="@style" Icon="@icon"/>
                         </div>
                     }
                 </div>
@@ -54,7 +57,8 @@
     private List<ConnectedMonitor>? _connectedMonitors;
     private ConnectedMonitor? _activeConnectedMonitor;
     private CancellationTokenSource? _cancellationTokenSource;
-    private double _changeDelaySeconds = 30;
+    private readonly double _changeDelaySeconds = 30;
+    private bool _paused;
 
     protected override async Task OnParametersSetAsync() {
         await base.OnParametersSetAsync();
@@ -129,8 +133,14 @@
 
     private void SetActiveMonitor(ConnectedMonitor monitor) {
         StopActiveMonitorRotation();
-        _activeConnectedMonitor = monitor;
-        StartActiveMonitorRotation();
+        if (_activeConnectedMonitor == monitor) {
+            _paused = !_paused;
+        } else {
+            _activeConnectedMonitor = monitor;
+        }
+        if (!_paused) {
+            StartActiveMonitorRotation();
+        }
         StateHasChanged();
     }
 
