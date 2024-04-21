@@ -1,0 +1,1 @@
+./build.ps1 --Target=deploy --deploy-server-name=%name% --deploy-path=%path%
