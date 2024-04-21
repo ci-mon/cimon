@@ -68,8 +68,22 @@ public sealed class DeployTask : FrostingTask<BuildContext>
                     $ProcessId = $match.Groups[1].Value
                     Write-Host "Killing process ID: $ProcessId"
                     # Kill the process
-                    sleep 15;
-                    Stop-Process -Id $ProcessId -Force
+                    $counter = 15;
+                    Write-Host "Waiting for process to stop"
+                    $processStopped = $false
+                    while ($counter -gt 0) {
+                        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+                        if ($process -eq $null) {
+                            $processStopped = $true
+                            break
+                        }
+                        Start-Sleep 1
+                        $counter--;
+                    }
+                    if (-not $processStopped) {
+                        Write-Host "Process did not stop in time, killing it"
+                        Stop-Process -Id $ProcessId -Force
+                    }
                 }
             """;
         context.StartPowershellScript(stopPoolScript, new PowershellSettings {
