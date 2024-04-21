@@ -11,78 +11,76 @@
 @inject UserManager UserManager;
 @inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
 
-<RadzenLayout Style="padding: 1em">
-    <RadzenStack Orientation="Orientation.Vertical">
-        <RadzenStack JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End">
-            <RadzenToggleButton Value="_showOnlineOnly" ValueChanged="OnShowOnlineOnlyChanged" Title="Show online" Icon="public" />
-        </RadzenStack>
-        <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PagerPosition="PagerPosition.Top" PageSize="30" AllowSorting="true" EditMode="DataGridEditMode.Single"
-                        Data="@Items" TItem="User" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
-            <Columns>
-                <RadzenDataGridColumn TItem="User" Property="Name" Title="Name" Width="180px">
-                    <Template Context="user">
-                        @user.Name
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="FullName" Title="FullName" Width="180px">
-                    <Template Context="user">
-                        @user.FullName
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
-                    <Template Context="user">
-                        @string.Join(",", user.Roles.Select(x => x.Name))
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
-                    <Template Context="user">
-                        @string.Join(",", user.Teams.Select(x => x.Name))
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="80px">
-                    <Template Context="user">
-                        @user.AllowLocalLogin
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Property="IsDeactivated" Title="IsDeactivated" Width="80px">
-                    <Template Context="user">
-                        @user.IsDeactivated
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Filterable="false" Title="Is online" Width="80px">
-                    <Template Context="user">
-                        @if (_usersOnline.Value is { } onlineUsers && onlineUsers.Contains(user.Name)) {
-                            <RadzenBadge Text="Online" BadgeStyle="BadgeStyle.Success" IsPill="@true"/>
-                        } else {
-                            <RadzenBadge Text="Offline" BadgeStyle="BadgeStyle.Warning" IsPill="@true"/>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
-                    <Template Context="user">
-                        @if (user.IsDeactivated) {
-                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Activate" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
-                            </RadzenButton>
-                        } else {
-                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person_off" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Deactivate" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
-                            </RadzenButton>
-                        }
-                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))" @onclick:stopPropagation="true">
-                        </RadzenButton>
-                    </Template>
-                    <EditTemplate Context="user">
-                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(user))">
-                        </RadzenButton>
-                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(user))">
-                        </RadzenButton>
-                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))">
-                        </RadzenButton>
-                    </EditTemplate>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
-    </RadzenStack>
-</RadzenLayout>
+<SectionContent SectionName="right-toolbar">
+    <RadzenToggleButton Value="_showOnlineOnly" ValueChanged="OnShowOnlineOnlyChanged" Title="Show online users" Icon="public" />
+</SectionContent>
+<RadzenStack Style="padding: 1em" Orientation="Orientation.Vertical">
+    <RadzenDataGrid @ref="Grid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PagerPosition="PagerPosition.Top" PageSize="30" AllowSorting="true" EditMode="DataGridEditMode.Single"
+                    Data="@Items" TItem="User" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+        <Columns>
+            <RadzenDataGridColumn TItem="User" Property="Name" Title="Name" Width="180px">
+                <Template Context="user">
+                    @user.Name
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="FullName" Title="FullName" Width="180px">
+                <Template Context="user">
+                    @user.FullName
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="Roles" Title="Roles" Width="180px">
+                <Template Context="user">
+                    @string.Join(",", user.Roles.Select(x => x.Name))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="Teams" Title="Teams" Width="180px">
+                <Template Context="user">
+                    @string.Join(",", user.Teams.Select(x => x.Name))
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="LocalLogin" Title="LocalLogin" Width="80px">
+                <Template Context="user">
+                    @user.AllowLocalLogin
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="IsDeactivated" Title="IsDeactivated" Width="80px">
+                <Template Context="user">
+                    @user.IsDeactivated
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Filterable="false" Title="Is online" Width="80px">
+                <Template Context="user">
+                    @if (_usersOnline.Value is { } onlineUsers && onlineUsers.Contains(user.Name)) {
+                    <RadzenBadge Text="Online" BadgeStyle="BadgeStyle.Success" IsPill="@true"/>
+                    } else {
+                    <RadzenBadge Text="Offline" BadgeStyle="BadgeStyle.Warning" IsPill="@true"/>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Context="user" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="156px">
+                <Template Context="user">
+                    @if (user.IsDeactivated) {
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Activate" Click="@(args => Activate(user))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    } else {
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="person_off" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Text="Deactivate" Click="@(args => Deactivate(user))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    }
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="user">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(user))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(user))">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(user))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenStack>
 
 @code {
 
