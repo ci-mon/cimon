@@ -36,7 +36,11 @@
                         var icon = isActive ? "radio_button_checked" : "radio_button_unchecked";
                         var classes = "nav-button" + (isActive ? " active" : " inactive");
                         var style = "animation-duration: " + _changeDelaySeconds + "s;";
-                        <div title="@connectedMonitor.ConnectedMonitorModel.Title" class="@classes"
+                        var title = connectedMonitor.ConnectedMonitorModel.Title;
+                        if (isActive) {
+                            title = _paused ? "Resume" : "Pause";
+                        }
+                        <div title="@title" class="@classes"
                              onclick="@(() => SetActiveMonitor(connectedMonitor))">
                             <RadzenIcon Style="@style" Icon="@icon"/>
                         </div>

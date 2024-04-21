@@ -1,17 +1,8 @@
-@using Cimon.Data
-@using Microsoft.AspNetCore.Components
-@using System.Text.Encodings.Web
-@using AngleSharp.Text
-@using Cimon.Contracts
 @using Cimon.Contracts.CI
-@using Cimon.Data.BuildInformation
 @using Cimon.Data.Common
 @using Cimon.Users
-@using Microsoft.Extensions.Options
 @using System.Text
-@using Microsoft.Extensions.Primitives
 @using System.Runtime.CompilerServices
-@using Cimon.DB.Models
 @using System.Collections.Immutable
 @inject NavigationManager NavigationManager
 @inject TooltipService TooltipService
@@ -28,15 +19,15 @@
         <div class="drop-zone" ondragover="event.preventDefault()"></div>
     }
     <div class="content">
-        <RadzenProgressBar Visible="@(!IsLoaded)"
+        <RadzenProgressBar Visible="@(BuildInfo is null)"
                            ProgressBarStyle="ProgressBarStyle.Light"
                            Value="100" ShowValue="false"
                            Mode="ProgressBarMode.Indeterminate"/>
         <RadzenStack Orientation="Orientation.Vertical" Gap="2px" class="build-name-and-status">
             <RadzenStack Orientation="Orientation.Horizontal" class="build-name">
                 <RadzenText TextStyle="TextStyle.H4" class="build-name-text">
-                    @if (IsLoaded) {
-                        <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link">
+                    @if (BuildInfo is not null) {
+                        <RadzenLink Path="@BuildInfo.Url" Target="blank" class="build-info-link" Title="Open in CI system">
                             <span data-qa="build-info-name">@BuildInfo.Name @(string.IsNullOrWhiteSpace(BuildInfo.Number) ? string.Empty : BuildInfo.Number)</span>
                             <RadzenIcon Icon="open_in_new"/>
                         </RadzenLink>
@@ -47,8 +38,8 @@
                         </RadzenText>
                     }
                 </RadzenText>
-                 @if (IsLoaded) {
-                    <RadzenButton class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
+                 @if (BuildInfo is not null) {
+                    <RadzenButton Title="Open discussion" class="discussion-button" Visible="@BuildInfo.IsNotOk()" Size="ButtonSize.Small" Variant="Variant.Text" Click="Discuss">
                         <RadzenBadge BadgeStyle="BadgeStyle.Warning" IsPill="@true" class="rz-ml-2">
                             <RadzenIcon Icon="chat" Style="color: var(--rz-white);margin-top: 3px;"/>
                             @BuildInfo.CommentsCount.ToString()
@@ -57,7 +48,7 @@
                 }
             </RadzenStack>
 
-            <RadzenText @ref="@infoText" Visible="@IsLoaded" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
+            <RadzenText @ref="@infoText" Visible="@(BuildInfo is not null)" TextStyle="TextStyle.H5" onclick="@(() => ShowStatusTooltip(infoText.Element))" class="build-status">
                 @{
                     var durationInfo = GetDurationInfo();
                 }
@@ -76,10 +67,11 @@
                     @foreach (var committer in Committers) {
                         var user = committer.User;
                         var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                        var userName = GetUserName(user);
                         <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                      AlignItems="AlignItems.Center" Gap="2px">
-                            <div class="avatar committer @committerClasses">
-                                <CimonAvatar UserName="@GetUserName(user)" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
+                            <div title="@user.FullName" class="avatar committer @committerClasses">
+                                <CimonAvatar UserName="@userName" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
                                 <div class="commits-count">
                                     <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
                                     @if (IsSuspect(user)) {
@@ -107,7 +99,6 @@
     RadzenText infoText;
     private ReactiveValue<BuildInfo> _infoSubscription;
     private BuildInfo? BuildInfo => _infoSubscription.Value;
-    private bool IsLoaded => BuildInfo is not null;
     private IReadOnlyCollection<CommitterInfo> Committers { get; set; } = ArraySegment<CommitterInfo>.Empty;
     private AppClientType AppClientType { get; set; }
     private ReactiveValue<IImmutableSet<string>> _activeUsers;
@@ -148,7 +139,7 @@
 
     private string GetClasses() {
         var builder = new DefaultInterpolatedStringHandler();
-        if (!IsLoaded) {
+        if (BuildInfo is null) {
             builder.AppendLiteral(" loading");
         }
         else if (BuildInfo?.Status == BuildStatus.Failed) {
@@ -189,12 +180,14 @@
 
     private (string Start, string Duration, string Full) GetDurationInfo() {
         var result = new StringBuilder();
-        var startDate = BuildInfo.StartDate?.ToString("HH:mm") ?? "?";
+        var startDate = BuildInfo?.StartDate?.ToString("HH:mm") ?? "?";
+        result.Append("Started at ");
         result.Append(startDate);
-        result.Append("-");
-        result.Append(BuildInfo.EndDate?.ToString("HH:mm") ?? "?");
+        result.Append(" completed at ");
+        result.Append(BuildInfo?.EndDate?.ToString("HH:mm") ?? "?");
         result.Append(" | ");
         var duration = GetDuration();
+        result.Append("Duration: ");
         result.Append(duration);
         return (startDate, duration, result.ToString());
     }

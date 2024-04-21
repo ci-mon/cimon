@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Cake.Common;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
@@ -10,6 +9,8 @@ using Cake.Core.Diagnostics;
 using Cake.Core.IO;
 using Cake.Frosting;
 using Cake.Powershell;
+
+namespace Build;
 
 public static class Program
 {
@@ -59,18 +60,18 @@ public sealed class DeployTask : FrostingTask<BuildContext>
         var deployPath = context.Argument<string>("deploy-path");
         var stopPoolScript = 
             $$"""
-              Stop-WebAppPool -Name "{{context.AppPoolName}}";
-              $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
-              $pattern = 'WP "(\d+)" \(applicationPool:{{context.AppPoolName}}\)'
-              $match = [regex]::Match($WorkerProcesses, $pattern)
-              if ($match.Success) {
-                  $ProcessId = $match.Groups[1].Value
-                  Write-Host "Killing process ID: $ProcessId"
-                  # Kill the process
-                  sleep 15;
-                  Stop-Process -Id $ProcessId -Force
-              }
-          """;
+                Stop-WebAppPool -Name "{{context.AppPoolName}}";
+                $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
+                $pattern = 'WP "(\d+)" \(applicationPool:{{context.AppPoolName}}\)'
+                $match = [regex]::Match($WorkerProcesses, $pattern)
+                if ($match.Success) {
+                    $ProcessId = $match.Groups[1].Value
+                    Write-Host "Killing process ID: $ProcessId"
+                    # Kill the process
+                    sleep 15;
+                    Stop-Process -Id $ProcessId -Force
+                }
+            """;
         context.StartPowershellScript(stopPoolScript, new PowershellSettings {
             ComputerName = deployServerName,
             Modules = new[]{"webadministration"},
