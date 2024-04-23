@@ -838,4 +838,13 @@ span {
     win.close();
     return nativeImage.createFromBuffer(buffer);
   }
+
+  public async onSecondInstance() {
+    if (this._window?.isDestroyed() == false){
+      this._window.show();
+      this._window.focus();
+    } else {
+      await this.showMonitors();
+    }
+  }
 }

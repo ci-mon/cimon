@@ -16,6 +16,16 @@ import { initializeCimonNotifier } from './notifications/cimon-notifier-initiali
 
 Object.assign(console, log.functions);
 
+let cimonApp: CimonApp | undefined = undefined;
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', async () => {
+    await cimonApp?.onSecondInstance();
+  });
+}
+
 const notifier = await initializeCimonNotifier();
 
 const autoLaunch = new AutoLaunch({
@@ -32,7 +42,7 @@ if (electron_squirrel_startup) {
   app.quit();
 }
 app.setAppUserModelId(notifier.AppId);
-const cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
+cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
 
 AutoUpdater.install(cimonApp);
 
