@@ -2,6 +2,7 @@
 
 ## 1.0.21
 1. Prevent multiple instances
+2. Update electron to v. 30
 
 ## 1.0.20
 1. [bug] Discussion window not visible after click on notification if main window minimized
