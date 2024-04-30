@@ -73,6 +73,7 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 	}
 
 	private static bool TryPublishSuspect(BuildFailureSuspect? failureSuspect, MlRequest request) {
+		if (failureSuspect is null) return false;
 		request.Receiver.Tell(new MlResponse(request, failureSuspect));
 		return true;
 	}
