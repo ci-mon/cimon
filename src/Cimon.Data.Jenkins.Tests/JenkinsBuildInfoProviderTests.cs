@@ -55,7 +55,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		foreach (var result in info) {
 			history.Add(result);
 		}
-		var failureSuspect = await predictor.FindFailureSuspect(history.Last, false);
+		var failureSuspect = await predictor.FindFailureSuspects(history.Last, false);
 
 	}
 

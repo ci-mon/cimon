@@ -168,7 +168,7 @@ public class DbInitializer
 				Duration = TimeSpan.FromSeconds(1234),
 				BranchName = "trunk",
 				Changes = manyChanges,
-				FailureSuspect = new BuildFailureSuspect(manyChanges[0].Author, 82)
+				FailureSuspects = ImmutableList.Create(new BuildFailureSuspect(manyChanges[0].Author, 82))
 			},
 			IsDefaultBranch = true
 		});

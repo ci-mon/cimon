@@ -102,7 +102,7 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private void HandleMlResponse(MlResponse response) {
-		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspect)) {
+		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspects)) {
 			NotifySubscribers(_buildInfoHistory.Last);
 		}
 	}

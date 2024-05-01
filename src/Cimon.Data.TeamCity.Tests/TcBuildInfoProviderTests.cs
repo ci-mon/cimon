@@ -31,7 +31,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 			DefaultConnector.ConnectorKey);//5711671,5738602
 		info.Should().NotBeNull();
 		var utils = new BuildFailurePredictor(Substitute.For<IFeatureManager>());
-		var author = await utils.FindFailureSuspect(info, false);
+		var author = await utils.FindFailureSuspects(info, false);
 		author.Should().NotBeNull();
 	}
 

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Cimon.Contracts.CI;
 
 public record BuildInfo
@@ -17,7 +19,7 @@ public record BuildInfo
 	public IReadOnlyCollection<CIBuildProblem> Problems { get; set; } = Array.Empty<CIBuildProblem>();
 	public IReadOnlyCollection<CITestOccurence> FailedTests { get; set; } = Array.Empty<CITestOccurence>();
 	public int CommentsCount { get; set; }
-	public BuildFailureSuspect? FailureSuspect { get; set; }
+	public ImmutableList<BuildFailureSuspect>? FailureSuspects { get; set; }
 	public static BuildInfo NoData { get; } = new() {
 		Url = "NO_DATA",
 		Group = "NO_DATA",

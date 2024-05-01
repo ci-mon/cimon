@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Immutable;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cimon.Data.BuildInformation;
 
@@ -15,7 +16,7 @@ record MlRequest(
 	BuildInfo BuildInfo,
 	IActorRef Receiver);
 
-record MlResponse(MlRequest Request, BuildFailureSuspect Suspect);
+record MlResponse(MlRequest Request, ImmutableList<BuildFailureSuspect> Suspects);
 
 class BuildMLActor: ReceiveActor, IWithUnboundedStash
 {
@@ -31,7 +32,7 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 	}
 
 	private async Task HandleRequest(MlRequest request) {
-		var failureSuspect = await TryFindSuspect(request.BuildInfo, false);
+		var failureSuspect = await TryFindSuspects(request.BuildInfo, false);
 		if (!TryPublishSuspect(failureSuspect, request)) {
 			GetLogs(request);
 			BecomeStacked(DownloadingLogs);
@@ -52,7 +53,7 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 			var request = logs.Request;
 			var info = request.BuildInfo;
 			info.Log = logs.Log;
-			var failureSuspect = await TryFindSuspect(info, true);
+			var failureSuspect = await TryFindSuspects(info, true);
 			info.Log = info.Log?.Substring(0, Math.Min(10000, info.Log.Length));
 			TryPublishSuspect(failureSuspect, request);
 			UnbecomeStacked();
@@ -60,11 +61,11 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 		});
 	}
 
-	private async Task<BuildFailureSuspect?> TryFindSuspect(BuildInfo info, bool useLogs) {
+	private async Task<ImmutableList<BuildFailureSuspect>?> TryFindSuspects(BuildInfo info, bool useLogs) {
 		try {
 			var predictor = _serviceScope.ServiceProvider.GetRequiredService<IBuildFailurePredictor>();
-			var failureSuspect = await predictor.FindFailureSuspect(info, useLogs);
-			return failureSuspect;
+			var failureSuspects = await predictor.FindFailureSuspects(info, useLogs);
+			return failureSuspects;
 		} catch (Exception e) {
 			_logger.LogWarning("Failed to find suspect on {BuildName} {BuildId}. Error: {Error}",
 				info.Name, info.Id, e.Message);
@@ -72,9 +73,10 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 		return null;
 	}
 
-	private static bool TryPublishSuspect(BuildFailureSuspect? failureSuspect, MlRequest request) {
-		if (failureSuspect is null) return false;
-		request.Receiver.Tell(new MlResponse(request, failureSuspect));
+	private static bool TryPublishSuspect(ImmutableList<BuildFailureSuspect>? failureSuspects, MlRequest request) {
+		if (failureSuspects is null) return false;
+		request.Receiver.Tell(new MlResponse(request, failureSuspects));
+		// todo mark failed test as not needed here or in build info history
 		return true;
 	}
 

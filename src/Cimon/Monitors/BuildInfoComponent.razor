@@ -66,7 +66,8 @@
                              AlignItems="AlignItems.Normal" Gap="8px">
                     @foreach (var committer in Committers) {
                         var user = committer.User;
-                        var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                        var isSuspect = IsSuspect(user, out var confidence);
+                        var committerClasses = isSuspect ? " suspect" : string.Empty;
                         var userName = GetUserName(user);
                         <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                      AlignItems="AlignItems.Center" Gap="2px">
@@ -74,8 +75,7 @@
                                 <CimonAvatar UserName="@userName" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
                                 <div class="commits-count">
                                     <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
-                                    @if (IsSuspect(user)) {
-                                        var confidence = BuildInfo.FailureSuspect?.Confidence ?? 0;
+                                    @if (isSuspect) {
                                         var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
                                         <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
                                             <RadzenIcon Icon="local_fire_department"/>
@@ -125,14 +125,13 @@
         Subscribe(ref _activeUsers, ActiveUsers);
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
             var committers = value?.Changes.GroupBy(x => x.Author)
-                                 .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)
+                                 .OrderByDescending(x => value.FailureSuspects?.FirstOrDefault(s=>s.User.Name == x.Key.Name) is not null)
                                  .ThenByDescending(x => x.Count())
                                  .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
                              (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
             if (MaxCommitters.HasValue && committers.Count > MaxCommitters.Value) {
                 committers = committers.Take(MaxCommitters.Value).ToList();
             }
-
             Committers = committers;
         });
     }
@@ -192,8 +191,14 @@
         return (startDate, duration, result.ToString());
     }
 
-    private bool IsSuspect(VcsUser user) {
-        return BuildInfo?.FailureSuspect?.User.Name == user.Name && BuildInfo.FailureSuspect.Confidence >= 10;
+    private bool IsSuspect(VcsUser user, out float confidence) {
+        if (BuildInfo?.FailureSuspects is {Count:>0} suspects 
+                && suspects.FirstOrDefault(s=>s.User.Name == user.Name) is {Confidence:>=10} suspect) {
+            confidence = suspect.Confidence;
+            return true;
+        }
+        confidence = 0;
+        return false;
     }
 
     private static string GetUserName(VcsUser user) {
