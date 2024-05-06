@@ -122,7 +122,7 @@
 
     private void RefreshMonitor() {
         MonitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshMonitor(MonitorKey));
-        NotificationService.Notify(new NotificationMessage() {
+        NotificationService.Notify(new NotificationMessage {
             Summary = "Data refresh started",
             Severity = NotificationSeverity.Success
         });

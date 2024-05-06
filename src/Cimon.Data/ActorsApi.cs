@@ -15,6 +15,7 @@ namespace Cimon.Data;
 
 public static class ActorsApi
 {
+	public class RefreshAllMonitors;
 	public abstract record MonitorMessage(string Id);
 	public record WatchMonitor(string Id) : MonitorMessage(Id), IMessageWithResponse<IObservable<MonitorData>>;
 	public record RefreshMonitor(string Id) : MonitorMessage(Id);

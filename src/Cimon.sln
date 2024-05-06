@@ -33,6 +33,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{FBB2DA39
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 		..\readme.md = ..\readme.md
 		deploy-web.ps1 = deploy-web.ps1
+		..\doc\demo-requests.http = ..\doc\demo-requests.http
 	EndProjectSection
 EndProject
 Global

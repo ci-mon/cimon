@@ -4,6 +4,7 @@ namespace Cimon.Contracts.CI;
 
 public record BuildInfo
 {
+	private const string NoDataValue = "NO_DATA";
 	public required string Url { get; set; }
 	public required string? Group { get; set; }
 	public required string? BranchName { get; set; }
@@ -21,15 +22,16 @@ public record BuildInfo
 	public int CommentsCount { get; set; }
 	public ImmutableList<BuildFailureSuspect>? FailureSuspects { get; set; }
 	public static BuildInfo NoData { get; } = new() {
-		Url = "NO_DATA",
-		Group = "NO_DATA",
-		BranchName = "NO_DATA",
-		Name = "NO_DATA",
-		Id = "NO_DATA",
+		Url = NoDataValue,
+		Group = NoDataValue,
+		BranchName = NoDataValue,
+		Name = NoDataValue,
+		Id = NoDataValue,
 	};
 
 	public string? Number { get; set; }
 
-	public bool IsNotOk() => Status == BuildStatus.Failed;
+	public bool IsNotOk() => !IsOk();
+	public bool IsOk() => Status != BuildStatus.Failed;
 	public bool CanHaveDiscussion() => Status is BuildStatus.Failed or BuildStatus.Investigated or BuildStatus.Fixed;
 }
