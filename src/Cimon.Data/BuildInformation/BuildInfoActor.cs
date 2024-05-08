@@ -65,7 +65,7 @@ class BuildInfoActor : ReceiveActor
 				Context.Watch(Sender);
 			}
 			_commentsCount = state.Comments.Count;
-			NotifySubscribers(_buildInfoHistory.Last);
+			NotifySubscribers();
 		});
 	}
 
@@ -103,18 +103,8 @@ class BuildInfoActor : ReceiveActor
 
 	private void HandleMlResponse(MlResponse response) {
 		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspects)) {
-			NotifySubscribers(_buildInfoHistory.Last);
+			NotifySubscribers();
 		}
-	}
-
-	private bool AddBuildInfoToHistory(BuildInfo? newInfo) {
-		if (newInfo is null) return true;
-		var lastBuildId = _buildInfoHistory.Last?.Id;
-		if (lastBuildId == newInfo.Id) {
-			return false;
-		}
-		_buildInfoHistory.Add(newInfo);
-		return true;
 	}
 
 	private void TryRunMl(BuildInfo newInfo) {
@@ -145,22 +135,28 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private void AddBuildInfos(IReadOnlyList<BuildInfo> infos) {
-		int lastId = infos.Count - 1;
-		for (var index = 0; index <= lastId; index++) {
-			BuildInfo buildInfo = infos[index];
+		var addedItems = new List<BuildInfoHistory.Item>();
+		bool needUpdate = false;
+		var lastId = _buildInfoHistory.Last?.Id;
+		foreach (var buildInfo in infos) {
 			buildInfo.Changes = buildInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
-			if (!AddBuildInfoToHistory(buildInfo)) {
-				continue;
-			}
-			if (index == lastId) {
-				TryRunMl(buildInfo);
-				HandleDiscussion(buildInfo);
-				NotifySubscribers(buildInfo);
+			var item = buildInfo.Id == lastId ? null : _buildInfoHistory.Add(buildInfo);
+			if (item is not null) {
+				needUpdate = true;
+				addedItems.Add(item);
 			}
 		}
+		if (!needUpdate) return;
+		var unresolvedItems = addedItems.Where(i => !i.Resolved).ToList();
+		foreach (var item in unresolvedItems) {
+			TryRunMl(item.Info);
+			HandleDiscussion(item.Info);
+		}
+		NotifySubscribers();
 	}
 
-	private void NotifySubscribers(BuildInfo? current) {
+	private void NotifySubscribers() {
+		BuildInfo? current = _buildInfoHistory.Last;
 		if (current is null) return;
 		current.CommentsCount = _commentsCount;
 		var buildInfoItem = CreateNotification(current);

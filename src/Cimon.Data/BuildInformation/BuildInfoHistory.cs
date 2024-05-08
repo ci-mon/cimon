@@ -6,105 +6,110 @@ namespace Cimon.Data.BuildInformation;
 
 public class BuildInfoHistory
 {
-	record BuildInfoItem(BuildInfo Info, bool Resolved)
+	public record Item(BuildInfo Info, bool Resolved, ImmutableList<BuildFailureSuspect> Suspects)
 	{
 		public bool Resolved { get; set; } = Resolved;
+		public ImmutableList<BuildFailureSuspect> Suspects { get; set; } = Suspects;
+
+		public void SetResolved() {
+			Resolved = true;
+			Info.FailedTests = ArraySegment<CITestOccurence>.Empty;
+		}
 	}
 
-	private readonly RingBuffer<BuildInfoItem> _buffer = new(50);
-	public BuildInfo? Last => _buffer.Last?.Info;
-	public void Add(BuildInfo newInfo) {
-		var changes = new List<VcsChange>();
-		var currentFailedTests = newInfo.FailedTests.Select(x => x.TestId).ToHashSet();
-		foreach (var infoItem in _buffer.IterateReversed()) {
-			if (infoItem.Info.Status == BuildStatus.Success) {
-				break;
-			}
-			if (!infoItem.Resolved) {
-				if (TryResolveOldBuildsByProblems(infoItem, newInfo, currentFailedTests)) continue;
-				changes.InsertRange(0,
-					infoItem.Info.Changes.Where(x => !x.IsInherited).Select(x => x with { IsInherited = true }));
-			}
-		}
-		var buildInfoItem = new BuildInfoItem(newInfo, false);
-		if (newInfo.Status == BuildStatus.Failed) {
-			var committers = newInfo.Changes.Select(c => c.Author).ToHashSet();
-			if (committers.Count == 1) {
-				newInfo.FailureSuspects = ImmutableList.Create(new BuildFailureSuspect(committers.First(), 50));
-			}
-		}
-		if (changes.Any()) {
-			changes.AddRange(newInfo.Changes);
-			newInfo.Changes = changes;
-		}
-		if (_buffer.Last is { Resolved: false } last) {
-			SetSuspects(buildInfoItem, last.Info.FailureSuspects);
-		}
+	private readonly RingBuffer<Item> _buffer = new(50);
+	private BuildInfo? _actualBuildInfo;
+
+	public BuildInfo? Last => _actualBuildInfo ?? InitializeLastBuildInfo();
+	public Item Add(BuildInfo newInfo) {
+		var buildInfoItem = new Item(newInfo, false, ImmutableList<BuildFailureSuspect>.Empty);
 		_buffer.Add(buildInfoItem);
+		_actualBuildInfo = null;
+		return buildInfoItem;
 	}
 
-	private static bool TryResolveOldBuildsByProblems(BuildInfoItem oldInfoItem, BuildInfo newInfo,
-			HashSet<string> currentFailedTests) {
-		var oldFailedTests = oldInfoItem.Info.FailedTests;
-		var oldProblems = oldInfoItem.Info.Problems.ToHashSet();
-		if (oldFailedTests.Count == 0 && currentFailedTests.Count == 0 && oldProblems.Count == 0 &&
-				newInfo.Problems.Count == 0) {
-			if (!string.Equals(oldInfoItem.Info.StatusText, newInfo.StatusText,
-					StringComparison.InvariantCultureIgnoreCase)) {
-				oldInfoItem.Resolved = true;
-				return true;
-			}
-		}
-		if (oldFailedTests.Count == 0) {
-			if (!oldProblems.Overlaps(newInfo.Problems)) {
-				oldInfoItem.Resolved = true;
-				return true;
-			}
-		} else {
-			if (currentFailedTests.Any() && oldFailedTests.All(t => !currentFailedTests.Contains(t.TestId))) {
-				oldInfoItem.Resolved = true;
-				return true;
-			}
+	public bool SetFailureSuspect(string buildInfoId, ImmutableList<BuildFailureSuspect> suspects) {
+		foreach (var item in _buffer.IterateReversed()) {
+			if (item.Info.Id != buildInfoId) continue;
+			item.Suspects = suspects;
+			_actualBuildInfo = null;
+			return true;
 		}
 		return false;
 	}
 
-	public bool SetFailureSuspect(string buildInfoId, ImmutableList<BuildFailureSuspect> failureSuspects) {
-		bool suspectFound = false;
-		foreach (var infoItem in _buffer) {
-			if (suspectFound) {
-				if (infoItem.Info.Status == BuildStatus.Success) {
-					break;
-				}
-				SetSuspects(infoItem, failureSuspects);
-			}
-			if (infoItem.Info.Id == buildInfoId) {
-				SetSuspects(infoItem, failureSuspects);
-				suspectFound = true;
-			}
-			if (infoItem.Resolved) {
-				break;
-			}
-		}
-		return Last?.Id == buildInfoId;
+	private BuildInfo? InitializeLastBuildInfo() {
+		if (_buffer.Items.Count == 0) return null;
+		var items = _buffer.ToArray().AsSpan();
+		var committers = GetCommittersInfo(items);
+		_actualBuildInfo = items[^1].Info with {
+			CombinedCommitters = committers
+		};
+		return _actualBuildInfo;
 	}
 
-	private void SetSuspects(BuildInfoItem infoItem, ImmutableList<BuildFailureSuspect>? failureSuspects) {
-		if (failureSuspects is null) return;
-		var currentSuspects = infoItem.Info.FailureSuspects;
-		if (currentSuspects is null) {
-			infoItem.Info.FailureSuspects = failureSuspects;
-			return;
+	private IReadOnlyCollection<CommitterInfo> GetCommittersInfo(Span<Item> items) {
+		var changes = new List<VcsChange>();
+		var suspects = new Dictionary<VcsUser, float>();
+		for (int i = items.Length - 1; i >= 0; i--) {
+			var item = items[i];
+			if (item.Resolved) break;
+			var nextItemIndex = i + 1;
+			var isItemResolved = GetIsItemResolved(item, items[nextItemIndex..]);
+			if (isItemResolved) {
+				item.SetResolved();
+				MarkPreviousItemsAsResolved(items, i);
+				break;
+			}
+			changes.AddRange(item.Info.Changes);
+			MergeSuspectConfidence(item, suspects);
 		}
-		foreach (var suspect in failureSuspects) {
-			if (currentSuspects.FirstOrDefault(s=>s.User == suspect.User) is { } current) {
-				if (current.Confidence < suspect.Confidence) {
-					currentSuspects = currentSuspects.Remove(current).Add(suspect);
-				}
-			} else {
-				currentSuspects = currentSuspects.Add(suspect);
+		var committers = changes
+			.GroupBy(x => x.Author)
+			.Select(g =>
+				new CommitterInfo(g.Key, g.Count(), suspects.GetValueOrDefault(g.Key, 0f)))
+			.OrderByDescending(x => x.SuspectConfidence)
+			.ThenByDescending(x => x.CommitsCount)
+			.ToImmutableList();
+		return committers;
+	}
+
+	private static void MergeSuspectConfidence(Item item, Dictionary<VcsUser, float> suspects) {
+		foreach (var suspect in item.Suspects) {
+			if (!suspects.TryGetValue(suspect.User, out var currentConfidence)) {
+				currentConfidence = 0;
+			}
+			suspects[suspect.User] = currentConfidence + suspect.Confidence;
+		}
+	}
+
+	private static void MarkPreviousItemsAsResolved(Span<Item> items, int i) {
+		for (int j = i - 1; j >= 0; j--) {
+			var prev = items[j];
+			if (!prev.Resolved) {
+				prev.SetResolved();
 			}
 		}
-		infoItem.Info.FailureSuspects = currentSuspects;
+	}
+
+	private bool GetIsItemResolved(Item item, Span<Item> nextItems) {
+		if (item.Info.Status == BuildStatus.Success) return true;
+		if (nextItems.IsEmpty) return false;
+		(CIBuildProblemType Type, string ShortSummary, string Details) GetProblemInfo(CIBuildProblem x) =>
+			(x.Type, x.ShortSummary, x.Details);
+		var unresolvedProblems = item.Info.Problems.Select(GetProblemInfo).ToHashSet();
+		foreach (var nextItem in nextItems) {
+			unresolvedProblems = unresolvedProblems.Intersect(nextItem.Info.Problems.Select(GetProblemInfo)).ToHashSet();
+			if (unresolvedProblems.Count == 0) break;
+		}
+		(string Name, string TestId, string Details) GetTestInfo(CITestOccurence t) => (t.Name, t.TestId, t.Details);
+		bool GetIsTestReallyFailing(CITestOccurence x) => x.Ignored is not true && x.CurrentlyMuted is not true;
+		var failedTests = item.Info.FailedTests.Where(GetIsTestReallyFailing).Select(GetTestInfo).ToHashSet();
+		foreach (var nextItem in nextItems) {
+			failedTests = failedTests
+				.Intersect(nextItem.Info.FailedTests.Where(GetIsTestReallyFailing).Select(GetTestInfo)).ToHashSet();
+			if (failedTests.Count == 0) break;
+		}
+		return unresolvedProblems.Count == 0 && failedTests.Count == 0;
 	}
 }

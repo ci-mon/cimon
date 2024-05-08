@@ -32,6 +32,7 @@ public class DemoBuildInfoProvider : IBuildInfoProvider
 				newState.StatusText = demo.StatusText;
 				newState.Problems = demo.Problems;
 				newState.Changes = demo.Changes;
+				newState.FailedTests = demo.FailedTests;
 			}
 			result = new List<BuildInfo> { newState };
 		}
@@ -54,4 +55,5 @@ public record DemoBuildInfo(
 	string Id,
 	string StatusText,
 	IReadOnlyCollection<CIBuildProblem> Problems,
+	IReadOnlyCollection<CITestOccurence> FailedTests,
 	IReadOnlyCollection<VcsChange> Changes);

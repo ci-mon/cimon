@@ -26,8 +26,9 @@ public class InternalApiController(IServiceProvider serviceProvider) : Controlle
 	}
 
 	[HttpPost]
-	public IActionResult SetBuildState([FromQuery] string buildConfigKey, [FromBody] DemoBuildInfo demoBuildInfo) {
-		DemoBuildInfoProvider.SetBuildState(buildConfigKey, demoBuildInfo);
+	[Route("setBuildState/{key}")]
+	public IActionResult SetBuildState([FromRoute] string key, [FromBody] DemoBuildInfo demoBuildInfo) {
+		DemoBuildInfoProvider.SetBuildState(key, demoBuildInfo);
 		_monitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshAllMonitors());
 		return Ok();
 	}

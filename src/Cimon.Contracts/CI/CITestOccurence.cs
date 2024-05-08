@@ -2,7 +2,6 @@
 
 public record CITestOccurence(string Name)
 {
-
 	public required string TestId { get; init; }
 
 	public required string Details { get; init; }
@@ -14,5 +13,4 @@ public record CITestOccurence(string Name)
 	public bool? CurrentlyInvestigated { get; init; }
 
 	public bool? NewFailure { get; init; }
-
 }

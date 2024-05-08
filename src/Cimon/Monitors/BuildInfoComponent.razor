@@ -66,7 +66,8 @@
                              AlignItems="AlignItems.Normal" Gap="8px">
                     @foreach (var committer in Committers) {
                         var user = committer.User;
-                        var isSuspect = IsSuspect(user, out var confidence);
+                        var confidence = committer.SuspectConfidence;
+                        var isSuspect = confidence > 0;
                         var committerClasses = isSuspect ? " suspect" : string.Empty;
                         var userName = GetUserName(user);
                         <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
@@ -103,8 +104,6 @@
     private AppClientType AppClientType { get; set; }
     private ReactiveValue<IImmutableSet<string>> _activeUsers;
 
-    record CommitterInfo(VcsUser User, int CommitsCount);
-
     [Parameter] public BuildConfig BuildConfig { get; set; } = null!;
     [Parameter] public IObservable<BuildInfo> Info { get; set; } = null!;
     [Parameter] public IObservable<IImmutableSet<string>> ActiveUsers { get; set; } = null!;
@@ -124,11 +123,7 @@
         await base.InitializeReactiveValues();
         Subscribe(ref _activeUsers, ActiveUsers);
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
-            var committers = value?.Changes.GroupBy(x => x.Author)
-                                 .OrderByDescending(x => value.FailureSuspects?.FirstOrDefault(s=>s.User.Name == x.Key.Name) is not null)
-                                 .ThenByDescending(x => x.Count())
-                                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                             (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+            var committers = value.CombinedCommitters;
             if (MaxCommitters.HasValue && committers.Count > MaxCommitters.Value) {
                 committers = committers.Take(MaxCommitters.Value).ToList();
             }
@@ -189,16 +184,6 @@
         result.Append("Duration: ");
         result.Append(duration);
         return (startDate, duration, result.ToString());
-    }
-
-    private bool IsSuspect(VcsUser user, out float confidence) {
-        if (BuildInfo?.FailureSuspects is {Count:>0} suspects 
-                && suspects.FirstOrDefault(s=>s.User.Name == user.Name) is {Confidence:>=10} suspect) {
-            confidence = suspect.Confidence;
-            return true;
-        }
-        confidence = 0;
-        return false;
     }
 
     private static string GetUserName(VcsUser user) {

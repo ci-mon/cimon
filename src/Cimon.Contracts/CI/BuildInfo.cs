@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 
 namespace Cimon.Contracts.CI;
 
+public record CommitterInfo(VcsUser User, int CommitsCount, float SuspectConfidence);
 public record BuildInfo
 {
 	private const string NoDataValue = "NO_DATA";
@@ -17,10 +18,10 @@ public record BuildInfo
 	public DateTimeOffset? EndDate => StartDate + Duration;
 	public TimeSpan? Duration { get; set; }
 	public IReadOnlyCollection<VcsChange> Changes { get; set; } = Array.Empty<VcsChange>();
+	public IReadOnlyCollection<CommitterInfo> CombinedCommitters { get; set; } = ArraySegment<CommitterInfo>.Empty;
 	public IReadOnlyCollection<CIBuildProblem> Problems { get; set; } = Array.Empty<CIBuildProblem>();
 	public IReadOnlyCollection<CITestOccurence> FailedTests { get; set; } = Array.Empty<CITestOccurence>();
 	public int CommentsCount { get; set; }
-	public ImmutableList<BuildFailureSuspect>? FailureSuspects { get; set; }
 	public static BuildInfo NoData { get; } = new() {
 		Url = NoDataValue,
 		Group = NoDataValue,

@@ -68,8 +68,9 @@ public class DbInitializer
 				teamsEditorRole.Entity
 			}
 		});
+		var admin = "admin";
 		var adminRole = await context.Roles.AddAsync(new Role {
-			Name = "admin",
+			Name = admin,
 			OwnedRoles = {
 				allEditorRole.Entity
 			}
@@ -93,13 +94,14 @@ public class DbInitializer
 			{ Name = "test", FullName = "Test User", Email = "milton.soto@example.com", AllowLocalLogin = true,
 				Teams = { usersTeam.Entity, allTeam.Entity } });
 		await context.Users.AddAsync(new User {
-			Name = "admin", FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
+			Name = admin, FullName = "Test Admin", Email = "bedete.araujo@example.com", Roles = { adminRole.Entity }, AllowLocalLogin = true,
 			Teams = { adminTeam.Entity }
 		});
 		await InitDemoMonitors(context, demoConnector);
 	}
 
 	private static async Task InitDemoMonitors(CimonDbContext context, EntityEntry<CIConnector> demoConnector) {
+		var branchName = "trunk";
 		var buildConfig1 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Cake_CakeMaster") {
 			DemoState = new BuildInfo {
 				Url = "https://teamcity.jetbrains.com/buildConfiguration/Cake_CakeMaster/4486115",
@@ -109,7 +111,7 @@ public class DbInitializer
 				StatusText = "Tests passed: 339, ignored: 10, muted: 2",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 			},
 			IsDefaultBranch = true
 		});
@@ -122,7 +124,7 @@ public class DbInitializer
 				StatusText = "Tests passed: 23760, ignored: 31, muted: 3",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 			},
 			IsDefaultBranch = true
 		});
@@ -135,7 +137,7 @@ public class DbInitializer
 				StatusText = "Tests passed: 21343, ignored: 384, muted: 4",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 			},
 			IsDefaultBranch = true
 		});
@@ -148,13 +150,14 @@ public class DbInitializer
 				StatusText = "Tests passed: 1723, ignored: 30, muted: 4",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 			},
 			IsDefaultBranch = true
 		});
+		var adminUser = new VcsUser("admin", "Admin");
 		var manyChanges = Enumerable.Range(0, 10).Select(i => 
 				new VcsChange(new VcsUser($"test{i}", $"Test {i}", $"user{i}@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
-			.Prepend(new VcsChange(new VcsUser("admin", "Admin", "bedete.araujo@example.com"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
+			.Prepend(new VcsChange(adminUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty))
 			.ToArray();
 		var buildConfig5 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "Integration (PostgreSQL)") {
 			DemoState = new BuildInfo {
@@ -166,9 +169,8 @@ public class DbInitializer
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
 				Duration = TimeSpan.FromSeconds(1234),
-				BranchName = "trunk",
-				Changes = manyChanges,
-				FailureSuspects = ImmutableList.Create(new BuildFailureSuspect(manyChanges[0].Author, 82))
+				BranchName = branchName,
+				Changes = manyChanges
 			},
 			IsDefaultBranch = true
 		});
@@ -181,7 +183,7 @@ public class DbInitializer
 				StatusText = "Tests passed: 1710, ignored: 55, muted: 7",
 				Status = 0,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 			},
 			IsDefaultBranch = true
 		});
@@ -193,11 +195,12 @@ public class DbInitializer
 				Id = "1",
 				Status = BuildStatus.Failed,
 				StartDate = DateTime.Now.AddHours(-1),
-				BranchName = "trunk",
+				BranchName = branchName,
 				Changes = manyChanges,
 			},
 			IsDefaultBranch = true
 		});
+		var testUser = new VcsUser("test", "Test");
 		var buildConfig8 = await context.BuildConfigurations.AddAsync(new BuildConfigModel(demoConnector.Entity, "jen_proj2") {
 			DemoState = new BuildInfo {
 				Url = "https://localhost:8080/job/jen_proj2/job/master/9248/",
@@ -207,8 +210,8 @@ public class DbInitializer
 				Status = BuildStatus.Failed,
 				BranchName = "",
 				Changes = new[] {
-					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
-					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+					new VcsChange(testUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(adminUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
 			},
 			IsDefaultBranch = true
@@ -223,8 +226,8 @@ public class DbInitializer
 				StartDate = DateTime.Now.AddHours(-1),
 				BranchName = "",
 				Changes = new[] {
-					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
-					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+					new VcsChange(testUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(adminUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
 			},
 			IsDefaultBranch = true
@@ -240,8 +243,8 @@ public class DbInitializer
 				BranchName = "",
 				StatusText = "something works, something not (not stable)",
 				Changes = new[] {
-					new VcsChange(new VcsUser("test", "Test"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
-					new VcsChange(new VcsUser("admin", "Admin"), DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
+					new VcsChange(testUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty),
+					new VcsChange(adminUser, DateTimeOffset.Now, string.Empty, ImmutableArray<FileModification>.Empty)
 				},
 			},
 			IsDefaultBranch = true
