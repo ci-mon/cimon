@@ -19,11 +19,8 @@ public class BuildInfoServiceActor : ReceiveActor
 		_mlActor = Context.DIActorOf<BuildMLActor>("ML");
 		Receive<BuildInfoServiceActorApi.Subscribe>(msg => ForwardToChild(msg.BuildConfig, msg));
 		Receive<BuildInfoServiceActorApi.Refresh>(msg => ForwardToChild(msg.BuildConfig, msg));
-		Receive<BuildInfoServiceActorApi.Unsubscribe>(msg => {
-			Context.Child(msg.BuildConfigId.ToString()).Forward(msg);
-		});
-		Receive<ActorsApi.OpenDiscussion>(discussionsService.Forward);
-		Receive<ActorsApi.CloseDiscussion>(discussionsService.Forward);
+		Receive<BuildInfoServiceActorApi.Unsubscribe>(msg => Context.Child(msg.BuildConfigId.ToString()).Forward(msg));
+		Receive<ActorsApi.Discussions.BuildStatusChanged>(discussionsService.Forward);
 	}
 
 	private void ForwardToChild(BuildConfig buildConfig, object msg) {

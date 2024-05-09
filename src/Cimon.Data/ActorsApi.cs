@@ -13,6 +13,12 @@ using User = Cimon.Contracts.User;
 
 namespace Cimon.Data;
 
+public enum BuildInfoItemUpdateSource {
+	None,
+	StateChanged,
+	DiscussionInfoChanged
+}
+
 public static class ActorsApi
 {
 	public class RefreshAllMonitors;
@@ -27,22 +33,22 @@ public static class ActorsApi
 	public record MonitorInfo(MonitorModel MonitorModel, IEnumerable<IBuildInfoSnapshot> BuildInfos);
 
 	public record GetActiveUserNames(): IMessageWithResponse<IObservable<IImmutableSet<string>>>;
-	public abstract record DiscussionAction(int BuildConfigId);
-
-	public record OpenDiscussion(BuildConfig BuildConfig, BuildInfo BuildInfo) : DiscussionAction(BuildConfig.Id);
-
-	public record CloseDiscussion(int BuildConfigId) : DiscussionAction(BuildConfigId);
+	public class Discussions
+	{
+		public abstract record DiscussionAction(int BuildConfigId);
+		public record BuildStatusChanged(BuildConfig BuildConfig, BuildInfoItem BuildInfoItem) : DiscussionAction(BuildConfig.Id);
+	}
 
 	public record DiscussionHandle(bool Active, IActorRef Discussion, IObservable<BuildDiscussionState> State,
 		IObservable<IEnumerable<IDiscussionBuildData>> Builds)
 	{
 		public static DiscussionHandle Empty { get; } = new(false, ActorRefs.Nobody,
-			Observable.Empty<BuildDiscussionState>(), 
+			Observable.Empty<BuildDiscussionState>(),
 			Observable.Empty<ImmutableList<IDiscussionBuildData>>());
 	}
 
 	public record FindDiscussion(int BuildConfigId)
-		: DiscussionAction(BuildConfigId), IMessageWithResponse<DiscussionHandle>;
+		: Discussions.DiscussionAction(BuildConfigId), IMessageWithResponse<DiscussionHandle>;
 
 	public record UserMessage<TMessage>(string UserName, TMessage Payload) : UserMessage(UserName)
 	{
@@ -70,7 +76,7 @@ public static class ActorsApi
 		});
 	}
 
-	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId);
+	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId, bool IsResolved, BuildInfoItemUpdateSource UpdateSource);
 
 	public record UserConnected(User User, string ConnectionId);
 	public record UserDisconnected(User User, string ConnectionId);

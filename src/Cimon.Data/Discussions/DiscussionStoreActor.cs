@@ -7,8 +7,7 @@ namespace Cimon.Data.Discussions;
 
 using Cimon.Contracts.CI;
 
-public record DiscussionBuildData(BuildConfig BuildConfig, ReplaySubject<BuildInfo> BuildInfo) : IDiscussionBuildData
-{
+public record DiscussionBuildData(BuildConfig BuildConfig, ReplaySubject<BuildInfo> BuildInfo) : IDiscussionBuildData {
 	IObservable<BuildInfo> IDiscussionBuildData.BuildInfo => BuildInfo;
 }
 
@@ -17,24 +16,35 @@ public interface IDiscussionBuildData {
 	IObservable<BuildInfo> BuildInfo { get; }
 }
 
-public record DiscussionData(IActorRef Child, ReplaySubject<BuildDiscussionState> Subject,
+public record DiscussionData(
+	IActorRef Child,
+	ReplaySubject<BuildDiscussionState> Subject,
 	ReplaySubject<IImmutableList<DiscussionBuildData>> Builds);
 
-public class DiscussionStoreActor : ReceiveActor
-{
+public class DiscussionStoreActor : ReceiveActor {
 	private readonly IActorRef _mentionsMonitor;
 	private readonly Dictionary<int, DiscussionData> _discussions = new();
+
 	public DiscussionStoreActor(IActorRef mentionsMonitor) {
 		_mentionsMonitor = mentionsMonitor;
 		Receive<ActorsApi.FindDiscussion>(FindDiscussion);
-		Receive<ActorsApi.CloseDiscussion>(CloseDiscussion);
-		Receive<ActorsApi.OpenDiscussion>(OpenDiscussion);
+		Receive<ActorsApi.Discussions.BuildStatusChanged>(OnBuildStatusChanged);
 	}
 
-	private void OpenDiscussion(ActorsApi.OpenDiscussion req) {
+	private void OnBuildStatusChanged(ActorsApi.Discussions.BuildStatusChanged msg) {
+		if (msg.BuildInfoItem.BuildInfo.IsOk()) {
+			if (_discussions.Remove(msg.BuildConfigId, out var state)) {
+				Context.Stop(state.Child);
+			}
+		} else {
+			OpenOrAddInfo(msg);
+		}
+	}
+
+	private void OpenOrAddInfo(ActorsApi.Discussions.BuildStatusChanged req) {
 		if (_discussions.TryGetValue(req.BuildConfigId, out var value)) {
 			value.Child.Forward(new DiscussionActorApi.SubscribeForState());
-			value.Child.Tell(req.BuildInfo);
+			value.Child.Tell(req.BuildInfoItem);
 			return;
 		}
 		var child = Context.DIActorOf<DiscussionActor>(req.BuildConfigId.ToString());
@@ -44,15 +54,9 @@ public class DiscussionStoreActor : ReceiveActor
 		_discussions.Add(req.BuildConfigId, state);
 		child.Tell(state);
 		child.Tell(req.BuildConfig);
-		child.Tell(new ActorsApi.BuildInfoItem(req.BuildInfo, req.BuildConfigId));
+		child.Tell(req.BuildInfoItem);
 		child.Forward(new DiscussionActorApi.SubscribeForState());
 		child.Tell(new DiscussionActorApi.SubscribeForComments(), _mentionsMonitor);
-	}
-
-	private void CloseDiscussion(ActorsApi.CloseDiscussion req) {
-		if (_discussions.Remove(req.BuildConfigId, out var state)) {
-			Context.Stop(state.Child);
-		}
 	}
 
 	private void FindDiscussion(ActorsApi.FindDiscussion req) {
@@ -63,6 +67,7 @@ public class DiscussionStoreActor : ReceiveActor
 				return;
 			}
 		}
+
 		Sender.Tell(ActorsApi.DiscussionHandle.Empty);
 	}
 }

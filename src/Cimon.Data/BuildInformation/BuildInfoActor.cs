@@ -28,13 +28,11 @@ class BuildInfoActor : ReceiveActor
 	private readonly HashSet<string> _systemUserLogins;
 	private readonly BuildInfoHistory _buildInfoHistory = new();
 	private int _commentsCount;
-	private bool _discussionWatched;
-	private bool _discussionOpen;
 	private readonly ILoggingAdapter _log = Context.GetLogger();
 	private readonly IServiceScope _scope;
 	private CIConnectorInfo _connectorInfo = null!;
 
-	public BuildInfoActor(int buildConfigId, IActorRef mlActor, IServiceProvider serviceProvider, 
+	public BuildInfoActor(int buildConfigId, IActorRef mlActor, IServiceProvider serviceProvider,
 			BuildConfigService buildConfigService,
 			BuildInfoMonitoringSettings settings) {
 		_mlActor = mlActor;
@@ -56,16 +54,9 @@ class BuildInfoActor : ReceiveActor
 		ReceiveAsync<BuildConfigModel>(InitBuildConfig);
 		ReceiveAsync<GetBuildInfo>(OnGetBuildInfo);
 		Receive<MlResponse>(HandleMlResponse);
-		Receive<Terminated>(_ => {
-			_discussionOpen = false;
-		});
 		Receive<BuildDiscussionState>(state => {
-			if (!_discussionWatched) {
-				_discussionWatched = true;
-				Context.Watch(Sender);
-			}
 			_commentsCount = state.Comments.Count;
-			NotifySubscribers();
+			NotifySubscribers(BuildInfoItemUpdateSource.DiscussionInfoChanged);
 		});
 	}
 
@@ -77,12 +68,13 @@ class BuildInfoActor : ReceiveActor
 
 	private void OnSubscribe(BuildInfoServiceActorApi.Subscribe msg) {
 		_subscribers.Add(Sender);
-		if (_buildInfoHistory.Last is {} current) {
-			Sender.Tell(CreateNotification(current));
+		if (_buildInfoHistory.CombinedInfo is {} current) {
+			Sender.Tell(CreateNotification(current, BuildInfoItemUpdateSource.None));
 		}
 	}
 
-	private ActorsApi.BuildInfoItem CreateNotification(BuildInfo current) => new(current, _config!.Id);
+	private ActorsApi.BuildInfoItem CreateNotification(BuildInfo current, BuildInfoItemUpdateSource updateSource) =>
+		new(current, _config!.Id, false, updateSource);
 
 	private async Task InitBuildConfig(BuildConfigModel config) {
 		try {
@@ -92,7 +84,7 @@ class BuildInfoActor : ReceiveActor
 			_connectorInfo = await _buildConfigService.GetConnectorInfo(config.Connector);
 			_refreshBuildInfoScheduler ??= Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
 				TimeSpan.Zero, _settings.Delay, Self, _getBuildInfo, Self);
-			if (_buildInfoHistory.Last is { } buildInfo && !mlWasEnabled) {
+			if (_buildInfoHistory.CombinedInfo is { } buildInfo && !mlWasEnabled) {
 				TryRunMl(buildInfo);
 			}
 		} catch (Exception e) {
@@ -103,7 +95,7 @@ class BuildInfoActor : ReceiveActor
 
 	private void HandleMlResponse(MlResponse response) {
 		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspects)) {
-			NotifySubscribers();
+			NotifySubscribers(BuildInfoItemUpdateSource.StateChanged);
 		}
 	}
 
@@ -120,7 +112,7 @@ class BuildInfoActor : ReceiveActor
 
 	private async Task OnGetBuildInfo<T>(T _) {
 		try {
-			string? lastBuildId = _buildInfoHistory.Last?.Id;
+			string? lastBuildId = _buildInfoHistory.CombinedInfo?.Id;
 			var options = new BuildInfoQueryOptions(lastBuildId, 15);
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
@@ -137,7 +129,7 @@ class BuildInfoActor : ReceiveActor
 	private void AddBuildInfos(IReadOnlyList<BuildInfo> infos) {
 		var addedItems = new List<BuildInfoHistory.Item>();
 		bool needUpdate = false;
-		var lastId = _buildInfoHistory.Last?.Id;
+		var lastId = _buildInfoHistory.CombinedInfo?.Id;
 		foreach (var buildInfo in infos) {
 			buildInfo.Changes = buildInfo.Changes.Where(x => !_systemUserLogins.Contains(x.Author.Name)).ToList();
 			var item = buildInfo.Id == lastId ? null : _buildInfoHistory.Add(buildInfo);
@@ -150,29 +142,23 @@ class BuildInfoActor : ReceiveActor
 		var unresolvedItems = addedItems.Where(i => !i.Resolved).ToList();
 		foreach (var item in unresolvedItems) {
 			TryRunMl(item.Info);
-			HandleDiscussion(item.Info);
+			HandleDiscussion(item);
 		}
-		NotifySubscribers();
+		NotifySubscribers(BuildInfoItemUpdateSource.StateChanged);
 	}
 
-	private void NotifySubscribers() {
-		BuildInfo? current = _buildInfoHistory.Last;
+	private void NotifySubscribers(BuildInfoItemUpdateSource updateSource) {
+		BuildInfo? current = _buildInfoHistory.CombinedInfo;
 		if (current is null) return;
 		current.CommentsCount = _commentsCount;
-		var buildInfoItem = CreateNotification(current);
+		var buildInfoItem = CreateNotification(current, updateSource);
 		_subscribers.ForEach(s => s.Tell(buildInfoItem));
 	}
 
-	private void HandleDiscussion(BuildInfo current) {
-		var canHaveDiscussion = current.CanHaveDiscussion();
-		if (_discussionOpen && !canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.CloseDiscussion(_config!.Id));
-			_discussionOpen = false;
-		} else if (!_discussionOpen && canHaveDiscussion) {
-			Context.Parent.Tell(new ActorsApi.OpenDiscussion(_config!, current));
-			_discussionOpen = true;
-		}
-	}
+	private void HandleDiscussion(BuildInfoHistory.Item buildInfoItem) =>
+		Context.Parent.Tell(new ActorsApi.Discussions.BuildStatusChanged(_config!,
+			new ActorsApi.BuildInfoItem(buildInfoItem.Info, _config!.Id, buildInfoItem.Resolved,
+				BuildInfoItemUpdateSource.StateChanged)));
 
 	private void OnStopIfIdle(StopIfIdle _) {
 		if (_subscribers.Count == 0) {

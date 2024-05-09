@@ -20,7 +20,7 @@ public class BuildInfoHistory
 	private readonly RingBuffer<Item> _buffer = new(50);
 	private BuildInfo? _actualBuildInfo;
 
-	public BuildInfo? Last => _actualBuildInfo ?? InitializeLastBuildInfo();
+	public BuildInfo? CombinedInfo => _actualBuildInfo ?? InitializeLastBuildInfo();
 	public Item Add(BuildInfo newInfo) {
 		var buildInfoItem = new Item(newInfo, false, ImmutableList<BuildFailureSuspect>.Empty);
 		_buffer.Add(buildInfoItem);
@@ -51,7 +51,8 @@ public class BuildInfoHistory
 	private IReadOnlyCollection<CommitterInfo> GetCommittersInfo(Span<Item> items) {
 		var changes = new List<VcsChange>();
 		var suspects = new Dictionary<VcsUser, float>();
-		for (int i = items.Length - 1; i >= 0; i--) {
+		var lastIndex = items.Length - 1;
+		for (int i = lastIndex; i >= 0; i--) {
 			var item = items[i];
 			if (item.Resolved) break;
 			var nextItemIndex = i + 1;
@@ -61,17 +62,16 @@ public class BuildInfoHistory
 				MarkPreviousItemsAsResolved(items, i);
 				break;
 			}
-			changes.AddRange(item.Info.Changes);
+			changes.AddRange(item.Info.Changes.Select(c => c with { IsInherited = i != lastIndex }));
 			MergeSuspectConfidence(item, suspects);
 		}
-		var committers = changes
+		return changes
 			.GroupBy(x => x.Author)
 			.Select(g =>
 				new CommitterInfo(g.Key, g.Count(), suspects.GetValueOrDefault(g.Key, 0f)))
 			.OrderByDescending(x => x.SuspectConfidence)
 			.ThenByDescending(x => x.CommitsCount)
 			.ToImmutableList();
-		return committers;
 	}
 
 	private static void MergeSuspectConfidence(Item item, Dictionary<VcsUser, float> suspects) {

@@ -46,7 +46,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		foreach (var result in results) {
 			history.Add(result);
 		}
-		history.Last.Should().NotBeNull();
+		history.CombinedInfo.Should().NotBeNull();
 	}
 
 	[Test]
