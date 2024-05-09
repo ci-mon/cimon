@@ -102,9 +102,12 @@ public class BuildInfoHistory
 			unresolvedProblems = unresolvedProblems.Intersect(nextItem.Info.Problems.Select(GetProblemInfo)).ToHashSet();
 			if (unresolvedProblems.Count == 0) break;
 		}
-		(string Name, string TestId, string Details) GetTestInfo(CITestOccurence t) => (t.Name, t.TestId, t.Details);
+		string GetTestInfo(CITestOccurence t) => string.IsNullOrWhiteSpace(t.TestId) ? t.Name : t.TestId;
 		bool GetIsTestReallyFailing(CITestOccurence x) => x.Ignored is not true && x.CurrentlyMuted is not true;
-		var failedTests = item.Info.FailedTests.Where(GetIsTestReallyFailing).Select(GetTestInfo).ToHashSet();
+		var failedTests = item.Info.FailedTests
+			.Where(GetIsTestReallyFailing)
+			.Select(GetTestInfo)
+			.ToHashSet(StringComparer.OrdinalIgnoreCase);
 		foreach (var nextItem in nextItems) {
 			failedTests = failedTests
 				.Intersect(nextItem.Info.FailedTests.Where(GetIsTestReallyFailing).Select(GetTestInfo)).ToHashSet();

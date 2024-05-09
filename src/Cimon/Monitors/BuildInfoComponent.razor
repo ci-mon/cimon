@@ -67,7 +67,7 @@
                     @foreach (var committer in Committers) {
                         var user = committer.User;
                         var confidence = committer.SuspectConfidence;
-                        var isSuspect = confidence > 0;
+                        var isSuspect = confidence >= 10;
                         var committerClasses = isSuspect ? " suspect" : string.Empty;
                         var userName = GetUserName(user);
                         <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"

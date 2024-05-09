@@ -63,6 +63,7 @@ class BuildMLActor: ReceiveActor, IWithUnboundedStash
 
 	private async Task<ImmutableList<BuildFailureSuspect>?> TryFindSuspects(BuildInfo info, bool useLogs) {
 		try {
+			_logger.LogInformation("Finding suspects for {Build}, Logs={Logs}", info.Name, useLogs);
 			var predictor = _serviceScope.ServiceProvider.GetRequiredService<IBuildFailurePredictor>();
 			var failureSuspects = await predictor.FindFailureSuspects(info, useLogs);
 			return failureSuspects;
