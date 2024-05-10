@@ -85,7 +85,8 @@ public class DiscussionActor : ReceiveActor
 			await OpenDiscussion(buildInfo);
 			return;
 		}
-		if (_state.Status == BuildDiscussionStatus.Open && !msg.IsResolved) {
+		if (_state.Status == BuildDiscussionStatus.Open
+				&& msg is { IsResolved: false, UpdateSource: BuildInfoItemUpdateSource.StateChanged }) {
 			await AddStatusUpdate(buildInfo);
 		}
 	}
@@ -202,6 +203,7 @@ public class DiscussionActor : ReceiveActor
 		var anyChanges = values.Any();
 		var message = new StringBuilder();
 		message.Append("<p>")
+			.AppendLine($"Build number: {buildInfo.Number}, duration: {buildInfo.Duration}")
 			.AppendLine(anyChanges ? $"{header}: {string.Join(", ", values)}" : "Who failed the build?")
 			.Append("</p>");
 		AppendInfo(buildInfo, message);
