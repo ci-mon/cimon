@@ -16,7 +16,8 @@ namespace Cimon.Data;
 public enum BuildInfoItemUpdateSource {
 	None,
 	StateChanged,
-	DiscussionInfoChanged
+	DiscussionInfoChanged,
+	SuspectsChanged
 }
 
 public static class ActorsApi

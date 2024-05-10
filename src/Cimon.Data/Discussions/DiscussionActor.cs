@@ -86,9 +86,30 @@ public class DiscussionActor : ReceiveActor
 			return;
 		}
 		if (_state.Status == BuildDiscussionStatus.Open
-				&& msg is { IsResolved: false, UpdateSource: BuildInfoItemUpdateSource.StateChanged }) {
-			await AddStatusUpdate(buildInfo);
+				&& msg is { IsResolved: false }) {
+			switch (msg.UpdateSource) {
+				case BuildInfoItemUpdateSource.StateChanged:
+					await AddStatusUpdate(buildInfo);
+					break;
+				case BuildInfoItemUpdateSource.SuspectsChanged:
+					await AddSuspectsUpdate(buildInfo);
+					break;
+			}
 		}
+	}
+
+	private async Task AddSuspectsUpdate(BuildInfo buildInfo) {
+		var commentData = new CommentData {
+			Author = _technicalUsers.MonitoringBot
+		};
+		var suspects = buildInfo.CombinedCommitters.Where(c => c.SuspectConfidence > 10).ToList();
+		if (!suspects.Any()) return;
+		var msg = new StringBuilder();
+		msg.AppendLine("<span>Possible suspects:</span>");
+		AddList(msg, "Possible suspects", suspects.OrderByDescending(s => s.SuspectConfidence).ToList(),
+			x => $"{x.User.FullName} {x.SuspectConfidence}%");
+		commentData.Comment = msg.ToString();
+		await AddComment(commentData);
 	}
 
 	private async Task AddStatusUpdate(BuildInfo buildInfo) {

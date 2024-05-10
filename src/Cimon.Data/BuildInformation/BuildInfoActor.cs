@@ -95,7 +95,7 @@ class BuildInfoActor : ReceiveActor
 
 	private void HandleMlResponse(MlResponse response) {
 		if (_buildInfoHistory.SetFailureSuspect(response.Request.BuildInfo.Id, response.Suspects)) {
-			NotifySubscribers(BuildInfoItemUpdateSource.StateChanged);
+			NotifySubscribers(BuildInfoItemUpdateSource.SuspectsChanged);
 		}
 	}
 
