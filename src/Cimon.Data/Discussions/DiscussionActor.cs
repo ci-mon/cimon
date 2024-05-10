@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using Akka.Actor;
 using Akka.Hosting;
 using Akka.Routing;
@@ -90,7 +91,7 @@ public class DiscussionActor : ReceiveActor
 	}
 
 	private async Task AddStatusUpdate(BuildInfo buildInfo) {
-		await AddComment(buildInfo, "New failure, changes by");
+		await AddComment(buildInfo, "New failure, changes by", true);
 	}
 
 	private async Task OnBuildConfig(BuildConfig buildConfig) {
@@ -195,13 +196,45 @@ public class DiscussionActor : ReceiveActor
 			$"""<span class="mention" data-index="1" data-denotation-char="@" data-id="{userId}" data-value="{name}"><span contenteditable="false"><span class="ql-mention-denotation-char">@</span>{userName}</span></span> """;
 	}
 
-	private void BuildCommentMessageAndMentions(BuildInfo buildInfo, string header, CommentData commentData) {
+	private bool BuildCommentMessageAndMentions(BuildInfo buildInfo, string header, CommentData commentData) {
 		var users = buildInfo.Changes.Select(x=>x.Author).Distinct().ToList();
 		var values = users.Select(u => GetUserMention(u.Name, u.FullName)).ToArray();
-		var message = values.Any() ? $"{header}: {string.Join(", ", values)}" : "Who failed the build?";
-		commentData.Comment = $"<p>{message}</p>";
+		var anyChanges = values.Any();
+		var message = new StringBuilder();
+		message.Append("<p>")
+			.AppendLine(anyChanges ? $"{header}: {string.Join(", ", values)}" : "Who failed the build?")
+			.Append("</p>");
+		AppendInfo(buildInfo, message);
+		commentData.Comment = message.ToString();
 		commentData.Mentions = users.Select(x => new MentionedEntityId(x.Name, x.FullName, MentionedEntityType.User))
 			.ToImmutableList();
+		return anyChanges;
+	}
+
+	private static void AppendInfo(BuildInfo buildInfo, StringBuilder message) {
+		message.AppendLine("<p>");
+		AddList(message, "Problems", buildInfo.Problems,
+			p => string.IsNullOrWhiteSpace(p.Details) ? p.ShortSummary : p.Details);
+		AddList(message, "Tests failed", buildInfo.FailedTests.OrderBy(x=>x.NewFailure).ToList(),
+			p => string.IsNullOrWhiteSpace(p.Name) ? p.TestId : p.Name);
+		message.AppendLine("</p>");
+	}
+
+	private static void AddList<T>(StringBuilder message, string header, IReadOnlyCollection<T> items,
+			Func<T, string> renderItem, int maxItems = 5) {
+		if (items.Any()) {
+			message.AppendLine($"<span>{header}: {items.Count}</span>");
+			if (items.Count > maxItems) {
+				message.AppendLine("<span>(top 5 tests)</span>");
+			}
+			message.Append("<ul>");
+			int counter = 0;
+			foreach (var item in items) {
+				message.Append($"<li>{renderItem(item)}</li>");
+				if (++counter == maxItems) break;
+			}
+			message.AppendLine("</ul>");
+		}
 	}
 
 	private async Task OpenDiscussion(BuildInfo buildInfo) {
@@ -219,11 +252,13 @@ public class DiscussionActor : ReceiveActor
 		}
 	}
 
-	private async Task AddComment(BuildInfo buildInfo, string header) {
+	private async Task AddComment(BuildInfo buildInfo, string header, bool skipIfNoChanges = false) {
 		var commentData = new CommentData {
 			Author = _technicalUsers.MonitoringBot
 		};
-		BuildCommentMessageAndMentions(buildInfo, header, commentData);
+		if (!BuildCommentMessageAndMentions(buildInfo, header, commentData) && skipIfNoChanges) {
+			return;
+		}
 		await AddComment(commentData);
 	}
 
