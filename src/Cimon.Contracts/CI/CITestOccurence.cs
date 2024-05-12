@@ -13,4 +13,5 @@ public record CITestOccurence(string Name)
 	public bool? CurrentlyInvestigated { get; init; }
 
 	public bool? NewFailure { get; init; }
+	public string Summary => string.IsNullOrWhiteSpace(Name) ? TestId : Name;
 }

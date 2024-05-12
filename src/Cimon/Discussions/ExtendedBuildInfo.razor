@@ -1,0 +1,47 @@
+﻿@using Cimon.Contracts.CI
+<div>
+	@if (BuildInfo.Problems.Any()) {
+		<details open>
+			<summary>@BuildInfo.Problems.Count problem(s):</summary>
+			<ul>
+				@foreach (var problem in BuildInfo.Problems.Take(5)) {
+					<li>@problem.Summary</li>
+				}
+			</ul>
+			@if (BuildInfo.Problems.Count > 5) {
+				<span>* only first 5 are displayed</span>
+			}
+		</details>
+	}
+	@if (BuildInfo.FailedTests.Any()) {
+	<details>
+		<summary>@BuildInfo.FailedTests.Count failed tests(s):</summary>
+		<ul>
+			@foreach (var testOccurence in BuildInfo.FailedTests.OrderBy(x=>x.NewFailure).Take(5)) {
+				<li>
+					<details>
+						<summary>
+							@if (BuildInfo.GetTestUrl(testOccurence) is {} link) {
+								<RadzenLink Path="@link.ToString()" Text="@testOccurence.Summary" />
+							} else {
+								@testOccurence.Summary
+							}
+							@if (testOccurence.NewFailure is true) {
+								<span class="new-failed-test">*</span>
+							}
+						</summary>
+						@testOccurence.Details
+					</details>
+				</li>
+			}
+		</ul>
+		@if (BuildInfo.FailedTests.Count > 5) {
+			<span>* only first 5 are displayed</span>
+		}
+	</details>
+	}
+</div>
+@code {
+	[Parameter]
+	public BuildInfo BuildInfo { get; set; }
+}

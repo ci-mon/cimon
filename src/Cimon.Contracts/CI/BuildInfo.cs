@@ -35,4 +35,8 @@ public record BuildInfo
 	public bool IsNotOk() => !IsOk();
 	public bool IsOk() => Status != BuildStatus.Failed;
 	public bool CanHaveDiscussion() => Status is BuildStatus.Failed or BuildStatus.Investigated or BuildStatus.Fixed;
+
+	public virtual Uri? GetTestUrl(CITestOccurence testOccurence) {
+		return null;
+	}
 }
