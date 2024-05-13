@@ -27,9 +27,9 @@
                         </RadzenStack>
                         <QuillEditor Class="comment-editor" Readonly="@(!_editing)" @bind-Content="@BuildComment.Comment"/>
                         @if (BuildComment.BuildInfo is { } info) {
-	                        <ExtendedBuildInfo BuildInfo="info"></ExtendedBuildInfo>
+                            <ExtendedBuildInfo BuildInfo="info"></ExtendedBuildInfo>
                         }
-						<div class="comment-content-icon"></div>
+                        <div class="comment-content-icon"></div>
 	                </p>
                 </RadzenStack>
             </RadzenColumn>
