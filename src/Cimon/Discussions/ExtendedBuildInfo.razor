@@ -13,11 +13,17 @@
 			}
 		</details>
 	}
-	@if (BuildInfo.FailedTests.Any()) {
+	@if (BuildInfo.FailedTests.Any())
+	{
+		var tests = BuildInfo.FailedTests
+			.Where(t => t.Ignored is not true && t.CurrentlyMuted is not true)
+			.OrderBy(x => x.NewFailure)
+			.Take(5)
+			.ToList();
 	<details>
-		<summary>@BuildInfo.FailedTests.Count failed tests(s):</summary>
+		<summary>@tests.Count failed tests(s):</summary>
 		<ul>
-			@foreach (var testOccurence in BuildInfo.FailedTests.OrderBy(x=>x.NewFailure).Take(5)) {
+			@foreach (var testOccurence in tests) {
 				<li>
 					<details>
 						<summary>
@@ -30,12 +36,12 @@
 								<span class="new-failed-test">*</span>
 							}
 						</summary>
-						@testOccurence.Details
+						<pre>@testOccurence.Details</pre>
 					</details>
 				</li>
 			}
 		</ul>
-		@if (BuildInfo.FailedTests.Count > 5) {
+		@if (tests.Count > 5) {
 			<span>* only first 5 are displayed</span>
 		}
 	</details>
