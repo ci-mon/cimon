@@ -1,4 +1,5 @@
 ﻿@using Cimon.Contracts.CI
+@using Cimon.Users
 <div>
 	@if (BuildInfo.Problems.Any()) {
 		<details open>
@@ -45,6 +46,27 @@
 			<span>* only first 5 are displayed</span>
 		}
 	</details>
+	}
+	@if (BuildInfo.CombinedCommitters is { Count: > 0 } committers) {
+		var suspects = committers.Where(x => x.SuspectConfidence > 10).ToList();
+		if (suspects.Count > 0) {
+			<details open>
+				<summary>
+					Possible suspect(s):
+				</summary>
+				<RadzenStack Orientation="Orientation.Horizontal" class="rz-p-2">
+					@foreach (var suspect in suspects) {
+						<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+							<CimonAvatar UserName="@suspect.User.Name" Email="@suspect.User.Email?.ToLowerInvariant()"></CimonAvatar>
+							<RadzenStack Orientation="Orientation.Vertical" Gap="0" AlignItems="AlignItems.Center">
+								<span>@suspect.User.Name</span>
+								<span>@suspect.SuspectConfidence%</span>
+							</RadzenStack>
+						</RadzenStack>
+					}
+				</RadzenStack>
+			</details>
+		}
 	}
 </div>
 @code {

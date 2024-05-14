@@ -100,6 +100,14 @@ public class DiscussionActor : ReceiveActor
 	}
 
 	private async Task AddSuspectsUpdate(BuildInfo buildInfo) {
+		var existing = _state.Comments.FirstOrDefault(x => x.BuildInfo?.Id == buildInfo.Id);
+		if (existing is not null) {
+			var state = _state with {
+				Comments = _state.Comments.Replace(existing, existing with { BuildInfo = buildInfo })
+			};
+			StateHasChanged(state);
+			return;
+		}
 		var commentData = new CommentData {
 			Author = _technicalUsers.MonitoringBot
 		};
@@ -232,8 +240,7 @@ public class DiscussionActor : ReceiveActor
 		using var message = HtmlBuilder.Create();
 		var anyChanges = users.Any();
 		message.AddNode(TagNames.P, p => {
-			p.AddText($"Build number: {buildInfo.Number}, duration: {buildInfo.Duration}. ")
-				.AddText(anyChanges ? $"{header}: " : "Who failed the build?")
+			p.AddText(anyChanges ? $"{header}: " : "Who failed the build?")
 				.AddNode(TagNames.Span, s => {
 					bool exists = false;
 					foreach (var user in users) {

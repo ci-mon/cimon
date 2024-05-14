@@ -8,7 +8,7 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.cs]
+[{*.cs,*.razor}]
 dotnet_analyzer_diagnostic.category-roslynator.severity = warning
 roslynator_refactorings.enabled = true
 dotnet_diagnostic.RCS1124.severity = none
@@ -19,3 +19,6 @@ csharp_new_line_before_members_in_anonymous_types = false
 csharp_new_line_before_members_in_object_initializers = false
 csharp_new_line_before_open_brace = namespace, types
 csharp_new_line_between_query_expression_clauses = false
+
+[*.razor]
+indent_style = space
