@@ -36,7 +36,7 @@ class AuthApi {
         window.location.href = `/auth/autologin?returnUrl=${returnUrl}`;
     }
 }
-window.authAPI = new AuthApi(); 
+window.authAPI = new AuthApi();
 
 class UIApi{
     resetIcon() {
@@ -49,6 +49,9 @@ class UIApi{
             icon.href = `/${name}.ico?${url.searchParams}`;
         }
     }
+	copyText(codeElement){
+		return navigator.clipboard.writeText(codeElement.textContent);
+	}
 }
 
 window.uiApi = new UIApi();
