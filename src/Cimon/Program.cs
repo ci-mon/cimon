@@ -30,6 +30,7 @@ using Serilog;
 using NotificationService = Radzen.NotificationService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
 builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
 	loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
 builder.Configuration.AddEnvironmentVariables("CIMON_");
@@ -41,11 +42,9 @@ builder.Services.AddAuth();
 builder.Services.AddCors();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddControllers().AddJsonOptions(x => {
-	x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+builder.Services.AddControllers()
+	.AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddTransient<UnprotectedLocalStorage>();
-
 var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddCimonData()
 	.AddMediatR(configuration => {
@@ -54,10 +53,9 @@ builder.Services.AddCimonData()
 			.RegisterServicesFromAssemblyContaining<SavedMonitorInLocalStoragesBehaviour>()
 			.AddBehavior<IPipelineBehavior<GetDefaultMonitorRequest, string>, SavedMonitorInLocalStoragesBehaviour>();
 	});
-var health = builder.Services.AddHealthChecks()
-	.AddCheck<VaultHealthCheck>("Vault")
-	.AddCheck<CIConnectorsHealthcheck>("CiConnector")
-	.AddCheck<LdapClient>("LdapClient", tags: new []{"windows"});
+builder.Services.AddBrowserTimeProvider();
+var health = builder.AddHealthChecks();
+
 builder.Services.AddCimonDb(builder.Configuration, isDevelopment, health);
 builder.Services.AddCimonDataTeamCity();
 builder.Services.AddCimonDataJenkins();
@@ -80,9 +78,7 @@ builder.Services.AddScoped<AppInitialStateAccessor>();
 
 builder.Services.AddOptions()
 	.ConfigureSecrets<CimonSecrets>()
-	.Configure<CimonDataSettings>(settings => {
-		settings.IsDevelopment = isDevelopment;
-	})
+	.Configure<CimonDataSettings>(settings => settings.IsDevelopment = isDevelopment)
 	.ConfigureSecretsFromConfig<VaultSecrets>()
 	.ConfigureSecrets<TeamcitySecrets>()
 	.ConfigureSecrets<JenkinsSecrets>()
@@ -97,16 +93,6 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
-builder.Services.AddHealthChecksUI(settings => {
-	var localAddress = builder.Configuration.GetValue<string>("LOCAL_ADDRESS");
-	var healthCheckAddress = "/healthz";
-	if (!string.IsNullOrWhiteSpace(localAddress) && Uri.TryCreate(localAddress, UriKind.Absolute, out var uri)
-			&& Uri.TryCreate(uri, healthCheckAddress, out var healthcheckUri)) {
-		healthCheckAddress = healthcheckUri.AbsoluteUri;
-	}
-	settings.SetEvaluationTimeInSeconds(60 * 5).AddHealthCheckEndpoint("local", healthCheckAddress);
-})
-.AddInMemoryStorage();
 builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures.UseSmartComponentsToFindFailureSuspect>());
 
 WebApplication app = builder.Build();

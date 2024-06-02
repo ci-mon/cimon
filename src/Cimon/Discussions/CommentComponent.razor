@@ -23,7 +23,11 @@
                                                     Icon="@(Collapsed ? "unfold_more" : "unfold_less")"
                                                     Value="@(!Collapsed)" ValueChanged="ToggleCollapsed"/>
                                 <RadzenText TextStyle="TextStyle.H6" Text="@BuildComment.Author.FullName"/>
-                                <RadzenText TextStyle="TextStyle.Body2" class="comment-date" Text="@GetDateDescription()"/>
+                                @if (BuildComment.ModifiedOn is { }) {
+                                    <span><LocalTime Format="f" DateTime="BuildComment.ModifiedOn" /> (edited);</span>
+                                } else {
+                                    <LocalTime Format="f" DateTime="BuildComment.CreatedOn" />
+                                }
                             </RadzenStack>
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">
                                 <RadzenButton Icon="edit" Visible="EditButtonVisible" Size="ButtonSize.Small" Variant="Variant.Text" Click="EditComment"/>

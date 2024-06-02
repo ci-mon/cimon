@@ -7,9 +7,10 @@
 @inject NavigationManager NavManager
 
 <PageTitle>Cimon</PageTitle>
-<RadzenButton Visible="_headerCollapsed" 
-              Click="ToggleFullscreenAsync" 
-              Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" 
+<InitializeDateTimeFormat />
+<RadzenButton Visible="_headerCollapsed"
+              Click="ToggleFullscreenAsync"
+              Icon="fullscreen" ButtonStyle="ButtonStyle.Primary"
               class="full-screen-toggle full-screen-toggle-float"/>
 <RadzenLayout class="@pageClass()" Style="grid-template-columns: auto 1fr auto; grid-template-areas: 'rz-header rz-header rz-header' 'rz-sidebar rz-body rz-right-sidebar'">
     <RadzenHeader class="header-line">
@@ -39,7 +40,7 @@
                         <ProfileComponent />
                     </div>
                     <SectionOutlet SectionName="right-toolbar" />
-                    <RadzenButton Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary" 
+                    <RadzenButton Click="ToggleFullscreenAsync" Icon="fullscreen" ButtonStyle="ButtonStyle.Primary"
                                   class="full-screen-toggle rz-ml-2"/>
                     <div class="rz-ml-2"></div>
                 </RadzenStack>
