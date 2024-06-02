@@ -1,0 +1,75 @@
+﻿@using Cimon.Contracts.CI
+@using Cimon.Users
+<div>
+	@if (BuildInfo.Problems.Any()) {
+		<details open>
+			<summary>@BuildInfo.Problems.Count problem(s):</summary>
+			<ul>
+				@foreach (var problem in BuildInfo.Problems.Take(5)) {
+					<li>@problem.Summary</li>
+				}
+			</ul>
+			@if (BuildInfo.Problems.Count > 5) {
+				<span>* only first 5 are displayed</span>
+			}
+		</details>
+	}
+	@if (BuildInfo.FailedTests.Any())
+	{
+		var tests = BuildInfo.FailedTests
+			.Where(t => t.Ignored is not true && t.CurrentlyMuted is not true)
+			.OrderBy(x => x.NewFailure)
+			.Take(5)
+			.ToList();
+	<details>
+		<summary>@tests.Count failed tests(s):</summary>
+		<ul>
+			@foreach (var testOccurence in tests) {
+				<li>
+					<details>
+						<summary>
+							@if (BuildInfo.GetTestUrl(testOccurence) is {} link) {
+								<RadzenLink Path="@link.ToString()" Text="@testOccurence.Summary" />
+							} else {
+								@testOccurence.Summary
+							}
+							@if (testOccurence.NewFailure is true) {
+								<span class="new-failed-test">*</span>
+							}
+						</summary>
+                        <SimpleCodeBlock Text="@testOccurence.Details"></SimpleCodeBlock>
+					</details>
+				</li>
+			}
+		</ul>
+		@if (tests.Count > 5) {
+			<span>* only first 5 are displayed</span>
+		}
+	</details>
+	}
+	@if (BuildInfo.CombinedCommitters is { Count: > 0 } committers) {
+		var suspects = committers.Where(x => x.SuspectConfidence > 10).ToList();
+		if (suspects.Count > 0) {
+			<details open>
+				<summary>
+					Possible suspect(s):
+				</summary>
+				<RadzenStack Orientation="Orientation.Horizontal" class="rz-p-2">
+					@foreach (var suspect in suspects) {
+						<RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center">
+							<CimonAvatar UserName="@suspect.User.Name" Email="@suspect.User.Email?.ToLowerInvariant()"></CimonAvatar>
+							<RadzenStack Orientation="Orientation.Vertical" Gap="0" AlignItems="AlignItems.Center">
+								<span>@suspect.User.Name</span>
+								<span>@suspect.SuspectConfidence%</span>
+							</RadzenStack>
+						</RadzenStack>
+					}
+				</RadzenStack>
+			</details>
+		}
+	}
+</div>
+@code {
+	[Parameter]
+	public BuildInfo BuildInfo { get; set; }
+}

@@ -1,4 +1,5 @@
-﻿using Cimon.Contracts.AppFeatures;
+﻿using System.Collections.Immutable;
+using Cimon.Contracts.AppFeatures;
 using Microsoft.FeatureManagement;
 using SmartComponents.LocalEmbeddings;
 
@@ -11,17 +12,17 @@ using Microsoft.ML.Transforms.Text;
 
 public interface IBuildFailurePredictor
 {
-	Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo, bool useLog);
+	Task<ImmutableList<BuildFailureSuspect>?> FindFailureSuspects(BuildInfo buildInfo, bool useLog);
 }
 public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailurePredictor
 {
-	readonly record struct BestMatch(int Index, int Confidence)
+	readonly record struct BestMatch(int Index, int ConfidencePercent)
 	{
 		public static BestMatch Empty { get; } = new(-1, 0);
 		public bool IsEmpty() => Index == Empty.Index;
 	}
 
-	public async Task<BuildFailureSuspect?> FindFailureSuspect(BuildInfo buildInfo, bool useLog) {
+	public async Task<ImmutableList<BuildFailureSuspect>?> FindFailureSuspects(BuildInfo buildInfo, bool useLog) {
 		var textData = ExtractTextData(buildInfo, useLog);
 		TextData buildStatusTextData = new TextData { Text = textData.BuildStatus.NormalizeText() };
 		var changesTextData = textData.Changes.Select(x => new TextData {
@@ -38,7 +39,8 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 			return null;
 		}
 		(VcsUser, string) item = textData.Changes[match.Index];
-		return new BuildFailureSuspect(item.Item1, match.Confidence);
+		var failureSuspect = new BuildFailureSuspect(item.Item1, match.ConfidencePercent);
+		return ImmutableList.Create(new[] { failureSuspect });
 	}
 
 	private BestMatch FindBestMatchWithSmartComponents(TextData buildStatusTextData, List<TextData> changesTextData) {
@@ -49,7 +51,7 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 		if (closestItems.Length == 1) {
 			var closest = closestItems.First();
 			return new BestMatch() {
-				Confidence = Convert.ToInt32(Math.Round(closest.Similarity * 100f)),
+				ConfidencePercent = Convert.ToInt32(Math.Round(closest.Similarity * 100f)),
 				Index = changesTextData.IndexOf(closest.Item)
 			};
 		}

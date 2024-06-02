@@ -1,0 +1,13 @@
+::deep.simple-code-block {
+	pre.wrap {
+		text-wrap: wrap;
+	}
+	.tool-button {
+		opacity: 10%;
+	}
+}
+.simple-code-block:hover {
+	.tool-button {
+		opacity: 90%;
+	}
+}

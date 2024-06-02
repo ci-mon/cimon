@@ -1,10 +1,12 @@
 ﻿using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using Akka.Actor;
 using Akka.Hosting;
 using Akka.Routing;
 using AngleSharp;
+using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using Cimon.Contracts;
 using Cimon.Contracts.CI;
@@ -30,9 +32,9 @@ public class DiscussionActor : ReceiveActor
 	private readonly IRequiredActor<BuildInfoServiceActor> _buildInfoService;
 	private readonly IActorRef _stateSubscribers;
 	private IActorRef _commentsSubscribers = ActorRefs.Nobody;
-	private DiscussionData _discussionData; 
+	private DiscussionData _discussionData;
 
-	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers, 
+	public DiscussionActor(INotificationService notificationService, ITechnicalUsers technicalUsers,
 			IRequiredActor<BuildInfoServiceActor> buildInfoService) {
 		_notificationService = notificationService;
 		_technicalUsers = technicalUsers;
@@ -40,18 +42,7 @@ public class DiscussionActor : ReceiveActor
 		_stateSubscribers = Context.ActorOf(Props.Empty.WithRouter(new BroadcastGroup()));
 		ReceiveAsync<BuildConfig>(OnBuildConfig);
 		Receive<DiscussionData>(state => _discussionData = state);
-		ReceiveAsync<ActorsApi.BuildInfoItem>(async msg => {
-			var buildData = await _discussionData!.Builds.Timeout(TimeSpan.FromSeconds(5)).SelectMany(x => x)
-				.Where(x => x.BuildConfig.Id == msg.BuildConfigId).FirstOrDefaultAsync();
-			buildData?.BuildInfo.OnNext(msg.BuildInfo);
-			if (_state.Status == BuildDiscussionStatus.Unknown) {
-				BuildDiscussionState state = _state with {
-					Status = BuildDiscussionStatus.Open
-				};
-				StateHasChanged(state);
-				await OpenDiscussion(msg.BuildInfo);
-			}
-		});
+		ReceiveAsync<ActorsApi.BuildInfoItem>(OnBuildStatusChanged);
 		ReceiveAsync<DiscussionActorApi.AddCommentMsg>(msg => AddComment(msg.CommentData));
 		ReceiveAsync<DiscussionActorApi.UpdateCommentMsg>(msg => UpdateComment(msg.Comment));
 		Receive<DiscussionActorApi.RemoveCommentMsg>(msg => RemoveComment(msg.Comment));
@@ -81,6 +72,66 @@ public class DiscussionActor : ReceiveActor
 			_commentsSubscribers.Tell(new RemoveRoutee(new ActorRefRoutee(Sender))));
 	}
 
+	private async Task OnBuildStatusChanged(ActorsApi.BuildInfoItem msg) {
+		if (msg.UpdateSource == BuildInfoItemUpdateSource.DiscussionInfoChanged) return;
+		var buildData = await _discussionData!.Builds.Timeout(TimeSpan.FromSeconds(5))
+			.SelectMany(x => x)
+			.Where(x => x.BuildConfig.Id == msg.BuildConfigId)
+			.FirstOrDefaultAsync();
+		var buildInfo = msg.BuildInfo;
+		buildData?.BuildInfo.OnNext(buildInfo);
+		if (_state.Status == BuildDiscussionStatus.Unknown) {
+			BuildDiscussionState state = _state with { Status = BuildDiscussionStatus.Open };
+			StateHasChanged(state);
+			await OpenDiscussion(buildInfo);
+			return;
+		}
+		if (_state.Status == BuildDiscussionStatus.Open
+				&& msg is { IsResolved: false }) {
+			switch (msg.UpdateSource) {
+				case BuildInfoItemUpdateSource.StateChanged:
+					await AddStatusUpdate(buildInfo);
+					break;
+				case BuildInfoItemUpdateSource.SuspectsChanged:
+					await AddSuspectsUpdate(buildInfo);
+					break;
+			}
+		}
+	}
+
+	private async Task AddSuspectsUpdate(BuildInfo buildInfo) {
+		var existing = _state.Comments.FirstOrDefault(x => x.BuildInfo?.Id == buildInfo.Id);
+		if (existing is not null) {
+			var state = _state with {
+				Comments = _state.Comments.Replace(existing, existing with { BuildInfo = buildInfo })
+			};
+			StateHasChanged(state);
+			return;
+		}
+		var commentData = new CommentData {
+			Author = _technicalUsers.MonitoringBot
+		};
+		var suspects = buildInfo.CombinedCommitters.Where(c => c.SuspectConfidence > 10).ToList();
+		if (!suspects.Any()) return;
+		using var msg = HtmlBuilder.Create();
+		var items = suspects.OrderByDescending(s => s.SuspectConfidence).Take(5).ToList();
+		msg.AddNode(TagNames.P, spoiler => {
+			spoiler.AddText($"{items.Count} possible suspect(s):")
+				.AddNode(TagNames.Ul, list => {
+					foreach (var item in items) {
+						list.AddNodeWithText(TagNames.Li, $"[{item.SuspectConfidence}%] {item.User.FullName}");
+					}
+				});
+		});
+		commentData.Comment = msg.ToString();
+		await AddComment(commentData);
+	}
+
+	private async Task AddStatusUpdate(BuildInfo buildInfo) {
+		if (_state.Comments.Any(c=>c.BuildInfo?.Id == buildInfo.Id)) return;
+		await AddComment(buildInfo, "New failure, changes by", true);
+	}
+
 	private async Task OnBuildConfig(BuildConfig buildConfig) {
 		_buildConfig = buildConfig;
 		_buildInfoService.ActorRef.Tell(new BuildInfoServiceActorApi.Subscribe(buildConfig));
@@ -95,22 +146,6 @@ public class DiscussionActor : ReceiveActor
 		}
 		items = items.RemoveAll(x => x.BuildConfig.Id == buildConfig.Id).Add(buildData);
 		_discussionData.Builds.OnNext(items);
-	}
-
-	private async Task AddComment(CommentData data) {
-		var comment = new BuildComment {
-			Author = data.Author,
-			Comment = data.Comment,
-			Mentions = await ExtractMentions(data.Comment)
-		};
-		var state = _state with {
-			Comments = _state.Comments.Add(comment)
-		};
-		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
-		var commentSimpleText = ExtractText(comment);
-		StateHasChanged(state);
-		await _notificationService.Notify(_buildConfig.Id, comment.Id, data.Author, comment.Mentions,
-			commentSimpleText);
 	}
 
 	private string ExtractText(BuildComment comment) {
@@ -177,23 +212,51 @@ public class DiscussionActor : ReceiveActor
 		}
 	}
 
-	private string GetUserMention(string userId, string userName) {
-		return
-			$"""<span class="mention" data-index="1" data-denotation-char="@" data-id="{userId}" data-value="{userName}"><span contenteditable="false"><span class="ql-mention-denotation-char">@</span>{userName}</span></span> """;
+	private void AddUserMention(HtmlBuilder builder, string userId, string userName, ref bool mentionExist) {
+		if (mentionExist) {
+			builder.AddText(", ");
+		} else {
+			mentionExist = true;
+		}
+		builder.AddNode(TagNames.Span, span => {
+			span["class"] = "mention";
+			span["data-index"] = "1";
+			span["data-denotation-char"] = "@";
+			span["data-id"] = userId;
+			span["data-value"] = userName;
+			span.AddNode(TagNames.Span, s => {
+				s["contenteditable"] = "false";
+				s.AddNode(TagNames.Span, ss => {
+						ss["class"] = "ql-mention-denotation-char";
+						ss.AddText("@");
+					})
+					.AddText(userName);
+			});
+		});
 	}
-	private string BuildCommentMessage(BuildInfo buildInfo) {
-		var users = buildInfo.Changes.Select(x=>x.Author).Distinct();
-		var values = users.Select(u => GetUserMention(u.Name, u.FullName)).ToArray();
-		var message = values.Any() ? $"Build failed by: {string.Join(", ", values)}" : "Who failed the build?";
-		return $"<p>{message}</p>";
+
+	private bool BuildCommentMessageAndMentions(BuildInfo buildInfo, string header, CommentData commentData) {
+		var users = buildInfo.Changes.Select(x=>x.Author).Distinct().ToList();
+		using var message = HtmlBuilder.Create();
+		var anyChanges = users.Any();
+		message.AddNode(TagNames.P, p => {
+			p.AddText(anyChanges ? $"{header}: " : "Who failed the build?")
+				.AddNode(TagNames.Span, s => {
+					bool exists = false;
+					foreach (var user in users) {
+						AddUserMention(s, user.SafeName, user.SafeFullName, ref exists);
+					}
+				});
+		});
+		commentData.Comment = message.ToString();
+		commentData.Mentions = users.Select(x => new MentionedEntityId(x.Name, x.FullName, MentionedEntityType.User))
+			.ToImmutableList();
+		commentData.BuildInfo = buildInfo;
+		return anyChanges;
 	}
-	
+
 	private async Task OpenDiscussion(BuildInfo buildInfo) {
-		var commentData = new CommentData {
-			Author = _technicalUsers.MonitoringBot,
-			Comment = BuildCommentMessage(buildInfo)
-		};
-		await AddComment(commentData);
+		await AddComment(buildInfo, "Build failed by");
 		if (buildInfo is IBuildInfoActionsProvider actionProvider) {
 			var actions = actionProvider.GetAvailableActions();
 			RegisterActions(actions);
@@ -207,17 +270,51 @@ public class DiscussionActor : ReceiveActor
 		}
 	}
 
+	private async Task AddComment(BuildInfo buildInfo, string header, bool skipIfNoChanges = false) {
+		var commentData = new CommentData {
+			Author = _technicalUsers.MonitoringBot
+		};
+		if (!BuildCommentMessageAndMentions(buildInfo, header, commentData) && skipIfNoChanges) {
+			return;
+		}
+		await AddComment(commentData);
+	}
+
+	private async Task AddComment(CommentData data) {
+		var comment = new BuildComment {
+			Author = data.Author,
+			Comment = data.Comment,
+			BuildInfo = data.BuildInfo,
+			Mentions = data.Mentions ?? await ExtractMentions(data.Comment)
+		};
+		var state = _state with {
+			Comments = _state.Comments.Add(comment)
+		};
+		_commentsSubscribers.Tell(new BuildCommentChange(ChangeType.Add, comment, _buildConfig!.Id));
+		var commentSimpleText = ExtractText(comment);
+		StateHasChanged(state);
+		await _notificationService.Notify(_buildConfig.Id, comment.Id, data.Author, comment.Mentions,
+			commentSimpleText);
+	}
+
 	private async Task CloseDiscussion() {
 		var comments = _state.Comments;
 		var mentionedUsers = comments
 			.SelectMany(c => c.Mentions.Where(x => x.Type == MentionedEntityType.User))
 			.ToList();
 		if (!mentionedUsers.Any()) return;
-		var values = mentionedUsers.DistinctBy(x => x.Name)
-			.Select(u => GetUserMention(u.Name, u.DisplayName));
+		var values = mentionedUsers.DistinctBy(x => x.Name);
+		using var comment = HtmlBuilder.Create()
+			.AddNode(TagNames.P, builder => {
+				var mentionExist = false;
+				foreach (var user in values) {
+					AddUserMention(builder, user.Name, user.DisplayName, ref mentionExist);
+				}
+			})
+			.AddText(" build is green now");
 		await AddComment(new CommentData {
 			Author = _technicalUsers.MonitoringBot,
-			Comment = $"<p>{string.Join(", ", values)} build is green now.</p>"
+			Comment = comment.ToString()
 		});
 	}
 

@@ -260,7 +260,9 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
         }
     }
 }
-
+.build-info-in-discussion  .committer-wrap {
+	scale: 1;
+}
 @media only screen and (min-width: 700px) {
     .committer-wrap {
         scale: 1;
@@ -281,9 +283,13 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
     .build-info-item {
         white-space: normal;
         text-overflow: ellipsis;
-        overflow: auto;
         grid-row: auto / span 2;
+		overflow: auto;
     }
+	.build-info-in-discussion .build-info-item {
+		overflow: visible;
+		height: 15em !important;
+	}
 
     .build-info-item h5 {
         font-size: clamp(5px, 17cqmin, 20px);

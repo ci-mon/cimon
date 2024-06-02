@@ -12,53 +12,54 @@
 @inherits ReactiveComponent
 @inject IRequiredActor<UserSupervisorActor> UserSupervisorActor;
 @inject IRequiredActor<DiscussionStoreActor> DiscussionStoreActor;
-
-@if (_state.Value is {} state) {
+@if (_state.Value is { } state) {
     <div class="container">
-        <RadzenRow JustifyContent="JustifyContent.Center">
-            <RadzenColumn Size="10" SizeSM="10" SizeXS="10" SizeXX="9" SizeMD="8" SizeLG="7" SizeXL="6" Style="z-index: 1">
-                @if (_builds.HasValue) {
-                    @foreach (var build in _builds.Value) {
-                        <div class="build-info-in-discussion">
-                            <BuildInfoComponent 
-                                BuildConfig="@build.BuildConfig" 
-                                Info="@build.BuildInfo"
-                                ActiveUsers="_activeUsers"/>
-                        </div>
-                    }
-                }
-                <RadzenCard class="status-item">
-                    <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@state.Status.ToString()"></RadzenLabel>
-                </RadzenCard>
-                @foreach (var comment in state.Comments) {
-                    <CommentComponent
-                        BuildComment="comment"
-                        OnSave="() => OnSave(comment)"
-                        OnDelete="() => OnDelete(comment)">
-                    </CommentComponent>
-                }
-                @if (state.Status != BuildDiscussionStatus.Closed) {
-                    <RadzenCard class="comment-editor-block">
-                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
-                            <div style="width: 100%">
-                                <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
+        <RadzenRow  JustifyContent="JustifyContent.Center">
+            <RadzenColumn Size="10" style="z-index: 1">
+                <div style="display: block;width: auto">
+                    @if (_builds.HasValue) {
+                        @foreach (var build in _builds.Value) {
+                            <div class="build-info-in-discussion">
+                                <BuildInfoComponent
+                                    BuildConfig="@build.BuildConfig"
+                                    Info="@build.BuildInfo"
+                                    ActiveUsers="_activeUsers"/>
                             </div>
-                            <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
-                                <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
-                            </RadzenStack>
-                        </RadzenStack>
+                        }
+                    }
+                    <RadzenCard class="status-item rz-mt-2">
+                        <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@state.Status.ToString()"></RadzenLabel>
                     </RadzenCard>
-                }
+                    @foreach (var comment in state.Comments) {
+                        <CommentComponent
+                            BuildComment="comment"
+                            OnSave="() => OnSave(comment)"
+                            OnDelete="() => OnDelete(comment)">
+                        </CommentComponent>
+                    }
+                    @if (state.Status != BuildDiscussionStatus.Closed) {
+                        <RadzenCard class="comment-editor-block">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                                <div style="width: 100%">
+                                    <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
+                                </div>
+                                <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
+                                    <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    }
+                </div>
             </RadzenColumn>
         </RadzenRow>
     </div>
 } else if (ReactiveValuesInitialized) {
     <RadzenText TextStyle="TextStyle.H1" Text="Discussion not found"/>
 }
+
 @code {
 
-    [Parameter]
-    public string? BuildConfigId { get; set; }
+    [Parameter] public string? BuildConfigId { get; set; }
 
     protected override bool PreloadData => true;
 

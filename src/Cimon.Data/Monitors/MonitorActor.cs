@@ -32,7 +32,6 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 	private ICancelable _stopCountdown = Cancelable.CreateCanceled();
 	private readonly List<IActorRef> _watchers = [];
 	private MonitorModel _model;
-	private IActorRef _groupMonitorActor = ActorRefs.Nobody;
 
 	public MonitorActor(string monitorId, MonitorService monitorService) {
 		_monitorService = monitorService;
@@ -74,8 +73,8 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 		if (model.Type == MonitorType.Simple) {
 			HandleSimpleMonitorChange(model);
 		} else {
-			_groupMonitorActor = Context.GetOrCreateChild<GroupMonitorActor>("group-monitor");
-			_groupMonitorActor.Tell(model);
+			var groupMonitorActor = Context.GetOrCreateChild<GroupMonitorActor>("group-monitor");
+			groupMonitorActor.Tell(model);
 		}
 		_builds = model.Builds.ToImmutableList();
 		_model = model;
@@ -102,7 +101,6 @@ class MonitorActor : ReceiveActor, IWithUnboundedStash
 			Builds = _buildInfos.Values
 		});
 	}
-
 
 	private void Ready() {
 		Receive<MonitorModel>(OnMonitorChange);

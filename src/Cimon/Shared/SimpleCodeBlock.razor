@@ -1,0 +1,26 @@
+﻿@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+<div class="simple-code-block">
+    <RadzenToggleButton ValueChanged="(value) => ChangeWrapMode(value)" title="Wrap" Size="ButtonSize.Small" Icon="wrap_text" Variant="Variant.Outlined" class="tool-button rz-border-radius-10 rz-shadow-1" />
+    <RadzenButton title="Copy" Click="CopyText" Size="ButtonSize.Small" Icon="content_copy" Variant="Variant.Outlined" class="tool-button rz-border-radius-10 rz-shadow-1" />
+    <pre @ref="_codeElement" class="@Classes">@Text</pre>
+</div>
+@code {
+    private bool _wrapLines;
+    private ElementReference _codeElement;
+    [Parameter]
+    public string Text { get; set; }
+
+    private string Classes => _wrapLines ? "wrap" : "";
+
+    private void ChangeWrapMode(bool value) {
+        _wrapLines = value;
+        StateHasChanged();
+    }
+
+    private async Task CopyText() {
+        await JSRuntime.InvokeVoidAsync("uiApi.copyText", _codeElement);
+        NotificationService.Notify(NotificationSeverity.Success, "Copied");
+    }
+
+}

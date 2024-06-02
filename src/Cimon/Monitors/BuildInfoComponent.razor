@@ -66,7 +66,9 @@
                              AlignItems="AlignItems.Normal" Gap="8px">
                     @foreach (var committer in Committers) {
                         var user = committer.User;
-                        var committerClasses = IsSuspect(user) ? " suspect" : string.Empty;
+                        var confidence = committer.SuspectConfidence;
+                        var isSuspect = confidence >= 10;
+                        var committerClasses = isSuspect ? " suspect" : string.Empty;
                         var userName = GetUserName(user);
                         <RadzenStack class="committer-wrap" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Right"
                                      AlignItems="AlignItems.Center" Gap="2px">
@@ -74,8 +76,7 @@
                                 <CimonAvatar UserName="@userName" Email="@user.Email?.ToLowerInvariant()"></CimonAvatar>
                                 <div class="commits-count">
                                     <p title="Commits count: @committer.CommitsCount">@committer.CommitsCount</p>
-                                    @if (IsSuspect(user)) {
-                                        var confidence = BuildInfo.FailureSuspect?.Confidence ?? 0;
+                                    @if (isSuspect) {
                                         var opacity = 30 + Math.Floor(Math.Min(100, 70 * confidence / 100f));
                                         <div style="opacity: @opacity%" title="Suspected in build failure with @confidence% confidence">
                                             <RadzenIcon Icon="local_fire_department"/>
@@ -103,8 +104,6 @@
     private AppClientType AppClientType { get; set; }
     private ReactiveValue<IImmutableSet<string>> _activeUsers;
 
-    record CommitterInfo(VcsUser User, int CommitsCount);
-
     [Parameter] public BuildConfig BuildConfig { get; set; } = null!;
     [Parameter] public IObservable<BuildInfo> Info { get; set; } = null!;
     [Parameter] public IObservable<IImmutableSet<string>> ActiveUsers { get; set; } = null!;
@@ -124,15 +123,10 @@
         await base.InitializeReactiveValues();
         Subscribe(ref _activeUsers, ActiveUsers);
         Subscribe(ref _infoSubscription, Info).OnChange(value => {
-            var committers = value?.Changes.GroupBy(x => x.Author)
-                                 .OrderByDescending(x => x.Key.Name == value.FailureSuspect?.User.Name)
-                                 .ThenByDescending(x => x.Count())
-                                 .Select(x => new CommitterInfo(x.Key, x.Count())).ToList() ??
-                             (IReadOnlyCollection<CommitterInfo>)Array.Empty<CommitterInfo>();
+            var committers = value.CombinedCommitters;
             if (MaxCommitters.HasValue && committers.Count > MaxCommitters.Value) {
                 committers = committers.Take(MaxCommitters.Value).ToList();
             }
-
             Committers = committers;
         });
     }
@@ -190,10 +184,6 @@
         result.Append("Duration: ");
         result.Append(duration);
         return (startDate, duration, result.ToString());
-    }
-
-    private bool IsSuspect(VcsUser user) {
-        return BuildInfo?.FailureSuspect?.User.Name == user.Name && BuildInfo.FailureSuspect.Confidence >= 10;
     }
 
     private static string GetUserName(VcsUser user) {

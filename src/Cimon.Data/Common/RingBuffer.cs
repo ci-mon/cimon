@@ -1,4 +1,6 @@
-﻿namespace Cimon.Data.Common;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Cimon.Data.Common;
 
 using System.Collections;
 

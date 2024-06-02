@@ -1,0 +1,63 @@
+﻿POST http://localhost:5001/api/internal/emulateAllBuildsAreGreen?value=true
+
+###
+POST http://localhost:5001/api/internal/emulateAllBuildsAreGreen?value=false
+
+### Fail
+## VcsChange(VcsUser Author, DateTimeOffset? Date, string CommitMessage, ImmutableArray<FileModification> Modifications, bool IsInherited = false);
+## VcsUser(UserName Name, string FullName, string? Email = null)
+## FileModification(FileModificationType Type, string Path)
+## public enum FileModificationType { Unknown, Add, Delete, Edit, Move, Copy }
+## CIBuildProblem(CIBuildProblemType Type, string ShortSummary, string Details, bool? NewFailure)
+## CIBuildProblemType {Unknown, FailedTests, StageExecutionError}
+## CITestOccurence (string Name, string TestId, string Details, bool? Ignored, bool? CurrentlyMuted, bool? CurrentlyInvestigated, bool? NewFailure)
+@cakeMasterBuildKey = Cake_CakeMaster
+< {%
+  request.variables.set("userId", $random.integer(50))
+  request.variables.set("testId", $random.integer(10))
+  request.variables.set("stableTest", `{"Name":  "test 1", "TestId": "test 1", "Details": "empty"},`)
+  request.variables.set("stableTest", ``)
+%}
+POST http://localhost:5001/api/internal/setBuildState/{{cakeMasterBuildKey}}
+Content-Type: application/json
+
+{
+  "Status": "Failed",
+  "StatusText": "Hello, build is failed",
+  "Id": "{{$random.uuid}}",
+  "Problems": [
+    {"Type": "FailedTests", "ShortSummary":  "{{$random.integer()}} test failed", "Details": "empty", "NewFailure":  true}
+  ],
+  "FailedTests": [
+    {{stableTest}}
+    {"Name":  "test {{testId}}", "TestId": "test {{testId}}", "Details": "MyClass"}
+  ],
+  "Changes": [
+  {
+      "Author": {"Name": {"Domain": "", "Name": "test 1{{userId}}"}, "FullName": "test 1{{userId}}"},
+      "Date": "2024-05-07T18:47:49.598Z",
+      "CommitMessage": "I am broke tests",
+      "Modifications": [{ "Type": "Edit", "Path": "MyClass"}],
+      "IsInherited": false
+    },
+    {
+      "Author": {"Name": {"Domain": "", "Name": "test {{userId}}"}, "FullName": "test {{userId}}"},
+      "Date": "2024-05-07T18:47:49.598Z",
+      "CommitMessage": "Some changes 2",
+      "Modifications": [{ "Type": "Edit", "Path": "empty"}],
+      "IsInherited": false
+    }
+  ]
+}
+
+### Fix
+POST http://localhost:5001/api/internal/setBuildState/{{cakeMasterBuildKey}}
+Content-Type: application/json
+
+{
+  "Status": "Success",
+  "StatusText": "",
+  "Id": "21",
+  "Problems": [],
+  "Changes": []
+}

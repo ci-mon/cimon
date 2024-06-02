@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Cimon;
 using Cimon.Auth;
 using Cimon.Contracts;
@@ -40,7 +41,9 @@ builder.Services.AddAuth();
 builder.Services.AddCors();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x => {
+	x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddTransient<UnprotectedLocalStorage>();
 
 var isDevelopment = builder.Environment.IsDevelopment();

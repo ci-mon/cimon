@@ -10,7 +10,12 @@
 ::deep.comment-item .comment-date {
     color: var(--rz-base-700);
 }
-::deep.comment-content {
+
+::deep .comment-content-wrap {
+	max-width: 100%;
+	overflow: scroll;
+}
+.comment-content {
     background-color: white;
     border-radius: 1em 1em 1em 0;
     padding: 1.5em;

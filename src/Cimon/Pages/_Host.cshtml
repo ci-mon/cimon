@@ -28,7 +28,7 @@
     var initialState = new InitialApplicationState {
         ClientType = AppClientType.Web
     };
-    if (HttpContext.Request.Cookies.TryGetValue("Cimon-ClientType", out var type) 
+    if (HttpContext.Request.Cookies.TryGetValue("Cimon-ClientType", out var type)
             && Enum.TryParse<AppClientType>(type, out var clientType)) {
         initialState.ClientType = clientType;
     }
@@ -60,7 +60,7 @@
 <script src="deps/js/languages/yaml.min.js" asp-append-version="true" ></script>
 <script src="deps/js/languages/javascript.min.js" asp-append-version="true" ></script>
 <script src="deps/js/languages/markdown.min.js" asp-append-version="true" ></script>
-<script src="deps/js/quillInterop.js" asp-append-version="true" ></script>
+<script src="js/quillInterop.js" asp-append-version="true" ></script>
 <script src="js/main.js" asp-append-version="true" ></script>
 </body>
 </html>

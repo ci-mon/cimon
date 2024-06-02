@@ -1,7 +1,7 @@
 ﻿@using Microsoft.IdentityModel.Tokens
 @using System.Security.Cryptography
 @using System.Text
-@inherits RadzenGravatar 
+@inherits RadzenGravatar
 @if (Visible)
 {
     <div class="cimon-avatar">
@@ -18,8 +18,15 @@
         .cimon-avatar img {
             position: relative;
         }
+        .comment-content div.cimon-avatar {
+            position: relative;
+        }
+        .comment-content .cimon-avatar .backoff {
+            position: absolute;
+            top:  0;
+        }
         .cimon-avatar .backoff {
-             position: absolute;
+            position: absolute;
             top: 0;
             text-transform: uppercase;
             width: 32px;

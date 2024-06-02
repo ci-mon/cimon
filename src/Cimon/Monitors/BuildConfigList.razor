@@ -116,11 +116,11 @@
     
     protected override Task OnAfterRenderAsync(bool firstRender) {
         if(firstRender) {
-            var column = Grid.ColumnsCollection.FirstOrDefault(c => c.Property == "IsDefaultBranch");
+            var column = Grid?.ColumnsCollection.FirstOrDefault(c => c.Property == "IsDefaultBranch");
             if(column != null) {
                 column.SetFilterValue(true);
                 column.SetFilterOperator(FilterOperator.Equals);
-                Grid.Reload();
+                Grid?.Reload();
             }
         }
         return base.OnAfterRenderAsync(firstRender);

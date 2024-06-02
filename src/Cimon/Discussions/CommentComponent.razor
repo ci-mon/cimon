@@ -11,7 +11,7 @@
                     <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
                 </RadzenStack>
             </RadzenColumn>
-            <RadzenColumn>
+            <RadzenColumn class="comment-content-wrap">
                 <RadzenStack Orientation="Orientation.Vertical">
                     <p class="comment-content">
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
@@ -26,8 +26,11 @@
                             </RadzenStack>
                         </RadzenStack>
                         <QuillEditor Class="comment-editor" Readonly="@(!_editing)" @bind-Content="@BuildComment.Comment"/>
+                        @if (BuildComment.BuildInfo is { } info) {
+                            <ExtendedBuildInfo BuildInfo="info"></ExtendedBuildInfo>
+                        }
                         <div class="comment-content-icon"></div>
-                    </p>
+	                </p>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn Size="1" Visible="AuthorIsMe">
@@ -72,7 +75,7 @@
     }
 
     private string GetDateDescription() {
-        return BuildComment.ModifiedOn != null ? 
+        return BuildComment.ModifiedOn != null ?
             $"{BuildComment.ModifiedOn:U} (edited)"
             : BuildComment.CreatedOn.ToString("U", CultureInfo.CurrentCulture);
     }

@@ -33,6 +33,14 @@
     display: block;
 }
 ::deep .avatar-group > .rz-stack {
-    overflow-x: auto;
-    padding-top: 6px;
+	padding: 1em;
+	overflow-x: visible;
+}
+::deep .build-info-item.content {
+	padding: 1em;
+}
+::deep .avatar-group {
+	overflow-x: auto;
+	overflow-y: hidden;
+	height: 100px;
 }
