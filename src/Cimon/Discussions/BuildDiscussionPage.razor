@@ -27,10 +27,25 @@
                             </div>
                         }
                     }
-                    <RadzenCard class="status-item rz-mt-2">
-                        <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@state.Status.ToString()"></RadzenLabel>
+                    <RadzenCard class="status-item rz-mt-2 rz-p-0">
+                        <RadzenButton class="btn-enter-comment-mode" Visible="@(!_commentModeOn)" Variant="Variant.Text" Click="@(() => _commentModeOn = true)">
+                            <RadzenTextBox Disabled="true" Value="Write comment here..."></RadzenTextBox>
+                        </RadzenButton>
+                        @if (state.Status != BuildDiscussionStatus.Closed && _commentModeOn) {
+                        <RadzenCard class="comment-editor-block">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
+                                <div style="width: 100%">
+                                    <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
+                                </div>
+                                <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween">
+                                    <RadzenButton Style="align-self: flex-start;" Variant="Variant.Text" Click="@(() => _commentModeOn = false)" Icon="close" Size="ButtonSize.Large"/>
+                                    <RadzenButton  Style="align-self: flex-end;" Variant="Variant.Text" Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                        }
                     </RadzenCard>
-                    @for (var index = 0; index < state.Comments.Count; index++) {
+                    @for (var index = state.Comments.Count - 1; index >= 0; index--) {
                         var comment = state.Comments[index];
                         var last = index == state.Comments.Count - 1;
                         <CommentComponent Collapsed="@(!last)"
@@ -38,18 +53,6 @@
                             OnSave="() => OnSave(comment)"
                             OnDelete="() => OnDelete(comment)">
                         </CommentComponent>
-                    }
-                    @if (state.Status != BuildDiscussionStatus.Closed) {
-                        <RadzenCard class="comment-editor-block">
-                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
-                                <div style="width: 100%">
-                                    <QuillEditor Class="comment-editor" @bind-Content="@_newComment.Comment" OnSend="AddComment"/>
-                                </div>
-                                <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.End">
-                                    <RadzenButton Click="AddComment" Icon="send" Size="ButtonSize.Large"/>
-                                </RadzenStack>
-                            </RadzenStack>
-                        </RadzenCard>
                     }
                 </div>
             </RadzenColumn>
@@ -71,7 +74,7 @@
     private ActorsApi.DiscussionHandle? _discussionHandle;
     private ReactiveValue<IEnumerable<IDiscussionBuildData>> _builds;
     private IObservable<IImmutableSet<string>>? _activeUsers;
-
+    private bool _commentModeOn;
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
         await JsRuntime.InvokeVoidAsync("interactiveAPI.highlightElementByHash");
@@ -97,6 +100,7 @@
     private void AddComment() {
         _discussionHandle?.AddComment(_newComment);
         ClearComment();
+        _commentModeOn = false;
         StateHasChanged();
     }
 

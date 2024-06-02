@@ -44,3 +44,12 @@
 	overflow-y: hidden;
 	height: 100px;
 }
+::deep .btn-enter-comment-mode {
+	width: 100%;
+	span {
+		width: 100%;
+		input {
+			width: 100%;
+		}
+	}
+}
