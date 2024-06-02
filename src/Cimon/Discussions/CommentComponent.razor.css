@@ -15,10 +15,23 @@
 	max-width: 100%;
 	overflow: scroll;
 }
+::deep.comment-item.collapsed .comment-content-wrap {
+	overflow: hidden;
+}
+::deep.comment-item .btn-toggle-comment-collapsed{
+	margin-top: -8px;
+	margin-right: -12px;
+	margin-left: -8px;
+}
 .comment-content {
     background-color: white;
     border-radius: 1em 1em 1em 0;
     padding: 1.5em;
+}
+
+::deep.comment-item.collapsed .comment-editor .ql-editor {
+	padding-top: 0;
+	padding-bottom: 0;
 }
 ::deep.comment-item.my-comment .comment-content {
     border-radius: 1em 1em 0 1em;

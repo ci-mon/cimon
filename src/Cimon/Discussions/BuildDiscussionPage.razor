@@ -30,8 +30,10 @@
                     <RadzenCard class="status-item rz-mt-2">
                         <RadzenLabel>Discussion state: </RadzenLabel> <RadzenLabel Text="@state.Status.ToString()"></RadzenLabel>
                     </RadzenCard>
-                    @foreach (var comment in state.Comments) {
-                        <CommentComponent
+                    @for (var index = 0; index < state.Comments.Count; index++) {
+                        var comment = state.Comments[index];
+                        var last = index == state.Comments.Count - 1;
+                        <CommentComponent Collapsed="@(!last)"
                             BuildComment="comment"
                             OnSave="() => OnSave(comment)"
                             OnDelete="() => OnDelete(comment)">

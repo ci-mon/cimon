@@ -1,6 +1,4 @@
-﻿@using Cimon.Auth
-@using System.Security.Claims
-@using Cimon.Contracts
+﻿@using Cimon.Contracts
 @using Cimon.Data.Users
 @inject ICurrentUserAccessor CurrentUserAccessor
 <RadzenStack aria-label="login-menu"  Orientation="Orientation.Horizontal">
@@ -11,7 +9,7 @@
         </Template>
         <ChildContent>
             @if (_user.IsGuest()) {
-                <RadzenProfileMenuItem Icon="login" Text="Login: Auto" 
+                <RadzenProfileMenuItem Icon="login" Text="Login: Auto"
                                        Path="/Login?autologin=true"></RadzenProfileMenuItem>
                 <RadzenProfileMenuItem Icon="password" aria-label="login-via-password"
                                        Text="Login: Password"
@@ -35,7 +33,7 @@
     private Task<AuthenticationState> AuthenticationState { get; set; } = null!;
 
     private User? _user = null!;
-    
+
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;

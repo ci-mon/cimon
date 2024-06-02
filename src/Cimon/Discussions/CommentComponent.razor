@@ -4,33 +4,39 @@
 @using Cimon.Data.Users
 @inject ICurrentUserAccessor CurrentUserAccessor
 <div id="@BuildComment.Id" class="@CardClasses">
-    <RadzenCard >
-        <RadzenRow AlignItems="AlignItems.End" >
-            <RadzenColumn Size="1" Visible="AuthorIsNotMe">
-                <RadzenStack Orientation="Orientation.Vertical">
-                    <RadzenGravatar Email="@BuildComment.Author.Email"></RadzenGravatar>
+    <RadzenCard class="rz-p-0">
+        <RadzenRow AlignItems="AlignItems.End">
+            <RadzenColumn Size="1" Visible="@(AuthorIsNotMe && !Collapsed)">
+                <RadzenStack class="rz-pb-6" Orientation="Orientation.Vertical">
+                    <StyledGravatar GravatarStyle="GravatarStyle.Robohash"
+                                    Email="@BuildComment.Author.Email">
+                    </StyledGravatar>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn class="comment-content-wrap">
                 <RadzenStack Orientation="Orientation.Vertical">
-                    <p class="comment-content">
-                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Stretch">
-                            <RadzenStack Orientation="Orientation.Horizontal" Style="width: 50%;">
+                    <div class="comment-content">
+                        <RadzenStack Orientation="Orientation.Horizontal">
+                            <RadzenStack Orientation="Orientation.Horizontal">
+                                <RadzenToggleButton class="rz-p-0 btn-toggle-comment-collapsed"
+                                                    Size="ButtonSize.Small" Variant="Variant.Text"
+                                                    Icon="@(Collapsed ? "unfold_more" : "unfold_less")"
+                                                    Value="@(!Collapsed)" ValueChanged="ToggleCollapsed"/>
                                 <RadzenText TextStyle="TextStyle.H6" Text="@BuildComment.Author.FullName"/>
-                                <RadzenText TextStyle="TextStyle.Body2" class="comment-date" Text="@GetDateDescription()" />
+                                <RadzenText TextStyle="TextStyle.Body2" class="comment-date" Text="@GetDateDescription()"/>
                             </RadzenStack>
-                            <RadzenStack Orientation="Orientation.Horizontal"  Style="width: 50%;" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">
-                                <RadzenButton Icon="edit" Visible="EditButtonVisible" Size="ButtonSize.Small" Variant="Variant.Text" Click="EditComment" />
-                                <RadzenButton Icon="save" Visible="_editing" Size="ButtonSize.Small" Variant="Variant.Text" Click="SaveComment" />
-                                <RadzenButton Icon="delete" Visible="CanEdit" Size="ButtonSize.Small" Variant="Variant.Text" Click="RemoveComment" />
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" AlignItems="AlignItems.End">
+                                <RadzenButton Icon="edit" Visible="EditButtonVisible" Size="ButtonSize.Small" Variant="Variant.Text" Click="EditComment"/>
+                                <RadzenButton Icon="save" Visible="_editing" Size="ButtonSize.Small" Variant="Variant.Text" Click="SaveComment"/>
+                                <RadzenButton Icon="delete" Visible="CanEdit" Size="ButtonSize.Small" Variant="Variant.Text" Click="RemoveComment"/>
                             </RadzenStack>
                         </RadzenStack>
                         <QuillEditor Class="comment-editor" Readonly="@(!_editing)" @bind-Content="@BuildComment.Comment"/>
-                        @if (BuildComment.BuildInfo is { } info) {
+                        @if (BuildComment.BuildInfo is { } info && !Collapsed) {
                             <ExtendedBuildInfo BuildInfo="info"></ExtendedBuildInfo>
                         }
                         <div class="comment-content-icon"></div>
-	                </p>
+                    </div>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn Size="1" Visible="AuthorIsMe">
@@ -41,13 +47,12 @@
         </RadzenRow>
     </RadzenCard>
 </div>
+
 @code {
-    [Parameter]
-    public BuildComment BuildComment { get; set; } = null!;
-    [Parameter]
-    public EventCallback OnSave { get; set; }
-    [Parameter]
-    public EventCallback OnDelete { get; set; }
+    [Parameter] public BuildComment BuildComment { get; set; } = null!;
+    [Parameter] public bool Collapsed { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
 
     private bool CanEdit => BuildComment.GetCanEditBy(_user ?? User.Guest);
     private bool AuthorIsMe => BuildComment.Author.Name == _user?.Name;
@@ -55,7 +60,8 @@
     private bool _editing;
     private User? _user;
     private bool EditButtonVisible => CanEdit && !_editing;
-    private string CardClasses => $"comment-item {(_editing ? "editing" : "")} {(AuthorIsMe ? "my-comment" : "")}";
+    private string CardClasses => $"comment-item{(_editing ? " editing" : "")}{(AuthorIsMe ? " my-comment" : "")}{(Collapsed ? " collapsed" : "")}";
+
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
         _user = await CurrentUserAccessor.Current;
@@ -75,9 +81,13 @@
     }
 
     private string GetDateDescription() {
-        return BuildComment.ModifiedOn != null ?
-            $"{BuildComment.ModifiedOn:U} (edited)"
+        return BuildComment.ModifiedOn != null
+            ? $"{BuildComment.ModifiedOn:U} (edited)"
             : BuildComment.CreatedOn.ToString("U", CultureInfo.CurrentCulture);
+    }
+
+    private void ToggleCollapsed() {
+        Collapsed = !Collapsed;
     }
 
 }
