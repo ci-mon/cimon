@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using Newtonsoft.Json;
 
 namespace Cimon.Shared;
 
 public class BrowserDateTimeFormatOptions
 {
-	[JsonProperty("timeZone")]
 	public string TimeZone { get; set; }
-	//[JsonProperty("locale")]
 	public string? Locale { get; set; }
 }
 
