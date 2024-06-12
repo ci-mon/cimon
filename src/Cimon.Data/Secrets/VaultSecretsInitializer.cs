@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
 using VaultSharp.V1.AuthMethods.Token;
+using VaultSharp.V1.AuthMethods.UserPass;
 
 namespace Cimon.Data.Secrets;
 
@@ -18,6 +19,7 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 
 	public void Configure(string? key, TSecrets options) {
 		if (_vaultSecrets.Disabled) return;
+		if (string.IsNullOrWhiteSpace(_vaultSecrets.Token) && string.IsNullOrWhiteSpace(_vaultSecrets.UserName)) return;
 		try {
 			ConfigureAsync(options, key).ConfigureAwait(false).GetAwaiter().GetResult();
 		} catch (Exception e) {
@@ -79,7 +81,9 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 	}
 
 	internal static IVaultClient CreateVaultClient(VaultSecrets secrets, TimeSpan timeout) {
-		IAuthMethodInfo authMethod = new TokenAuthMethodInfo(secrets.Token);
+		IAuthMethodInfo authMethod = string.IsNullOrWhiteSpace(secrets.UserName)
+			? new TokenAuthMethodInfo(secrets.Token)
+			: new UserPassAuthMethodInfo(secrets.UserName, secrets.Password);
 		var vaultClientSettings = new VaultClientSettings(secrets.Url, authMethod) {
 			VaultServiceTimeout = timeout
 		};
