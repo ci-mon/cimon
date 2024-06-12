@@ -12,7 +12,7 @@ public static class DI
 			.AddCheck<CIConnectorsHealthcheck>("CiConnector")
 			.AddCheck<LdapClient>("LdapClient", tags: new[] { "windows" });
 		builder.Services.AddHealthChecksUI(settings => {
-				var localAddress = builder.Configuration.GetValue<string>("LOCAL_ADDRESS");
+				var localAddress = builder.Configuration.GetValue<string>("LocalAddress");
 				var healthCheckAddress = "/healthz";
 				if (!string.IsNullOrWhiteSpace(localAddress) && Uri.TryCreate(localAddress, UriKind.Absolute,
 						out var uri) && Uri.TryCreate(uri, healthCheckAddress, out var healthcheckUri)) {
