@@ -58,7 +58,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
     public override void Run(BuildContext context) {
         var deployServerName = context.Argument<string>("deploy-server-name");
         var deployPath = context.Argument<string>("deploy-path");
-        var stopPoolScript = 
+        var stopPoolScript =
             $$"""
                 Stop-WebAppPool -Name "{{context.AppPoolName}}";
                 $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
@@ -92,6 +92,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
             ExceptionOnScriptError = false
         });
         context.Information("Synchronizing files");
+        var webConfig = "web.config";
         context.StartProcess("robocopy", new ProcessSettings {
             Arguments = new ProcessArgumentBuilder()
                 .AppendQuoted(context.PublishDir.FullPath)
@@ -100,7 +101,13 @@ public sealed class DeployTask : FrostingTask<BuildContext>
                 .Append("/R:15")
                 .Append("/W:5")
                 .Append("/XD").AppendQuoted("nativeApps").AppendQuoted("db").AppendQuoted("logs")
+                .Append("/XF").AppendQuoted(webConfig)
         });
+        var webConfigPath = context.File(webConfig);
+        var webConfigDestination = context.Directory(deployPath) + webConfigPath;
+        if (!context.FileExists(webConfigDestination)) {
+	        context.CopyFile(context.PublishDir + webConfigPath, webConfigDestination);
+        }
         context.StartPowershellScript($"Start-WebAppPool -Name \"{context.AppPoolName}\"", new PowershellSettings {
             ComputerName = deployServerName,
             Modules = new[]{"webadministration"}
