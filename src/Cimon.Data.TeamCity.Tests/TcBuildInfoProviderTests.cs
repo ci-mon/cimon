@@ -17,7 +17,6 @@ using ML;
 [TestFixture]
 public class TcBuildInfoProviderTests : BaseTeamCityTest
 {
-	private TcBuildInfoProvider _buildInfoProvider = null!;
 	private TcClientFactory _clientFactory = null!;
 
 	protected override void Setup() {
@@ -27,7 +26,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 
 	[Test]
 	public async Task Debug() {
-		var info = await _buildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629, 
+		var info = await BuildInfoProvider.GetSingleBuildInfo("DotNetUnitTests", 5652629,
 			DefaultConnector.ConnectorKey);//5711671,5738602
 		info.Should().NotBeNull();
 		var utils = new BuildFailurePredictor(Substitute.For<IFeatureManager>());
@@ -41,7 +40,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 			Key = "Test1_BuildConf1"
 		};
 		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
-		var results = await _buildInfoProvider.FindInfo(query);
+		var results = await BuildInfoProvider.FindInfo(query);
 		var history = new BuildInfoHistory();
 		foreach (var result in results) {
 			history.Add(result);
@@ -55,7 +54,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 			Key = "Test1_BuildConf1"
 		};
 		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
-		var results = await _buildInfoProvider.FindInfo(query);
+		var results = await BuildInfoProvider.FindInfo(query);
 		using var client = _clientFactory.Create(DefaultConnector.ConnectorKey);
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {
 			BuildType = new BuildTypeLocator {

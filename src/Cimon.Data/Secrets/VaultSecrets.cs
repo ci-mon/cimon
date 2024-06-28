@@ -5,8 +5,8 @@ public class VaultSecrets
 	public bool Disabled { get; set; }
 	public required string Url { get; set; }
 	public required string Token { get; set; }
-	public required string UserName { get; set; }
-	public required string Password { get; set; }
+	public string? UserName { get; set; }
+	public string? Password { get; set; }
 	public required string MountPoint { get; set; }
 	public required string Path { get; set; }
 }
