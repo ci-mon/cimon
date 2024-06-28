@@ -45,7 +45,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			return Array.Empty<BuildInfo>();
 		TcBuildInfo info = await GetBuildInfo(build, clientTicket);
 		var results = new List<BuildInfo> { info };
-		if (info.Status == BuildStatus.Failed) {
+		if (info.Status == BuildStatus.Failed || infoQuery.Options.IsInitialLoad) {
 			await LoadBuildHistory(clientTicket, results, infoQuery, build);
 		}
 		return results;
@@ -60,14 +60,15 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 			return;
 		}
 		var buildLocator = GetBuildLocator(query.BuildConfig);
-		buildLocator.Count = query.Options.LookBackLimit;
+		var limit = query.Options.Limit;
+		buildLocator.Count = limit;
 		buildLocator.LookupLimit = 20;
 		var buildsList = clientTicket.Client.Builds.Include(x => x.Build).WithLocator(buildLocator)
 			.GetAsyncEnumerable<Builds, Build>(5);
 		var count = 0;
 		await foreach (var buildInfoSmall in buildsList) {
 			count++;
-			if (count > query.Options.LookBackLimit) {
+			if (count > limit) {
 				break;
 			}
 			if (buildInfoSmall.Id == sourceBuild.Id) continue;
@@ -75,7 +76,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 				break;
 			}
 			var status = GetStatus(buildInfoSmall.Status);
-			if (status == BuildStatus.Success) {
+			if (!query.Options.IsInitialLoad && status == BuildStatus.Success) {
 				break;
 			}
 			var locator = GetBuildLocator(query.BuildConfig);
@@ -117,7 +118,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return buildInfo;
 	}
 
-	private async Task<TcBuildInfo> GetBuildInfo(Build build, 
+	private async Task<TcBuildInfo> GetBuildInfo(Build build,
 			TeamCityClientTicket clientTicket) {
 		var endDate = ParseDate(build.FinishOnAgentDate);
 		var startDate = ParseDate(build.StartDate);
@@ -144,7 +145,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return info;
 	}
 
-	private async Task<IReadOnlyCollection<CITestOccurence>> GetFailedTests(Build build, 
+	private async Task<IReadOnlyCollection<CITestOccurence>> GetFailedTests(Build build,
 			TeamCityClientTicket clientTicket) {
 		var result = new List<CITestOccurence>();
 		foreach (var status in new []{TestOccurrenceLocatorStatus.Error, TestOccurrenceLocatorStatus.Failure}) {
@@ -190,7 +191,7 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		}
 		return result;
 	}
-	
+
 
 	private IReadOnlyCollection<VcsChange> GetChanges(Build build) {
 		var changes = build.Changes.Value;

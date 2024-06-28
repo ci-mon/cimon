@@ -113,7 +113,7 @@ class BuildInfoActor : ReceiveActor
 	private async Task OnGetBuildInfo<T>(T _) {
 		try {
 			string? lastBuildId = _buildInfoHistory.CombinedInfo?.Id;
-			var options = new BuildInfoQueryOptions(lastBuildId, 15);
+			var options = new BuildInfoQueryOptions(lastBuildId, 15, 5);
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
 			if (!infos.Any() && lastBuildId is null) {

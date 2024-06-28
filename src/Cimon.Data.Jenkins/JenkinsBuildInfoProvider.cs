@@ -32,13 +32,13 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		var results = new List<BuildInfo> {
 			info
 		};
-		if (info.Status == BuildStatus.Failed && info.Id != infoQuery.Options?.LastBuildId) {
+		if (infoQuery.Options.IsInitialLoad || (info.Status == BuildStatus.Failed && info.Id != infoQuery.Options.LastBuildId)) {
 			await LoadBuildHistory(infoQuery, info, client, results);
 		}
 		return results;
 	}
 
-	private async Task<BuildInfoWrapper?> GetFullBuildInfo(BuildInfoQuery infoQuery, long? number, 
+	private async Task<BuildInfoWrapper?> GetFullBuildInfo(BuildInfoQuery infoQuery, long? number,
 			IJenkinsClient client) {
 		var build = await GetBuildInfo(infoQuery, number, client);
 		if (build is null) return null;
@@ -69,7 +69,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 	}
 
 	private static async Task LoadProblems(IJenkinsClient client, BuildInfoWrapper info, InternalBuildInfo build) {
-		var workflow = await client.Query(new JenkinsWfApi.DescribeBuild(build.BuildInfo.Number.ToString(), 
+		var workflow = await client.Query(new JenkinsWfApi.DescribeBuild(build.BuildInfo.Number.ToString(),
 			build.JobLocator));
 		if (workflow is null) return;
 		var statusBuilder = new StringBuilder();
@@ -108,21 +108,21 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		}
 	}
 
-	private async Task LoadBuildHistory(BuildInfoQuery infoQuery, BuildInfoWrapper lastBuildInfo,
-			IJenkinsClient client, List<BuildInfo> results) {
+	private async Task LoadBuildHistory(BuildInfoQuery infoQuery, BuildInfoWrapper lastBuildInfo, IJenkinsClient client,
+		List<BuildInfo> results) {
 		var lastBuildNumber = lastBuildInfo.InternalInfo.BuildInfo.Number;
 		var prevBuild = lastBuildNumber - 1;
-		var minNumber = Math.Max(0, lastBuildNumber - infoQuery.Options.LookBackLimit);
-		while (prevBuild >= minNumber) {
+		var minNumber = Math.Max(0, lastBuildNumber - infoQuery.Options.Limit);
+		while (prevBuild > minNumber) {
 			var info = await GetFullBuildInfo(infoQuery, prevBuild, client);
 			if (info is null) {
 				break;
 			}
-			if (info.Id == infoQuery.Options?.LastBuildId) {
+			if (info.Id == infoQuery.Options.LastBuildId) {
 				break;
 			}
 			results.Insert(0, info);
-			if (info.Status == BuildStatus.Success) {
+			if (!infoQuery.Options.IsInitialLoad && info.Status == BuildStatus.Success) {
 				break;
 			}
 			prevBuild--;
@@ -196,7 +196,7 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		}
 		JobInfo? job = await client.Query(new JenkinsApi.Job(locator));
 		if (job is null) return null;
-		return await GetLastFinishedBuild(job.LastCompletedBuild.Number, locator, client, 
+		return await GetLastFinishedBuild(job.LastCompletedBuild.Number, locator, client,
 			buildInfoQuery.Options.LastBuildId);
 	}
 

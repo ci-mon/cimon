@@ -16,7 +16,11 @@ public record BuildConfig
 	}
 }
 
-public record BuildInfoQueryOptions(string? LastBuildId, int LookBackLimit);
+public record BuildInfoQueryOptions(string? LastBuildId, int LookBackLimit, int InitialLoadLimit)
+{
+	public int Limit => LastBuildId is null ? InitialLoadLimit : LookBackLimit;
+	public bool IsInitialLoad => LastBuildId is null;
+}
 
 public record BuildInfoQuery(CIConnectorInfo ConnectorInfo, BuildConfig BuildConfig,
 	BuildInfoQueryOptions Options);
