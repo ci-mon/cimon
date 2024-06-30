@@ -5,5 +5,6 @@ public enum BuildStatus
 	Success,
 	Failed,
 	Investigated,
-	Fixed
+	Fixed,
+	NoData
 }

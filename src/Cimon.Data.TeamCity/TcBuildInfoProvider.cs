@@ -96,6 +96,14 @@ public class TcBuildInfoProvider : IBuildInfoProvider
 		return await GetLogsAsync(tcBuildInfo.TcId.Value, clientTicket, logsQuery.CancellationToken);
 	}
 
+	public BuildInfo GetNoDataPlaceholder(BuildInfoQuery query) {
+		using var clientTicket = _clientFactory.Create(query.ConnectorInfo.ConnectorKey);
+		var buildConfig = query.BuildConfig;
+		return BuildInfo.NoData(query.BuildConfig) with {
+			Url = clientTicket.Client.BaseUrl + $"/buildConfiguration/{buildConfig.Key}"
+		};
+	}
+
 	private async Task<string> GetLogsAsync(long buildId, TeamCityClientTicket clientTicket,
 		CancellationToken cancellationToken) {
 		var client = clientTicket.Client;

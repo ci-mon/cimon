@@ -22,13 +22,16 @@ public record BuildInfo
 	public IReadOnlyCollection<CIBuildProblem> Problems { get; set; } = Array.Empty<CIBuildProblem>();
 	public IReadOnlyCollection<CITestOccurence> FailedTests { get; set; } = Array.Empty<CITestOccurence>();
 	public int CommentsCount { get; set; }
-	public static BuildInfo NoData { get; } = new() {
-		Url = NoDataValue,
-		Group = NoDataValue,
-		BranchName = NoDataValue,
-		Name = NoDataValue,
-		Id = NoDataValue,
-	};
+	public static BuildInfo NoData(BuildConfig buildConfig) {
+		return new BuildInfo {
+			Url = NoDataValue,
+			Group = NoDataValue,
+			BranchName = NoDataValue,
+			Name = $"{buildConfig.Key} - {NoDataValue}",
+			Id = NoDataValue,
+			Status = BuildStatus.NoData
+		};
+	}
 
 	public string? Number { get; set; }
 

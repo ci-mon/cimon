@@ -39,8 +39,10 @@ public class DemoBuildInfoProvider : IBuildInfoProvider
 		return Task.FromResult(result);
 	}
 
-	public Task<string> GetLogs(LogsQuery logsQuery) => 
+	public Task<string> GetLogs(LogsQuery logsQuery) =>
 		Task.FromResult($"some logs from build {logsQuery.BuildInfo.Name}");
+
+	public BuildInfo GetNoDataPlaceholder(BuildInfoQuery query) => BuildInfo.NoData(query.BuildConfig);
 
 	private static bool? _stateForAll;
 	public static void SetStateForAll(bool? value) => _stateForAll = value;

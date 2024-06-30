@@ -165,6 +165,8 @@ public class JenkinsBuildInfoProvider(ClientFactory factory) : IBuildInfoProvide
 		return await client.Query(query) ?? string.Empty;
 	}
 
+	public BuildInfo GetNoDataPlaceholder(BuildInfoQuery query) => BuildInfo.NoData(query.BuildConfig);
+
 	private async Task<InternalBuildInfo?> GetLastFinishedBuild(long number, JobLocator locator,
 			IJenkinsClient client, string? lastBuildId) {
 		while (number > 0) {

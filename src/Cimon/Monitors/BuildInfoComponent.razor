@@ -142,6 +142,9 @@
                 builder.AppendLiteral(" with-committers");
             }
         }
+        else if (BuildInfo?.Status == BuildStatus.NoData) {
+            builder.AppendLiteral(" no-data");
+        }
 
         return builder.ToStringAndClear();
     }

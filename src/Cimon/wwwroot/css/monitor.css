@@ -134,6 +134,12 @@ button.rz-button.discussion-button:not(:hover) .rz-badge {
             cursor: pointer;
         }
     }
+	&.no-data {
+		  .content {
+			  --bg-from: rgb(142, 119, 3);
+			  --bg-to: rgb(176, 181, 52);
+		  }
+	}
 
     .content {
         --bg-from: #3e6213;

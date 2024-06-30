@@ -118,7 +118,7 @@ class BuildInfoActor : ReceiveActor
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
 			if (!infos.Any() && lastBuildId is null) {
-				infos = new[] { BuildInfo.NoData };
+				infos = new[] { _provider.GetNoDataPlaceholder(query) };
 			}
 			AddBuildInfos(infos);
 		} catch (Exception e) {

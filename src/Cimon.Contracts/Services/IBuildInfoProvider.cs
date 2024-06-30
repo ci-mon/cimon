@@ -7,4 +7,5 @@ public interface IBuildInfoProvider
 {
 	Task<IReadOnlyList<BuildInfo>> FindInfo(BuildInfoQuery infoQuery);
 	Task<string> GetLogs(LogsQuery logsQuery);
+	BuildInfo GetNoDataPlaceholder(BuildInfoQuery query);
 }
