@@ -6,9 +6,10 @@ namespace Cimon.Data.BuildInformation;
 
 public class BuildInfoHistory
 {
-	public record BuildConfigurationStats(int Runs, int SuccessfulRunsInARow)
+	public record BuildConfigurationStats(int Runs, int SuccessfulRunsInARow, int LastSuccessfulBuildAge)
 	{
 		public bool Resolved { get; set; }
+		public bool IsUnstable => LastSuccessfulBuildAge > 5;
 	}
 
 	public record Item(BuildInfo Info, bool Resolved, ImmutableList<BuildFailureSuspect> Suspects,
@@ -16,6 +17,7 @@ public class BuildInfoHistory
 	{
 		public bool Resolved { get; set; } = Resolved;
 		public ImmutableList<BuildFailureSuspect> Suspects { get; set; } = Suspects;
+		public bool IsLast { get; set; } = true;
 
 		public void SetResolved() {
 			Resolved = true;
@@ -37,10 +39,15 @@ public class BuildInfoHistory
 	}
 
 	public Item Add(BuildInfo newInfo) {
-		var stats = _buffer.Last is { } last
-			? new BuildConfigurationStats(last.Stats.Runs + 1,
-				last.Info.IsSuccess() ? last.Stats.SuccessfulRunsInARow + 1 : 0)
-			: new BuildConfigurationStats(0, 0);
+		BuildConfigurationStats stats;
+		if (_buffer.Last is { } last) {
+			last.IsLast = false;
+			var successfulRunsInARow = last.Info.IsSuccess() ? last.Stats.SuccessfulRunsInARow + 1 : 0;
+			var lastSuccessfulAge = last.Info.IsOk() ? 1 : last.Stats.LastSuccessfulBuildAge + 1;
+			stats = new BuildConfigurationStats(last.Stats.Runs + 1, successfulRunsInARow, lastSuccessfulAge);
+		} else {
+			stats = new BuildConfigurationStats(0, 0, 100);
+		}
 		var buildInfoItem = new Item(newInfo, false, ImmutableList<BuildFailureSuspect>.Empty, stats);
 		_buffer.Add(buildInfoItem);
 		_actualBuildInfo = null;
@@ -84,6 +91,7 @@ public class BuildInfoHistory
 			changes.AddRange(item.Info.Changes.Select(c => c with { IsInherited = i != lastIndex }));
 			MergeSuspectConfidence(item, suspects);
 		}
+		suspects = NormalizeSuspects(suspects);
 		return changes
 			.GroupBy(x => x.Author)
 			.Select(g =>
@@ -91,6 +99,16 @@ public class BuildInfoHistory
 			.OrderByDescending(x => x.SuspectConfidence)
 			.ThenByDescending(x => x.CommitsCount)
 			.ToImmutableList();
+	}
+
+	private Dictionary<VcsUser, float> NormalizeSuspects(Dictionary<VcsUser, float> suspects) {
+		var total = suspects.Sum(x => x.Value);
+		if (total < 100) return suspects;
+		var weight = 100f / total;
+		foreach (var suspect in suspects.ToList()) {
+			suspects[suspect.Key] = Convert.ToSingle(Math.Round(suspect.Value * weight));
+		}
+		return suspects;
 	}
 
 	private static void MergeSuspectConfidence(Item item, Dictionary<VcsUser, float> suspects) {

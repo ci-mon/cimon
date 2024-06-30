@@ -41,6 +41,7 @@ export abstract class CimonNotifier {
     await this.savedNotifications[id]?.remove();
     delete this.savedNotifications[id];
   }
+
   saveNotification(id: string, notification: NotificationInstance) {
     this.savedNotifications[id] = notification;
     notification.onChange(() => {
@@ -48,16 +49,24 @@ export abstract class CimonNotifier {
     });
   }
 
-  public async showMentionNotification(title: string, comment: string, commentAuthorEmail?: string) {
+  public async showMentionNotification(buildId: number, title: string, comment: string, commentAuthorEmail?: string) {
     const id = 'commentNotification';
     await this.hide(id);
     const notification = await this.createMentionNotification(title, comment, commentAuthorEmail);
+    notification.sourceBuildId = buildId;
     this.saveNotification(id, notification);
     return await this.getMentionNotificationResult(notification);
   }
 
   async hideAll() {
     for (const id of Object.keys(this.savedNotifications)) {
+      await this.hide(id);
+    }
+  }
+
+  async remove(buildId: number) {
+    const id = 'commentNotification';
+    if (this.savedNotifications[id]?.sourceBuildId === buildId) {
       await this.hide(id);
     }
   }

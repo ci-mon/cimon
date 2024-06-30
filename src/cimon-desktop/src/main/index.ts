@@ -44,7 +44,7 @@ if (electron_squirrel_startup) {
 app.setAppUserModelId(notifier.AppId);
 cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
 
-AutoUpdater.install(cimonApp);
+await AutoUpdater.install(cimonApp);
 
 app.on('ready', async () => {
   await cimonApp.init();

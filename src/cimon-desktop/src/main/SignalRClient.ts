@@ -72,6 +72,9 @@ export class SignalRClient {
         this._onNotifyWithUrl(buildId, url, title, comment, authorEmail);
       }
     );
+    this._connection.on('RemoveNotification', (buildId: number) => {
+      this._notifier.remove(buildId);
+    });
     this._connection.on('UpdateMentions', (mentions) => this.onMentionsChanged?.(mentions));
     this._connection.on('UpdateMonitorInfo', (monitorInfo) => this.onMonitorInfoChanged?.(monitorInfo));
     this._connection.on('CheckForUpdates', () => {
@@ -90,7 +93,7 @@ export class SignalRClient {
   }
 
   private async _onNotifyWithUrl(buildId: number, url: string, title: string, comment: string, authorEmail: string) {
-    const result = await this._notifier.showMentionNotification(title, comment, authorEmail);
+    const result = await this._notifier.showMentionNotification(buildId, title, comment, authorEmail);
     switch (result.reaction) {
       case MentionNotificationReaction.Activated: {
         this.onOpenDiscussionWindow?.(url);

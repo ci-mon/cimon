@@ -12,7 +12,9 @@ public record BuildComment
 	public IImmutableList<MentionedEntityId> Mentions { get; set; } = ImmutableList<MentionedEntityId>.Empty;
 	public string Id { get; set; } = $"c_{Guid.NewGuid():N}";
 	public DateTime? ModifiedOn { get; set; }
-	public BuildInfo BuildInfo { get; set; }
+	public BuildInfo? BuildInfo { get; set; }
+	public bool MentionedUsersNotified { get; set; }
+
 	public bool GetCanEditBy(User user) {
 		return Author.Name == user.Name || Author.Name == User.Guest.Name;
 	}

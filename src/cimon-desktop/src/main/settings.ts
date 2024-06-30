@@ -1,7 +1,22 @@
 import Store from 'electron-store';
 import { NativeAppSettings } from '../shared/interfaces';
-
-export const settingsStore = new Store<NativeAppSettings>({
+export class CimonSettingsStore extends Store<NativeAppSettings> {
+  async getBaseUrl(){
+    const resp = await fetch(`${this.store.baseUrl}`, { redirect: 'manual' });
+    if (resp.redirected) {
+      const newUrl = resp.headers.get('location');
+      try {
+        if (newUrl && (await fetch(`${newUrl}`))?.ok) {
+          this.set('baseUrl', newUrl);
+        }
+      } catch (e) {
+        console.warn(`Base url was redirected to ${newUrl} but it not works: ${(e as Error)?.message}`);
+      }
+    }
+    return this.store.baseUrl;
+  }
+}
+export const settingsStore = new CimonSettingsStore({
   defaults: {
     autoRun: false,
     baseUrl: import.meta.env.CIMON_WEB_APP_URL ?? 'http://localhost:5001',

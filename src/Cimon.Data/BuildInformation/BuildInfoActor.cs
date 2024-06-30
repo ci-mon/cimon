@@ -142,7 +142,9 @@ class BuildInfoActor : ReceiveActor
 		_buildInfoHistory.InitializeLastBuildInfo();
 		var unresolvedItems = addedItems.Where(i => !i.Resolved).ToList();
 		foreach (var item in unresolvedItems) {
-			TryRunMl(item.Info);
+			if (!item.Stats.IsUnstable) {
+				TryRunMl(item.Info);
+			}
 			HandleDiscussion(item);
 		}
 		NotifySubscribers(BuildInfoItemUpdateSource.StateChanged);

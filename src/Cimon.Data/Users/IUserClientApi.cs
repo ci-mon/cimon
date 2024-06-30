@@ -15,4 +15,5 @@ public interface IUserClientApi
 	Task UpdateMentions(IEnumerable<ExtendedMentionInfo> mentions);
 	Task CheckForUpdates();
 	Task UpdateMonitorInfo(MonitorInfo monitorInfo);
+	Task RemoveNotification(int buildConfigId);
 }

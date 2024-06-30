@@ -22,6 +22,11 @@ public class SignalRNotificationService : INotificationService, INotificationHan
 				$"{messageAuthor.Name} mentioned you in a comment", comment, messageAuthor.Email ?? string.Empty);
 	}
 
+	public async Task HideNotification(int buildConfigId, IReadOnlyCollection<MentionedEntityId> groups) {
+		var groupNames = groups.Select(x=>x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
+		await _hubContext.Clients.Groups(groupNames).RemoveNotification(buildConfigId);
+	}
+
 	public async Task Handle(NativeAppPublished notification, CancellationToken cancellationToken) {
 		await _hubContext.Clients.All.CheckForUpdates();
 	}
