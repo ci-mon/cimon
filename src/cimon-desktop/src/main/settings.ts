@@ -1,19 +1,27 @@
 import Store from 'electron-store';
 import { NativeAppSettings } from '../shared/interfaces';
 export class CimonSettingsStore extends Store<NativeAppSettings> {
-  async getBaseUrl(){
-    const resp = await fetch(`${this.store.baseUrl}`, { redirect: 'manual' });
-    if (resp.redirected) {
-      const newUrl = resp.headers.get('location');
-      try {
-        if (newUrl && (await fetch(`${newUrl}`))?.ok) {
-          this.set('baseUrl', newUrl);
-        }
-      } catch (e) {
-        console.warn(`Base url was redirected to ${newUrl} but it not works: ${(e as Error)?.message}`);
+  async getBaseUrl() {
+    try {
+      const resp = await fetch(`${this.store.baseUrl}`, { redirect: 'manual' });
+      if (resp.redirected) {
+        await this._handleRedirection(resp);
       }
+    } catch {
+      // ignored
     }
     return this.store.baseUrl;
+  }
+
+  private async _handleRedirection(resp: Response) {
+    const newUrl = resp.headers.get('location');
+    try {
+      if (newUrl && (await fetch(`${newUrl}`))?.ok) {
+        this.set('baseUrl', newUrl);
+      }
+    } catch (e) {
+      console.warn(`Base url was redirected to ${newUrl} but it not works: ${(e as Error)?.message}`);
+    }
   }
 }
 export const settingsStore = new CimonSettingsStore({

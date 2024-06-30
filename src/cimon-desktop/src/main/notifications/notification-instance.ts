@@ -1,5 +1,5 @@
 export interface NotificationInstance {
-  sourceBuildId?: number;
+  sourceBuildId?: string;
   sourceNotification?: Electron.Notification;
   remove(): Promise<void>;
   onChange: (cb: () => void) => void;

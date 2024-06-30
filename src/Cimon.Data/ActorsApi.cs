@@ -18,7 +18,8 @@ public enum BuildInfoItemUpdateSource {
 	None,
 	StateChanged,
 	DiscussionInfoChanged,
-	SuspectsChanged
+	SuspectsChanged,
+	Resolved
 }
 
 public static class ActorsApi

@@ -15,16 +15,17 @@ public class SignalRNotificationService : INotificationService, INotificationHan
 	}
 
 	public async Task Notify(int buildConfigId, string commentId, User messageAuthor,
-			IReadOnlyCollection<MentionedEntityId> groups, string comment) {
-		var groupNames = groups.Select(x=>x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
-		await _hubContext.Clients.Groups(groupNames)
-			.NotifyWithUrl(buildConfigId, $"/buildDiscussion/{buildConfigId}#{commentId}",
-				$"{messageAuthor.Name} mentioned you in a comment", comment, messageAuthor.Email ?? string.Empty);
+		IReadOnlyCollection<MentionedEntityId> groups, string comment) {
+		var groupNames = groups.Select(x => x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
+		await _hubContext.Clients.Groups(groupNames).NotifyWithUrl(buildConfigId, commentId,
+			$"/buildDiscussion/{buildConfigId}#{commentId}", $"{messageAuthor.Name} mentioned you in a comment",
+			comment, messageAuthor.Email ?? string.Empty);
 	}
 
-	public async Task HideNotification(int buildConfigId, IReadOnlyCollection<MentionedEntityId> groups) {
-		var groupNames = groups.Select(x=>x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
-		await _hubContext.Clients.Groups(groupNames).RemoveNotification(buildConfigId);
+	public async Task HideNotification(int buildConfigId, string commentId,
+		IReadOnlyCollection<MentionedEntityId> groups) {
+		var groupNames = groups.Select(x => x.Name).Where(x => !string.IsNullOrWhiteSpace(x));
+		await _hubContext.Clients.Groups(groupNames).RemoveNotification(buildConfigId, commentId);
 	}
 
 	public async Task Handle(NativeAppPublished notification, CancellationToken cancellationToken) {

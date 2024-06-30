@@ -79,12 +79,17 @@ public class DiscussionActor : ReceiveActor
 		var buildInfo = msg.BuildInfo;
 		buildData?.BuildInfo.OnNext(buildInfo);
 		var stats = msg.Stats;
+		if (msg.UpdateSource == BuildInfoItemUpdateSource.Resolved) {
+			await SetItemResolved(buildInfo);
+			return;
+		}
 		if (_state.Status == BuildDiscussionStatus.Unknown) {
 			BuildDiscussionState state = _state with { Status = BuildDiscussionStatus.Open };
 			StateHasChanged(state);
 			await OpenDiscussion(buildInfo, stats);
 			return;
 		}
+
 		if (_state.Status == BuildDiscussionStatus.Open && msg is { IsResolved: false }) {
 			switch (msg.UpdateSource) {
 				case BuildInfoItemUpdateSource.StateChanged:
@@ -94,6 +99,17 @@ public class DiscussionActor : ReceiveActor
 					await AddSuspectsUpdate(buildInfo);
 					break;
 			}
+		}
+	}
+
+	private async Task SetItemResolved(BuildInfo buildInfo) {
+		var existing = _state.Comments.FirstOrDefault(x => x.BuildInfo?.Id == buildInfo.Id);
+		if (existing is not null) {
+			var state = _state with { Comments = _state.Comments.Remove(existing) };
+			if (existing.MentionedUsersNotified) {
+				await HideCommentNotifications(existing);
+			}
+			StateHasChanged(state);
 		}
 	}
 
@@ -108,7 +124,7 @@ public class DiscussionActor : ReceiveActor
 				var mentions = allSuspects.ConvertAll(x =>
 					new MentionedEntityId(x.User.Name, x.User.FullName, MentionedEntityType.User));
 				if (existing.MentionedUsersNotified) {
-					await _notificationService.HideNotification(_buildConfig.Id, existing.Mentions);
+					await HideCommentNotifications(existing);
 				}
 				await _notificationService.Notify(_buildConfig.Id, existing.Id, existing.Author, mentions,
 					$"You was suspected in a failure of \"{buildInfo.Name}\"");
@@ -132,6 +148,10 @@ public class DiscussionActor : ReceiveActor
 		});
 		commentData.Comment = msg.ToString();
 		await AddComment(commentData);
+	}
+
+	private async Task HideCommentNotifications(BuildComment existing) {
+		await _notificationService.HideNotification(_buildConfig.Id, existing.Id, existing.Mentions);
 	}
 
 	private async Task AddStatusUpdate(BuildInfo buildInfo, BuildInfoHistory.BuildConfigurationStats? stats) {

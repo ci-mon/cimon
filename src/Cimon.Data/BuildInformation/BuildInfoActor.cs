@@ -43,6 +43,7 @@ class BuildInfoActor : ReceiveActor
 		Setup();
 		var buildConfigStream = buildConfigService.Get(buildConfigId);
 		Context.Observe(buildConfigStream);
+		_buildInfoHistory.OnResolved += OnItemResolved;
 		_log.Info($"BuildInfoActor started: {Self.Path.Name}");
 	}
 
@@ -117,8 +118,7 @@ class BuildInfoActor : ReceiveActor
 			var query = new BuildInfoQuery(_connectorInfo, _config!, options);
 			var infos = await _provider!.FindInfo(query);
 			if (!infos.Any() && lastBuildId is null) {
-				Self.Tell(BuildInfo.NoData);
-				return;
+				infos = new[] { BuildInfo.NoData };
 			}
 			AddBuildInfos(infos);
 		} catch (Exception e) {
@@ -156,6 +156,15 @@ class BuildInfoActor : ReceiveActor
 		current.CommentsCount = _commentsCount;
 		var buildInfoItem = CreateNotification(current, updateSource);
 		_subscribers.ForEach(s => s.Tell(buildInfoItem));
+	}
+
+	private void OnItemResolved(BuildInfoHistory.Item item) {
+		Context.Parent.Tell(new ActorsApi.Discussions.BuildStatusChanged(_config!,
+			new ActorsApi.BuildInfoItem(item.Info, _config!.Id,
+				BuildInfoItemUpdateSource.Resolved) {
+				IsResolved = true,
+				Stats = item.Stats
+			}));
 	}
 
 	private void HandleDiscussion(BuildInfoHistory.Item buildInfoItem) =>

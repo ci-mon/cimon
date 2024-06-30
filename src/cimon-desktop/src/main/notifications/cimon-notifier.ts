@@ -49,11 +49,16 @@ export abstract class CimonNotifier {
     });
   }
 
-  public async showMentionNotification(buildId: number, title: string, comment: string, commentAuthorEmail?: string) {
+  public async showMentionNotification(
+    sourceBuildId: string,
+    title: string,
+    comment: string,
+    commentAuthorEmail?: string,
+  ) {
     const id = 'commentNotification';
     await this.hide(id);
     const notification = await this.createMentionNotification(title, comment, commentAuthorEmail);
-    notification.sourceBuildId = buildId;
+    notification.sourceBuildId = sourceBuildId;
     this.saveNotification(id, notification);
     return await this.getMentionNotificationResult(notification);
   }
@@ -64,9 +69,9 @@ export abstract class CimonNotifier {
     }
   }
 
-  async remove(buildId: number) {
+  async remove(sourceBuildId: string) {
     const id = 'commentNotification';
-    if (this.savedNotifications[id]?.sourceBuildId === buildId) {
+    if (this.savedNotifications[id]?.sourceBuildId === sourceBuildId) {
       await this.hide(id);
     }
   }

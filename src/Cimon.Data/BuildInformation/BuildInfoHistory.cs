@@ -6,6 +6,7 @@ namespace Cimon.Data.BuildInformation;
 
 public class BuildInfoHistory
 {
+	public event Action<Item> OnResolved;
 	public record BuildConfigurationStats(int Runs, int SuccessfulRunsInARow, int LastSuccessfulBuildAge)
 	{
 		public bool Resolved { get; set; }
@@ -79,12 +80,13 @@ public class BuildInfoHistory
 		var suspects = new Dictionary<VcsUser, float>();
 		var lastIndex = items.Length - 1;
 		for (int i = lastIndex; i >= 0; i--) {
-			var item = items[i];
+			Item item = items[i];
 			if (item.Resolved) break;
 			var nextItemIndex = i + 1;
 			var isItemResolved = GetIsItemResolved(item, items[nextItemIndex..]);
 			if (isItemResolved) {
 				item.SetResolved();
+				OnResolved?.Invoke(item);
 				MarkPreviousItemsAsResolved(items, i);
 				break;
 			}
