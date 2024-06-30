@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Collections.Specialized;
 using Cimon.Contracts.AppFeatures;
 using Microsoft.FeatureManagement;
 using SmartComponents.LocalEmbeddings;
@@ -91,16 +92,16 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 			.Append(mlContext.Transforms.Text.RemoveDefaultStopWords("Tokens", "Words",
 				language: StopWordsRemovingEstimator.Language.English))
 			.Append(mlContext.Transforms.Conversion.MapValueToKey("Tokens"))
-			.Append(mlContext.Transforms.Text.ProduceNgrams("Ngrams", "Tokens", 
+			.Append(mlContext.Transforms.Text.ProduceNgrams("Ngrams", "Tokens",
 				ngramLength: 3, useAllLengths: true, weighting: NgramExtractingEstimator.WeightingCriteria.Tf))
-			.Append(mlContext.Transforms.Text.LatentDirichletAllocation("Features", "Ngrams", 
+			.Append(mlContext.Transforms.Text.LatentDirichletAllocation("Features", "Ngrams",
 				numberOfTopics: itemsToMatch.Count + 1));
 		using var transformer = pipeline.Fit(dataView);
 		using var predictionEngine = mlContext.Model.CreatePredictionEngine<TextData, TransformedTextData>(transformer);
-		TransformedTextData? sourceRes = predictionEngine.Predict(source);
+		TransformedTextData? sourceRes = predictionEngine.Predict(GetSafeText(source));
 		var sourceTopic = sourceRes.Features.GetItemWithMaxValue();
 		var probabilities = itemsToMatch.Select(item => {
-			var prediction = predictionEngine.Predict(item);
+			var prediction = predictionEngine.Predict(GetSafeText(item));
 			var sourceTopicWeight = prediction.Features[sourceTopic.Index];
 			return sourceTopicWeight;
 		}).ToList();
@@ -109,6 +110,18 @@ public class BuildFailurePredictor(IFeatureManager featureManager) : IBuildFailu
 		return totalProbabilities == 0
 			? BestMatch.Empty
 			: new BestMatch(bestFit.Index, Convert.ToInt32(Math.Round(bestFit.Value * 100.0)));
+	}
+
+	private static TextData GetSafeText(TextData source) {
+		var maxLength = 112_530;
+		var sourceText = source.Text;
+		if (sourceText.Length < maxLength) {
+			return source;
+		}
+		var text = TextCompressor.CompressText(sourceText, maxLength);
+		return new TextData {
+			Text = text
+		};
 	}
 
 	private class TextData

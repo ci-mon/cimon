@@ -80,6 +80,7 @@ public class DiscussionActor : ReceiveActor
 			.FirstOrDefaultAsync();
 		var buildInfo = msg.BuildInfo;
 		buildData?.BuildInfo.OnNext(buildInfo);
+		var stats = msg.Stats;
 		if (_state.Status == BuildDiscussionStatus.Unknown) {
 			BuildDiscussionState state = _state with { Status = BuildDiscussionStatus.Open };
 			StateHasChanged(state);

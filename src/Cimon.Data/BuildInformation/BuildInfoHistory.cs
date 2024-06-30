@@ -6,7 +6,13 @@ namespace Cimon.Data.BuildInformation;
 
 public class BuildInfoHistory
 {
-	public record Item(BuildInfo Info, bool Resolved, ImmutableList<BuildFailureSuspect> Suspects)
+	public record BuildConfigurationStats(int Runs, int SuccessfulRunsInARow)
+	{
+		public bool Resolved { get; set; }
+	}
+
+	public record Item(BuildInfo Info, bool Resolved, ImmutableList<BuildFailureSuspect> Suspects,
+		BuildConfigurationStats Stats)
 	{
 		public bool Resolved { get; set; } = Resolved;
 		public ImmutableList<BuildFailureSuspect> Suspects { get; set; } = Suspects;
@@ -14,15 +20,28 @@ public class BuildInfoHistory
 		public void SetResolved() {
 			Resolved = true;
 			Info.FailedTests = ArraySegment<CITestOccurence>.Empty;
+			Stats.Resolved = true;
 		}
 	}
 
 	private readonly RingBuffer<Item> _buffer = new(50);
 	private BuildInfo? _actualBuildInfo;
 
-	public BuildInfo? CombinedInfo => _actualBuildInfo ?? InitializeLastBuildInfo();
+	public BuildInfo? CombinedInfo {
+		get {
+			if (_actualBuildInfo is null) {
+				InitializeLastBuildInfo();
+			}
+			return _actualBuildInfo;
+		}
+	}
+
 	public Item Add(BuildInfo newInfo) {
-		var buildInfoItem = new Item(newInfo, false, ImmutableList<BuildFailureSuspect>.Empty);
+		var stats = _buffer.Last is { } last
+			? new BuildConfigurationStats(last.Stats.Runs + 1,
+				last.Info.IsSuccess() ? last.Stats.SuccessfulRunsInARow + 1 : 0)
+			: new BuildConfigurationStats(0, 0);
+		var buildInfoItem = new Item(newInfo, false, ImmutableList<BuildFailureSuspect>.Empty, stats);
 		_buffer.Add(buildInfoItem);
 		_actualBuildInfo = null;
 		return buildInfoItem;
@@ -38,14 +57,14 @@ public class BuildInfoHistory
 		return false;
 	}
 
-	private BuildInfo? InitializeLastBuildInfo() {
-		if (_buffer.Items.Count == 0) return null;
+	public void InitializeLastBuildInfo() {
+		_actualBuildInfo = null;
+		if (_buffer.Items.Count == 0) return;
 		var items = _buffer.ToArray().AsSpan();
 		var committers = GetCommittersInfo(items);
 		_actualBuildInfo = items[^1].Info with {
 			CombinedCommitters = committers
 		};
-		return _actualBuildInfo;
 	}
 
 	private IReadOnlyCollection<CommitterInfo> GetCommittersInfo(Span<Item> items) {

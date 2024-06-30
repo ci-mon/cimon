@@ -2,6 +2,7 @@
 using System.Reactive.Linq;
 using Akka.Actor;
 using Cimon.Contracts.CI;
+using Cimon.Data.BuildInformation;
 using Cimon.Data.CIConnectors;
 using Cimon.Data.Common;
 using Cimon.Data.Discussions;
@@ -77,7 +78,14 @@ public static class ActorsApi
 		});
 	}
 
-	public record BuildInfoItem(BuildInfo BuildInfo, int BuildConfigId, bool IsResolved, BuildInfoItemUpdateSource UpdateSource);
+	public record BuildInfoItem(
+		BuildInfo BuildInfo,
+		int BuildConfigId,
+		BuildInfoItemUpdateSource UpdateSource)
+	{
+		public bool IsResolved { get; init; }
+		public BuildInfoHistory.BuildConfigurationStats? Stats { get; init; }
+	}
 
 	public record UserConnected(User User, string ConnectionId);
 	public record UserDisconnected(User User, string ConnectionId);

@@ -74,7 +74,7 @@ class BuildInfoActor : ReceiveActor
 	}
 
 	private ActorsApi.BuildInfoItem CreateNotification(BuildInfo current, BuildInfoItemUpdateSource updateSource) =>
-		new(current, _config!.Id, false, updateSource);
+		new(current, _config!.Id, updateSource);
 
 	private async Task InitBuildConfig(BuildConfigModel config) {
 		try {
@@ -139,6 +139,7 @@ class BuildInfoActor : ReceiveActor
 			}
 		}
 		if (!needUpdate) return;
+		_buildInfoHistory.InitializeLastBuildInfo();
 		var unresolvedItems = addedItems.Where(i => !i.Resolved).ToList();
 		foreach (var item in unresolvedItems) {
 			TryRunMl(item.Info);
@@ -157,8 +158,11 @@ class BuildInfoActor : ReceiveActor
 
 	private void HandleDiscussion(BuildInfoHistory.Item buildInfoItem) =>
 		Context.Parent.Tell(new ActorsApi.Discussions.BuildStatusChanged(_config!,
-			new ActorsApi.BuildInfoItem(buildInfoItem.Info, _config!.Id, buildInfoItem.Resolved,
-				BuildInfoItemUpdateSource.StateChanged)));
+			new ActorsApi.BuildInfoItem(buildInfoItem.Info, _config!.Id,
+				BuildInfoItemUpdateSource.StateChanged) {
+				IsResolved = buildInfoItem.Resolved,
+				Stats = buildInfoItem.Stats
+			}));
 
 	private void OnStopIfIdle(StopIfIdle _) {
 		if (_subscribers.Count == 0) {

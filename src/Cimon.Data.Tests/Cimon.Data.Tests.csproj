@@ -28,6 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Cimon.Data.ML\Cimon.Data.ML.csproj" />
       <ProjectReference Include="..\Cimon.Data\Cimon.Data.csproj" />
       <ProjectReference Include="..\Cimon\Cimon.csproj" />
     </ItemGroup>
