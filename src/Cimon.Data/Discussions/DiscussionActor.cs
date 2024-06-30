@@ -127,7 +127,7 @@ public class DiscussionActor : ReceiveActor
 					await HideCommentNotifications(existing);
 				}
 				await _notificationService.Notify(_buildConfig.Id, existing.Id, existing.Author, mentions,
-					$"You was suspected in a failure of \"{buildInfo.Name}\"");
+					$"You were suspected of a failure in \"{buildInfo.Name}\"");
 			}
 			StateHasChanged(state);
 			return;
