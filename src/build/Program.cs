@@ -58,6 +58,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
     public override void Run(BuildContext context) {
         var deployServerName = context.Argument<string>("deploy-server-name");
         var deployPath = context.Argument<string>("deploy-path");
+        var ci = context.Argument("ci", true);
         var stopPoolScript =
             $$"""
                 Stop-WebAppPool -Name "{{context.AppPoolName}}";
@@ -89,7 +90,9 @@ public sealed class DeployTask : FrostingTask<BuildContext>
         context.StartPowershellScript(stopPoolScript, new PowershellSettings {
             ComputerName = deployServerName,
             Modules = new[]{"webadministration"},
-            ExceptionOnScriptError = false
+            ExceptionOnScriptError = false,
+            OutputToAppConsole = !ci,
+            LogOutput = ci
         });
         context.Information("Synchronizing files");
         var webConfig = "web.config";
@@ -111,7 +114,9 @@ public sealed class DeployTask : FrostingTask<BuildContext>
         }
         context.StartPowershellScript($"Start-WebAppPool -Name \"{context.AppPoolName}\"", new PowershellSettings {
             ComputerName = deployServerName,
-            Modules = new[]{"webadministration"}
+            Modules = new[]{"webadministration"},
+            OutputToAppConsole = !ci,
+            LogOutput = ci
         });
         context.Log.Information("Cimon app deployed");
     }
