@@ -102,11 +102,12 @@ public sealed class DeployTask : FrostingTask<BuildContext>
                 .Append("/W:5")
                 .Append("/XD").AppendQuoted("nativeApps").AppendQuoted("db").AppendQuoted("logs")
                 .Append("/XF").AppendQuoted(webConfig)
+                .Append("/XF").AppendQuoted("appsettings.Production.json")
         });
         var webConfigPath = context.File(webConfig);
         var webConfigDestination = context.Directory(deployPath) + webConfigPath;
         if (!context.FileExists(webConfigDestination)) {
-	        context.CopyFile(context.PublishDir + webConfigPath, webConfigDestination);
+             context.CopyFile(context.PublishDir.GetFilePath(webConfig), webConfigDestination);
         }
         context.StartPowershellScript($"Start-WebAppPool -Name \"{context.AppPoolName}\"", new PowershellSettings {
             ComputerName = deployServerName,
