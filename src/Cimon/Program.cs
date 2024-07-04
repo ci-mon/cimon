@@ -123,7 +123,8 @@ app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList")));
 app.MapGet("/cimon-info", () => new {
-	version = typeof(Program).Assembly.GetName().Version
+	version = typeof(Program).Assembly.GetName().Version,
+	env = app.Environment.EnvironmentName
 });
 app.UseStaticFiles();
 app.MapFallbackToPage("/_Host");

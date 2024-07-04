@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VaultSharp;
@@ -14,6 +15,7 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 	private readonly string _prefix = typeof(TSecrets).Name.Replace("Secrets", string.Empty);
 	private readonly VaultSecrets _vaultSecrets;
 	private readonly ILogger _log;
+	private readonly IHostEnvironment _environment;
 
 	public void Configure(TSecrets options) => Configure(null, options);
 
@@ -28,8 +30,9 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 	}
 
 	public VaultSecretsInitializer(IOptions<VaultSecrets> vaultSettings,
-			ILogger<VaultSecretsInitializer<TSecrets>> log) {
+			ILogger<VaultSecretsInitializer<TSecrets>> log, IHostEnvironment environment) {
 		_log = log;
+		_environment = environment;
 		_vaultSecrets = vaultSettings.Value;
 	}
 
@@ -41,8 +44,9 @@ public class VaultSecretsInitializer<TSecrets> :  IConfigureNamedOptions<TSecret
 
 	private async Task ConfigureAsync(TSecrets options, string? key) {
 		var vaultClient = CreateVaultClient(_vaultSecrets, TimeSpan.FromSeconds(30));
+		var path = _vaultSecrets.Path ?? _environment.EnvironmentName;
 		var secrets = await vaultClient.V1.Secrets.KeyValue.V2
-			.ReadSecretAsync(path: _vaultSecrets.Path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
+			.ReadSecretAsync(path: path, mountPoint: _vaultSecrets.MountPoint).ConfigureAwait(false);
 		var config = new ConfigurationManager();
 		var jsonDataKey =
 			secrets.Data.Data.Keys.SingleOrDefault(x => x.Equals(_prefix, StringComparison.OrdinalIgnoreCase));

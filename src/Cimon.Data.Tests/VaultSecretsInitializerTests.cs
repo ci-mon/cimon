@@ -1,5 +1,6 @@
 ﻿using Cimon.Data.Secrets;
 using Cimon.Data.TeamCity;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -15,7 +16,7 @@ public class VaultSecretsInitializerTests
 			Url = "http://localhost:8200",
 			MountPoint = "infrastructure.cimon",
 			Path = "dev"
-		}), NullLogger<VaultSecretsInitializer<CimonSecrets>>.Instance);
+		}), NullLogger<VaultSecretsInitializer<CimonSecrets>>.Instance, new HostingEnvironment());
 		var secrets = Activator.CreateInstance<CimonSecrets>();
 		initializer.Configure(secrets);
 		secrets.BuildInfoMonitoring.SystemUserLogins.Should().Contain("user1");
@@ -27,7 +28,7 @@ public class VaultSecretsInitializerTests
 			Url = "http://localhost:8200",
 			MountPoint = "infrastructure.cimon",
 			Path = "dev"
-		}), NullLogger<VaultSecretsInitializer<TeamcitySecrets>>.Instance);
+		}), NullLogger<VaultSecretsInitializer<TeamcitySecrets>>.Instance, new HostingEnvironment());
 		var secrets = Activator.CreateInstance<TeamcitySecrets>();
 		initializer.Configure("teamcity_main", secrets);
 		secrets.Uri.Should().Be("http://localhost:8112");

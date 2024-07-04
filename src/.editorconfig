@@ -8,6 +8,10 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+[*.json]
+indent_style = space
+indent_size = 2
+
 [{*.cs,*.razor}]
 dotnet_analyzer_diagnostic.category-roslynator.severity = warning
 roslynator_refactorings.enabled = true
