@@ -4,7 +4,7 @@ export class CimonSettingsStore extends Store<NativeAppSettings> {
   async getBaseUrl() {
     try {
       const resp = await fetch(`${this.store.baseUrl}`, { redirect: 'manual' });
-      if (resp.redirected) {
+      if (resp.redirected || resp.status === 301) {
         await this._handleRedirection(resp);
       }
     } catch {
