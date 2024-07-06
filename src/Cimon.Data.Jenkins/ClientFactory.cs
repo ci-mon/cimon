@@ -3,11 +3,11 @@ using Microsoft.Extensions.Options;
 
 namespace Cimon.Data.Jenkins;
 
-public class ClientFactory(IOptionsSnapshot<JenkinsSecrets> snapshot, 
+public class ClientFactory(IOptionsMonitor<JenkinsSecrets> options,
 	Func<JenkinsConfig, IJenkinsClient> factory)
 {
 	public IJenkinsClient Create(string connectorKey, out JenkinsConfig config)  {
-		var secrets = snapshot.Get(connectorKey);
+		var secrets = options.Get(connectorKey);
 		config = new JenkinsConfig {
 			JenkinsUrl = secrets.Uri,
 			Username = secrets.Login,

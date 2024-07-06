@@ -1,4 +1,4 @@
-﻿namespace Cimon.Auth;
+﻿namespace Cimon.Data.Secrets;
 
 public class AuthOptions
 {

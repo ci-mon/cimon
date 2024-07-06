@@ -63,10 +63,4 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>
     </ItemGroup>
-
-    <ItemGroup>
-      <Content Update="appsettings.Production.json">
-        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
 </Project>

@@ -39,7 +39,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var buildConfig = new BuildConfig {
 			Key = "Test1_BuildConf1"
 		};
-		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions(null, 5, 5));
 		var results = await BuildInfoProvider.FindInfo(query);
 		var history = new BuildInfoHistory();
 		foreach (var result in results) {
@@ -53,7 +53,7 @@ public class TcBuildInfoProviderTests : BaseTeamCityTest
 		var buildConfig = new BuildConfig {
 			Key = "Test1_BuildConf1"
 		};
-		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1));
+		var query = new BuildInfoQuery(DefaultConnector, buildConfig, new BuildInfoQueryOptions("0", 1, 1));
 		var results = await BuildInfoProvider.FindInfo(query);
 		using var client = _clientFactory.Create(DefaultConnector.ConnectorKey);
 		var lastBuild = await client.Client.Builds.Include(x=>x.Build).WithLocator(new BuildLocator {

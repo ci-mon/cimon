@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Cimon.Data.Users;
 using System.Security.Principal;
 using Cimon.Data.Monitors;
+using Cimon.Data.Secrets;
 using Cimon.DB.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

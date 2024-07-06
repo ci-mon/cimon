@@ -14,11 +14,10 @@ public record struct TeamCityClientTicket(TeamCityClient Client, TeamcitySecrets
 	}
 }
 
-public class TcClientFactory(IOptionsSnapshot<TeamcitySecrets> snapshot)
+public class TcClientFactory(IOptionsMonitor<TeamcitySecrets> optionsMonitor)
 {
-
 	public TeamCityClientTicket Create(string connectorKey) {
-		var secrets = snapshot.Get(connectorKey);
+		var secrets = optionsMonitor.Get(connectorKey);
 		if(secrets.Uri is null) {
 			throw new InvalidOperationException($"URL for teamcity {connectorKey} is not defined");
 		}

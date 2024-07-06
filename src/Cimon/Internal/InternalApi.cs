@@ -32,4 +32,12 @@ public class InternalApiController(IServiceProvider serviceProvider) : Controlle
 		_monitorServiceActor.ActorRef.Tell(new ActorsApi.RefreshAllMonitors());
 		return Ok();
 	}
+
+	[HttpGet]
+	[Route("reload-config")]
+	[Authorize(Roles = "admin")]
+	public string ReloadConfig([FromServices]IConfiguration config) {
+		(config as IConfigurationRoot)?.Reload();
+		return "Configuration reloaded";
+	}
 }

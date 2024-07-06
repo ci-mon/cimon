@@ -20,7 +20,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		var query = new BuildInfoQuery(DefaultConnector, new BuildConfig {
 			Key = "app.my.test",
 			Branch = "master"
-		}, new BuildInfoQueryOptions(null, 5));
+		}, new BuildInfoQueryOptions(null, 5, 5));
 		var info = (await BuildInfoProvider.FindInfo(query)).First();
 		var job = await client.Query(new JenkinsApi.Job("app.my.test"));
 		var number = job.LastBuild.Number;
@@ -49,7 +49,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		var query = new BuildInfoQuery(DefaultConnector, new BuildConfig {
 			Key = "lib.studio-enterprise.components",
 			Branch = "master"
-		}, new BuildInfoQueryOptions(null, 5));
+		}, new BuildInfoQueryOptions(null, 5, 5));
 		var info = await BuildInfoProvider.FindInfo(query);
 		var history = new BuildInfoHistory();
 		foreach (var result in info) {
@@ -64,7 +64,7 @@ public class JenkinsBuildInfoProviderTests : BaseJenkinsTest
 		var result = await BuildInfoProvider.FindInfo(new BuildInfoQuery(DefaultConnector, new BuildConfig {
 			Key = "app.my.multibranch",
 			Branch = "master"
-		}, new BuildInfoQueryOptions(null, 1)));
+		}, new BuildInfoQueryOptions(null, 1, 1)));
 		result.Should().NotBeNull();
 	}
 }

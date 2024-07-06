@@ -7,8 +7,8 @@ public static class SecretsExtensions
 {
 	public static IServiceCollection ConfigureSecrets<TSecrets>(this IServiceCollection services) where TSecrets : class {
 		ConfigureSecretsFromConfig<TSecrets>(services);
-		services.Add(ServiceDescriptor.Transient(typeof(IConfigureOptions<TSecrets>),
-			typeof(VaultSecretsInitializer<TSecrets>)));
+		/*services.Add(ServiceDescriptor.Transient(typeof(IConfigureOptions<TSecrets>),
+			typeof(VaultSecretsInitializer<TSecrets>)));*/
 		return services;
 	}
 

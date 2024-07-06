@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using Cimon.Contracts;
+using Cimon.Data.Secrets;
 using Cimon.Data.Users;
 
 namespace Cimon.Auth;

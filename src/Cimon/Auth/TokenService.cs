@@ -2,6 +2,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Cimon.Contracts;
+using Cimon.Data.Secrets;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 

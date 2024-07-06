@@ -29,6 +29,10 @@ using Radzen;
 using Serilog;
 using NotificationService = Radzen.NotificationService;
 
+Log.Logger = new LoggerConfiguration()
+	.WriteTo.Console()
+	.CreateBootstrapLogger();
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
@@ -38,6 +42,7 @@ if (builder.Configuration["DataProtection:Path"] is { Length: > 0 } path) {
 	builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(path));
 	Console.WriteLine($"Data protection keys path set to: {path}");
 }
+builder.AddVaultConfiguration("Secrets");
 builder.Services.AddAuth();
 builder.Services.AddCors();
 builder.Services.AddRazorPages();
@@ -94,7 +99,6 @@ builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 20_000_000);
 builder.Services.AddSingleton<IFeatureAssembly>(new FeatureAssembly<MlFeatures.UseSmartComponentsToFindFailureSuspect>());
-
 WebApplication app = builder.Build();
 
 await DbInitializer.Init(app.Services);
@@ -116,12 +120,12 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions {
 	Predicate = _ => true,
 	ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-app.MapHealthChecksUI();
+app.MapHealthChecksUI(options => options.UIPath = "/health");
 app.MapControllers();
 app.MapBlazorHub();
 app.MapHub<UserHub>("/hubs/user");
 app.MapGet("/", context => Task.Run(()=> context.Response.Redirect("/MonitorList")));
-app.MapGet("/cimon-info", () => new {
+app.MapGet("/info", () => new {
 	version = typeof(Program).Assembly.GetName().Version,
 	env = app.Environment.EnvironmentName
 });
