@@ -7,13 +7,13 @@ import { settingsStore } from './settings';
 const updaterLog = log.create({ logId: 'update' });
 
 export class AutoUpdater {
-  private static async getReleasesUrl(version: string) {
-    const baseUrl = await settingsStore.getBaseUrl();
+  private static getReleasesUrl(version: string) {
+    const baseUrl = settingsStore.store.baseUrl;
     const callbackUrl = Buffer.from(baseUrl).toString('base64');
     return `${baseUrl}/native/update/${callbackUrl}/${platform}/${arch}/${version}`;
   }
   public static async install(cimonApp: CimonApp) {
-    const feedUrl = await AutoUpdater.getReleasesUrl(app.getVersion());
+    const feedUrl = AutoUpdater.getReleasesUrl(app.getVersion());
     updaterLog.info(`Updater feed url: ${feedUrl}`);
     if (!app.isPackaged) {
       return;

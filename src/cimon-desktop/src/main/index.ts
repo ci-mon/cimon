@@ -26,7 +26,6 @@ if (!gotTheLock) {
   });
 }
 
-const notifier = await initializeCimonNotifier();
 
 const autoLaunch = new AutoLaunch({
   name: 'cimon',
@@ -41,22 +40,29 @@ if (electron_squirrel_startup) {
   }
   app.quit();
 }
-app.setAppUserModelId(notifier.AppId);
-cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
 
-await AutoUpdater.install(cimonApp);
+if (await settingsStore.checkBaseUrl()) {
+  app.relaunch();
+  app.quit();
+} else {
+  const notifier = await initializeCimonNotifier();
+  app.setAppUserModelId(notifier.AppId);
+  cimonApp = new CimonApp(settingsStore, autoLaunch, notifier);
 
-app.on('ready', async () => {
-  await cimonApp.init();
-});
-app.on('before-quit', async () => {
-  await notifier.hideAll();
-});
-app.on('window-all-closed', (e) => e.preventDefault());
-app.on('activate', async () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    await cimonApp.showMonitors();
-  }
-});
+  await AutoUpdater.install(cimonApp);
+
+  app.on('ready', async () => {
+    await cimonApp?.init();
+  });
+  app.on('before-quit', async () => {
+    await notifier.hideAll();
+  });
+  app.on('window-all-closed', (e) => e.preventDefault());
+  app.on('activate', async () => {
+    // On OS X it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) {
+      await cimonApp?.showMonitors();
+    }
+  });
+}

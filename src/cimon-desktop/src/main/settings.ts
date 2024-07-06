@@ -1,16 +1,16 @@
 import Store from 'electron-store';
 import { NativeAppSettings } from '../shared/interfaces';
 export class CimonSettingsStore extends Store<NativeAppSettings> {
-  async getBaseUrl() {
+  async checkBaseUrl() {
     try {
       const resp = await fetch(`${this.store.baseUrl}`, { redirect: 'manual' });
       if (resp.redirected || resp.status === 301) {
-        await this._handleRedirection(resp);
+        return await this._handleRedirection(resp);
       }
     } catch {
       // ignored
     }
-    return this.store.baseUrl;
+    return false;
   }
 
   private async _handleRedirection(resp: Response) {
@@ -18,10 +18,12 @@ export class CimonSettingsStore extends Store<NativeAppSettings> {
     try {
       if (newUrl && (await fetch(`${newUrl}`))?.ok) {
         this.set('baseUrl', newUrl);
+        return true;
       }
     } catch (e) {
       console.warn(`Base url was redirected to ${newUrl} but it not works: ${(e as Error)?.message}`);
     }
+    return false;
   }
 }
 export const settingsStore = new CimonSettingsStore({
