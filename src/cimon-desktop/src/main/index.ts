@@ -33,15 +33,15 @@ const autoLaunch = new AutoLaunch({
 autoLaunch.opts.appName = 'cimon';
 
 if (electron_squirrel_startup) {
+  const notifier = await initializeCimonNotifier();
+  app.setAppUserModelId(notifier.AppId);
   await registerOnSquirrelStartup(build.appId, 'cimon desktop', options.icons.green.big_png_win);
   const cmd = process.argv[1];
   if (cmd === '--squirrel-uninstall') {
     autoLaunch.disable();
   }
   app.quit();
-}
-
-if (await settingsStore.checkBaseUrl()) {
+} else if (await settingsStore.checkBaseUrl()) {
   app.relaunch();
   app.quit();
 } else {
