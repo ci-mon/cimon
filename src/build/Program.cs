@@ -61,7 +61,7 @@ public sealed class DeployTask : FrostingTask<BuildContext>
         var ci = context.Argument("ci", true);
         var stopPoolScript =
             $$"""
-                Stop-WebAppPool -Name "{{context.AppPoolName}}";
+                Stop-WebAppPool -Name "{{context.AppPoolName}}" -ErrorAction SilentlyContinue;
                 $WorkerProcesses = & "$env:SystemRoot\system32\inetsrv\appcmd.exe" list wp
                 $pattern = 'WP "(\d+)" \(applicationPool:{{context.AppPoolName}}\)'
                 $match = [regex]::Match($WorkerProcesses, $pattern)
