@@ -28,6 +28,7 @@
     "make": "npm run build && electron-forge make",
     "make:mac": "npm run build && electron-forge make -- --platform=darwin",
     "publish": "npm i && npm run build && electron-forge publish",
+    "publish:mac": "npm i && npm run build && electron-forge publish -- --platform=darwin",
     "build": "npm run typecheck && electron-vite build",
     "debugPublish": "electron-forge publish"
   },
