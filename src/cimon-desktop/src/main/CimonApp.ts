@@ -622,8 +622,20 @@ export class CimonApp {
     }
     this._window!.show();
     await this._window!.loadURL(options.lastMonitor);
+    await this.loginIfNeeded();
     const icon = this._getCurrentStatusIcon();
     this._setMainWindowIcon(this._window!, icon, false);
+  }
+  private async loginIfNeeded() {
+    const cookies = await this._window!.webContents.session.cookies.get({
+      url: options.baseUrl,
+      name: '.AspNetCore.Cookies',
+    });
+    if (cookies?.length > 0) {
+      return;
+    }
+    await this._doLogin();
+    await this._window!.loadURL(options.lastMonitor);
   }
 
   public setUpdateReady() {
