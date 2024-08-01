@@ -25,8 +25,6 @@ if (!gotTheLock) {
     await cimonApp?.onSecondInstance();
   });
 }
-
-
 const autoLaunch = new AutoLaunch({
   name: 'cimon',
 });

@@ -1,7 +1,7 @@
 {
   "name": "cimon-desktop",
   "productName": "cimon-desktop",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "desktop client for ci monitoring tool",
   "main": "./dist/main/index.js",
   "keywords": [],

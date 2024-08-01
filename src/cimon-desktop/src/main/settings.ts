@@ -16,9 +16,16 @@ export class CimonSettingsStore extends Store<NativeAppSettings> {
   private async _handleRedirection(resp: Response) {
     const newUrl = resp.headers.get('location');
     try {
-      if (newUrl && (await fetch(`${newUrl}`))?.ok) {
-        this.set('baseUrl', newUrl);
-        return true;
+      if (newUrl) {
+        const response = await fetch(`${newUrl}/info`);
+        if (response?.ok) {
+          const json = await response.json();
+          if (!json?.version) {
+            return false;
+          }
+          this.set('baseUrl', newUrl);
+          return true;
+        }
       }
     } catch (e) {
       console.warn(`Base url was redirected to ${newUrl} but it not works: ${(e as Error)?.message}`);
