@@ -35,7 +35,7 @@ export class CimonSettingsStore extends Store<NativeAppSettings> {
 }
 export const settingsStore = new CimonSettingsStore({
   defaults: {
-    autoRun: false,
+    autoRun: true,
     baseUrl: import.meta.env.CIMON_WEB_APP_URL ?? 'http://localhost:5001',
   } as Readonly<NativeAppSettings>,
   schema: {

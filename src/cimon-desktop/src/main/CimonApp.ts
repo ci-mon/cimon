@@ -316,7 +316,7 @@ export class CimonApp {
         return { action: 'deny' };
       });
     }
-    await this._discussionWindow.loadURL(options.discussionUrl(url));
+    await this._loginIfNeededAndLoadUrl(this._discussionWindow, options.discussionUrl(url));
     this._discussionWindow.show();
   }
 
@@ -621,13 +621,14 @@ export class CimonApp {
       await this._initMainWindow();
     }
     this._window!.show();
-    await this._window!.loadURL(options.lastMonitor);
-    await this.loginIfNeeded();
+    await this._loginIfNeededAndLoadUrl(this._window!, options.lastMonitor);
     const icon = this._getCurrentStatusIcon();
     this._setMainWindowIcon(this._window!, icon, false);
   }
-  private async loginIfNeeded() {
-    const cookies = await this._window!.webContents.session.cookies.get({
+
+  private async _loginIfNeededAndLoadUrl(window: Electron.CrossProcessExports.BrowserWindow, url: string) {
+    await window.loadURL(url);
+    const cookies = await window.webContents.session.cookies.get({
       url: options.baseUrl,
       name: '.AspNetCore.Cookies',
     });
@@ -635,7 +636,10 @@ export class CimonApp {
       return;
     }
     await this._doLogin();
-    await this._window!.loadURL(options.lastMonitor);
+    await window.loadURL(url);
+    if (window !== this._window && this._window?.isVisible()) {
+      this._window.webContents.reload();
+    }
   }
 
   public setUpdateReady() {
@@ -837,7 +841,7 @@ body {
 }
 span {
 	padding: 4px;
-	font-size: 46;
+	font-size: 46px;
     font-family: sans-serif;
     color: white;
     font-weight: bold;
