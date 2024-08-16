@@ -5,7 +5,7 @@ namespace Cimon.Contracts.Services;
 
 public class DemoBuildConfigProvider : IBuildConfigProvider
 {
-	public Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
+	public Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info, Action<int>? reportProgress) {
 		var count = int.Parse(info.Settings["Count"]);
 		var buildConfigs = Enumerable.Range(0, count).Select(x => new BuildConfig {
 			Id = x,

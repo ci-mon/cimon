@@ -20,10 +20,10 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 		_clientFactory = clientFactory;
 	}
 
-	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
+	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info, Action<int>? reportProgress) {
 		using var client = _clientFactory.Create(info.ConnectorKey);
 		var results = new List<BuildConfig>();
-		await foreach (var (buildConfig, branches) in GetBuildConfigs(client, info.Settings)) {
+		await foreach (var (buildConfig, branches) in GetBuildConfigs(client, info.Settings, reportProgress)) {
 			if (!branches.Any()) {
 				var item = new BuildConfig {
 					Name = buildConfig.Name,
@@ -65,14 +65,20 @@ public class TcBuildConfigProvider : IBuildConfigProvider
 	}
 
 	private async IAsyncEnumerable<(BuildType, IReadOnlyCollection<Branch>)> GetBuildConfigs(
-		TeamCityClientTicket client, IReadOnlyDictionary<string, string> settings) {
+		TeamCityClientTicket client, IReadOnlyDictionary<string, string> settings, Action<int>? reportProgress) {
+		var buildTypes = await client.Client.BuildTypes.GetAsync(perPage: 10000);
+		var buildTypesCount = buildTypes.Count ?? 1;
 		var configs = client.Client
 			.BuildTypes
 			.Include(x => x.BuildType).ThenInclude(x=>x.Branches, IncludeType.Long)
 			.GetAsyncEnumerable<BuildTypes, BuildType>()
 			.Select(buildType => buildType);
 		var projectNameMatcher = CreateMatcher(settings, _searchedProjectsSettingKey, ";");
+		var jobNumber = 0;
 		await foreach (var buildType in configs) {
+			jobNumber++;
+			var progress = Convert.ToInt32(Math.Round(jobNumber * 100d / buildTypesCount, 0d));
+			reportProgress?.Invoke(progress);
 			if (!projectNameMatcher.Check(buildType.ProjectId)) {
 				continue;
 			}

@@ -80,7 +80,8 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		var ciConnectorInfo = await GetConnectorInfo(connector, ctx);
 		try {
 			var provider = scope.ServiceProvider.GetRequiredKeyedService<IBuildConfigProvider>(connector.CISystem);
-			var newItems = await provider.GetAll(ciConnectorInfo);
+			var newItems = await provider.GetAll(ciConnectorInfo, progressPercentage =>
+				progress.OnNext((progressPercentage / 2).Some()));
 			var existingItems = await ctx.BuildConfigurations.Include(x=>x.Connector).Include(x => x.Monitors)
 				.Where(x => x.Connector.Id == connector.Id).ToListAsync();
 			var toRemove = existingItems.ToHashSet();
@@ -115,7 +116,7 @@ public class BuildConfigService : IReactiveRepositoryApi<IImmutableList<BuildCon
 		var current = 0;
 		foreach (var newItem in newItems) {
 			current++;
-			var progressPercents = Convert.ToInt32(current * 1d / totalCount * 100d);
+			var progressPercents = Math.Min(50 + (Convert.ToInt32(current * 1d / totalCount * 100d) / 2), 99);
 			progress.OnNext(progressPercents.Some());
 			var existing = existingItems.Find(x => newItem.IsSame(x));
 			if (existing == null) {

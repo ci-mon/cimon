@@ -8,12 +8,16 @@ using Contracts.CI;
 
 public class JenkinsBuildConfigProvider(ClientFactory clientFactory) : IBuildConfigProvider
 {
-	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info) {
+	public async Task<IReadOnlyCollection<BuildConfig>> GetAll(CIConnectorInfo info, Action<int>? reportProgress) {
 		using var client = clientFactory.Create(info.ConnectorKey);
 		var result = new List<BuildConfig>();
 		var master = await client.Query(new JenkinsApi.Master());
 		if (master is null) return result;
+		int jobNumber = 0;
 		foreach (var job in master.Jobs) {
+			jobNumber++;
+			var progress = Convert.ToInt32(Math.Round(jobNumber * 100d / master.Jobs.Count, 0d));
+			reportProgress?.Invoke(progress);
 			var jobInfo = await client.Query(new JenkinsApi.Job(JobLocator.Create(job.Name)));
 			if (jobInfo is null) continue;
 			if (!jobInfo.Jobs.Any()) {

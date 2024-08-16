@@ -9,7 +9,7 @@ public class JenkinsBuildConfigProviderTests : BaseJenkinsTest
 
 	[Test]
 	public async Task GetAll() {
-		var result = await BuildConfigProvider.GetAll(DefaultConnector);
+		var result = await BuildConfigProvider.GetAll(DefaultConnector, null);
 		result.Should().Contain(new BuildConfig() {
 			Key = "app.my.multibranch",
 			Branch = "master"
